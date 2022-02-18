@@ -1,16 +1,60 @@
 @textColor: #333;
-@borderColor: #333;
+@borderColor: #000;
 
-.system {
+body {
+  font-family: "Open Sans", "PingFang SC", Helvetica, Arial, sans-serif;
+  // color: @textColor;
+}
+
+.bordered {
+  border: 1px solid @borderColor;
+}
+
+.block {
+  .bordered();
+  margin: 3px;
+  padding: 2px 6px;
+}
+
+.view-title {
+  font-size: large;
+  font-weight: bold;
+}
+
+#root {
+  // display: flex;
   height: 1080px;
-  color: red;
   .system-title {
-    width: 50px;
-    height: 50px;
+    width: 100%;
+    // height: 50px;
     padding: 10px 10px;
+    background-color: black;
+    color: #fff;
+    font-size: larger;
+    font-weight: bold;
   }
   .system-content {
     display: flex;
     flex-direction: row;
+    // align-items: stretch;
+    height: 1025px;
+    padding: 3px;
+    .data-view {
+      width: 300px;
+    }
+    .charts-view {
+      width: 300px;
+    }
+    .view-box {
+      flex: auto;
+      display: flex;
+      flex-direction: column;
+      .modal-view {
+        height: 500px;
+      }
+      .validation-view {
+        height: 500px;
+      }
+    }
   }
 }
