@@ -4,6 +4,7 @@ import { attributesData } from '../../data/attributes';
 import { Upload, Button, DatePicker, Space } from 'antd'
 import { UploadOutlined } from '@ant-design/icons';
 import AttributeBlock from './AttributeBlock/AttributeBlock';
+import FilterBlock from './FilterBlock/FilterBlock';
 
 const { RangePicker } = DatePicker;
 
@@ -24,12 +25,12 @@ const DataView = () => {
       <AttributeBlock
         data={attributesData['Dimension']}
         title='Dimension'
-        color='#96ccf6'
+        color='#d0ddfa'
       ></AttributeBlock>
       <AttributeBlock
         data={attributesData['Measure']}
         title='Measure'
-        color='#60b077'
+        color='#d4f2e5'
       ></AttributeBlock>
       <AttributeBlock
         data={attributesData['Time']}
@@ -43,11 +44,20 @@ const DataView = () => {
       ></AttributeBlock>
       <div>
         <div>Filter</div>
+        <FilterBlock
+          attributeName='Age'
+          attributeType='measure'
+        ></FilterBlock>
+        <div style={{height: 10}}></div>
+        <FilterBlock
+          attributeName='Region'
+          attributeType='dimension'
+        ></FilterBlock>
         {/* <RangePicker></RangePicker> */}
         {/* <Input placeholder="Basic usage" style={{width: 500}}></Input> */}
-        <Space direction="vertical">
+        {/* <Space direction="vertical">
           <DatePicker onChange={onChange} />
-        </Space>
+        </Space> */}
       </div>
     </div>
   )
