@@ -6308,12 +6308,14 @@
   dependencies:
     "language-subtag-registry" "~0.3.2"
 
-"less-loader@^10.2.0":
-  "integrity" "sha512-AV5KHWvCezW27GT90WATaDnfXBv99llDbtaj4bshq6DvAihMdNjaPDcUMa6EXKLRF+P2opFenJp89BXg91XLYg=="
-  "resolved" "https://registry.npmmirror.com/less-loader/-/less-loader-10.2.0.tgz"
-  "version" "10.2.0"
+"less-loader@^7.2.1":
+  "integrity" "sha512-4v83WZ7KGbluOWPgk3iNjreAaJDNStfmmdfJbQIib3Jlc8mejV3w6A9xU+EkaivjBVqwQEK0y8cFthyNeGnrTQ=="
+  "resolved" "https://registry.npmmirror.com/less-loader/-/less-loader-7.2.1.tgz"
+  "version" "7.2.1"
   dependencies:
     "klona" "^2.0.4"
+    "loader-utils" "^2.0.0"
+    "schema-utils" "^3.0.0"
 
 "less@^3.5.0 || ^4.0.0", "less@^4.1.2":
   "integrity" "sha512-EoQp/Et7OSOVu0aJknJOtlXZsnr8XE8KwuzTHOLeVSEx8pVWUICc8Q0VYRHgzyjX78nMEyC/oztWFbgyhtNfDA=="
@@ -6652,7 +6654,7 @@
   dependencies:
     "minimist" "^1.2.5"
 
-"moment@^2.24.0", "moment@^2.25.3":
+"moment@^2.24.0", "moment@^2.25.3", "moment@^2.29.1":
   "integrity" "sha512-kHmoybcPV8Sqy59DwNDY3Jefr64lK/by/da0ViFcuA4DH0vQg5Q6Ze5VimxkfQNSC+Mls/Kx53s7TjP1RhFEDQ=="
   "resolved" "https://registry.npmmirror.com/moment/-/moment-2.29.1.tgz"
   "version" "2.29.1"

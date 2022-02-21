@@ -1,5 +1,6 @@
 import React from 'react';
 import './AttributeBlock.less';
+import { SettingOutlined, FilterFilled, PlusOutlined } from '@ant-design/icons';
 
 const AttributeBlock = (props) => {
   const { data, title, color } = props;
@@ -15,8 +16,15 @@ const AttributeBlock = (props) => {
       {
         data.map((attr) => {
           return (
-            <div style={{backgroundColor: color, margin: '5px 0px', fontSize: 14}} key={attr}>
-              <span>{attr}</span>
+            <div className='attribute-block-line' style={{ backgroundColor: color}} key={attr}>
+              <span>
+                <span style={{ padding: '0px 5px' }}><SettingOutlined /></span>
+                <span style={{ padding: '0px 5px' }}>{attr}</span>
+              </span>
+              <span>
+                <span style={{ padding: '0px 5px' }}><FilterFilled /></span>
+                <span style={{ padding: '0px 5px' }}><PlusOutlined /></span>
+              </span>
             </div>
           )
         })

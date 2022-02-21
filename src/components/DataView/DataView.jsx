@@ -1,8 +1,16 @@
 import React from 'react';
 import './DataView.less';
 import { attributesData } from '../../data/attributes';
-import { Upload, Button } from 'antd'
+import { Upload, Button, DatePicker, Space } from 'antd'
+import { UploadOutlined } from '@ant-design/icons';
 import AttributeBlock from './AttributeBlock/AttributeBlock';
+
+const { RangePicker } = DatePicker;
+
+function onChange(date, dateString) {
+  console.log(date, dateString);
+}
+
 
 const DataView = () => {
 
@@ -10,7 +18,7 @@ const DataView = () => {
     <div className='data-view-box'>
       <div>
         <Upload>
-          <Button>Click to Upload Data</Button>
+          <Button icon={<UploadOutlined/>}>Click to Upload Data</Button>
         </Upload>
       </div>
       <AttributeBlock
@@ -33,7 +41,14 @@ const DataView = () => {
         title='Template Fields'
         color='#d4c0d6'
       ></AttributeBlock>
-      <div>Filter</div>
+      <div>
+        <div>Filter</div>
+        {/* <RangePicker></RangePicker> */}
+        {/* <Input placeholder="Basic usage" style={{width: 500}}></Input> */}
+        <Space direction="vertical">
+          <DatePicker onChange={onChange} />
+        </Space>
+      </div>
     </div>
   )
 }

@@ -1,11 +1,13 @@
 import React from 'react';
 import './index.less';
 import DataView from '../components/DataView/DataView';
+import ChartsView from '../components/ChartsView/ChartsView';
 
 const IndexPage = () => {
 
   return (
     <>
+      {/* <ChartsView></ChartsView> */}
       <div className='system-title'>DPVisCreator</div>
       <div className='system-content'>
         <div className='block data-view'>
@@ -14,6 +16,7 @@ const IndexPage = () => {
         </div>
         <div className='block charts-view'>
           <div className='view-title'>Charts View</div>
+          <ChartsView></ChartsView>
         </div>
         <div className='view-box'>
           <div className='block modal-view'>
