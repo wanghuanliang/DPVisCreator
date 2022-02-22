@@ -133,9 +133,7 @@ class ChartsView extends Component {
   }
   render() {
     return (
-      // <DatePicker></DatePicker>
       <div>
-        <TimePicker></TimePicker>
         {this.createCharts()}
         <Button
           block
