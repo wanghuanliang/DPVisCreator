@@ -19,7 +19,7 @@ const DataView = () => {
     <div className='data-view-box'>
       <div>
         <Upload>
-          <Button icon={<UploadOutlined/>}>Click to Upload Data</Button>
+          <Button icon={<UploadOutlined />}>Click to Upload Data</Button>
         </Upload>
       </div>
       <AttributeBlock
@@ -48,7 +48,7 @@ const DataView = () => {
           attributeName='Age'
           attributeType='measure'
         ></FilterBlock>
-        <div style={{height: 10}}></div>
+        <div style={{ height: 10 }}></div>
         <FilterBlock
           attributeName='Region'
           attributeType='dimension'
@@ -60,7 +60,7 @@ const DataView = () => {
         </Space> */}
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default DataView;
