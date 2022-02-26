@@ -60,12 +60,12 @@ export default class MenuChart extends Component {
     ];
   }
   getData() {
-    return this.props.dataset.map((data) => {
-      const [x, y, color] = [
-        this.props.attributes[this.state.columnIndex],
-        this.props.attributes[this.state.rowIndex],
-        this.props.attributes[this.state.colorIndex],
-      ];
+    const [x, y, color] = [
+      this.props.attributes[this.state.columnIndex],
+      this.props.attributes[this.state.rowIndex],
+      this.props.attributes[this.state.colorIndex],
+    ];
+    const data = this.props.dataset.map((data) => {
       if (!isDimension(color.type)) throw Error("color should be dimensions");
       return [
         isDimension(x.type) ? x.range.indexOf(data[x.name]) : data[x.name],
@@ -73,6 +73,8 @@ export default class MenuChart extends Component {
         data[color.name],
       ];
     });
+    data.sort((a, b) => a[0] - b[0]);
+    return data;
   }
   render() {
     let self = this;
