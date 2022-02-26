@@ -1,35 +1,49 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './FilterBlock.less'
 import { Slider, Checkbox } from 'antd';
 import { CloseOutlined } from '@ant-design/icons';
-import { attributeCharacter } from '../../../data/attributes';
-import { cloneDeep } from 'lodash';
+import { cloneDeep, debounce } from 'lodash';
 
 const CheckboxGroup = Checkbox.Group;
 
 const FilterBlock = (props) => {
-  const { attribute, filterData, setFilterData } = props;
+  const { attributeCharacter, attribute, filterData, setFilterData } = props;
+  const [sliderValue, setSliderValue] = useState(null);
+  const [checkValue, setCheckValue] = useState(null);
+  useEffect(() => {
+    if (sliderValue === null) return;
+    const temp = cloneDeep(filterData);
+    temp[attribute] = {attributeType: '1', min: sliderValue[0], max: sliderValue[1]}
+    setFilterData(temp);
+  }, [sliderValue]);
+
+  useEffect(() => {
+    if (checkValue === null) return;
+    const temp = cloneDeep(filterData);
+    temp[attribute] = {attributeType: '0', value: checkValue}
+    setFilterData(temp);
+  }, [checkValue])
 
   const handleCloseClick = () => {
     const temp = cloneDeep(filterData)
     delete temp[attribute]
-    console.log(temp)
     setFilterData(temp);
   }
 
   const renderCheckbox = (attr) => {
-    const plainOptions = attributeCharacter[attr]?.range;
+    const plainOptions = attributeCharacter[attr]?.value;
     return (
       <CheckboxGroup
         options={plainOptions}
         defaultValue={plainOptions}
+        onChange={(value) => setCheckValue(value)}
       ></CheckboxGroup>
     )
   }
 
   const renderSlider = (attr) => {
-    const min = attributeCharacter[attr]?.range[0];
-    const max = attributeCharacter[attr]?.range[1];
+    const min = attributeCharacter[attr]?.min;
+    const max = attributeCharacter[attr]?.max;
     return (
       <Slider
         style={{width: '100%'}}
@@ -37,6 +51,7 @@ const FilterBlock = (props) => {
         min={min}
         max={max}
         defaultValue={[min, max]}
+        onChange={debounce((value) => setSliderValue(value), 500)}
       ></Slider>
     )
   }
@@ -53,7 +68,7 @@ const FilterBlock = (props) => {
       <div className='filter-block-content-box'>
         <div className='filter-block-content'>
           {
-            attributeCharacter[attribute].character === '0' ?
+            attributeCharacter[attribute].attributeType === '0' ?
               renderCheckbox(attribute) : renderSlider(attribute)
           }
         </div>

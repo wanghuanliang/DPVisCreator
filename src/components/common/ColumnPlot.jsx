@@ -57,7 +57,7 @@ const ColumnPlot = (props) => {
       .attr("width", xScale.bandwidth())
       .attr("height", d => height - yScale(d.value))
       .attr("fill", "#d0ddfa");
-    
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return <div ref={columnPlotRef}></div>

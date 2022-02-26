@@ -1,30 +1,22 @@
 import React, { useState} from 'react';
 import './DataView.less';
-import { attributesData } from '../../data/attributes';
+// import { attributesData } from '../../data/attributes';
 import { Upload, Button, DatePicker, Space } from 'antd'
 import { UploadOutlined } from '@ant-design/icons';
 import AttributeBlock from './AttributeBlock/AttributeBlock';
 import FilterBlock from './FilterBlock/FilterBlock';
 
-const defaultFilterSet = [];
+const colorArray = ['#d0ddfa', '#d4f2e5', '#f6c3cb'];
 
 const DataView = (props) => {
 
-  const { originalData, filterData, setFilterData } = props;
-  console.log('fff', filterData);
-
-  // filter窗口
-  const [filterSet, setFilterSet] = useState(defaultFilterSet);
-  const changeFilterSet = (opera, attr) => {
-    console.log('father', opera,attr);
-    if (opera === 'open') {
-      setFilterSet([...filterSet, attr]);
-    } else if (opera === 'close') {
-      // 数组/对象中移除一项,并赋值为新数组/对象
-      let newFilterSet = filterSet.filter(value => value !== attr);
-      setFilterSet(newFilterSet);
-    }
-  }
+  const {
+    originalData,
+    attributeData,
+    attributeCharacter,
+    filterData,
+    setFilterData,
+  } = props;
 
   const prop = {
     action: 'https://www.mocky.io/v2/5cc8019d300000980a055e76',
@@ -65,7 +57,23 @@ const DataView = (props) => {
           <Button icon={<UploadOutlined />} size='small'>select file</Button>
         </Upload>
       </div>
-      <AttributeBlock
+      {
+        Object.keys(attributeData).map((type, index) => {
+          return (
+            <AttributeBlock
+              key={type}
+              originalData={originalData}
+              data={attributeData[type]}
+              title={type}
+              attributeType={String(index)}
+              color={colorArray[index]}
+              filterData={filterData}
+              setFilterData={setFilterData}
+            ></AttributeBlock>
+          )
+        })
+      }
+      {/* <AttributeBlock
         originalData={originalData}
         data={attributesData['Dimensions']}
         title='Dimensions'
@@ -91,7 +99,7 @@ const DataView = (props) => {
         color='#f6c3cb'
         filterData={filterData}
         setFilterData={setFilterData}
-      ></AttributeBlock>
+      ></AttributeBlock> */}
       <div>
         <div>Filter</div>
         {
@@ -99,6 +107,7 @@ const DataView = (props) => {
             return (
               <FilterBlock
                 key={attribute}
+                attributeCharacter={attributeCharacter}
                 attribute={attribute}
                 filterData={filterData}
                 setFilterData={setFilterData}
@@ -106,18 +115,6 @@ const DataView = (props) => {
             )
           })
         }
-        {/* {
-          filterSet.map((attr) => {
-            console.log(filterSet);
-            return (
-              <FilterBlock
-                key={attr}
-                attributeName={attr}
-                changeFilterSet={changeFilterSet}
-              ></FilterBlock>
-            )
-          })
-        } */}
       </div>
     </div>
   );
