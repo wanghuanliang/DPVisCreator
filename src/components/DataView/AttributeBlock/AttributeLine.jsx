@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
 import './AttributeLine.less';
-import { Histogram } from '@ant-design/plots';
 import DensityPlot from '../../common/DensityPlot';
 import ColumnPlot from '../../common/ColumnPlot';
 import { ReactComponent as FilterIcon } from "../../../assets/filter-icon.svg";
