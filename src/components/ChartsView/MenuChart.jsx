@@ -6,7 +6,7 @@ import {
   DotChartOutlined,
 } from "@ant-design/icons";
 import DataChart from "./DataChart";
-import { AttributeType } from "random-mock";
+import { attributeType } from "../../data/attributes";
 
 const { Option } = Select;
 const chartLabels = {
@@ -14,14 +14,7 @@ const chartLabels = {
   line: "Line Chart",
   bar: "Bar Chart",
 };
-function isDimension(type) {
-  return (
-    type === AttributeType.Discrete ||
-    type === AttributeType.Category ||
-    type === AttributeType.Primary ||
-    type === AttributeType.Unique
-  );
-}
+
 export default class MenuChart extends Component {
   constructor(props) {
     super(props);
@@ -66,10 +59,15 @@ export default class MenuChart extends Component {
       this.props.attributes[this.state.colorIndex],
     ];
     const data = this.props.dataset.map((data) => {
-      if (!isDimension(color.type)) throw Error("color should be dimensions");
+      if ("Dimensions" !== attributeType[color.attributeType])
+        throw Error("color should be dimensions");
       return [
-        isDimension(x.type) ? x.range.indexOf(data[x.name]) : data[x.name],
-        isDimension(y.type) ? y.range.indexOf(data[y.name]) : data[y.name],
+        "Dimensions" === attributeType[x.attributeType]
+          ? x.value.indexOf(data[x.name])
+          : data[x.name],
+        "Dimensions" === attributeType[y.attributeType]
+          ? y.value.indexOf(data[y.name])
+          : data[y.name],
         data[color.name],
       ];
     });
@@ -81,7 +79,8 @@ export default class MenuChart extends Component {
     function getColorSelect() {
       let select = [];
       self.props.attributes.forEach((attribute, index) => {
-        if (isDimension(attribute.type)) select.push({ attribute, index });
+        if ("Dimensions" === attributeType[attribute.attributeType])
+          select.push({ attribute, index });
       });
       return select;
     }
@@ -90,7 +89,7 @@ export default class MenuChart extends Component {
         self.state.typeIndex >= 0 && // type should be selected
         self.props.avaliable[self.state.typeIndex] !== "scatter" && // not a scatter chart
         index >= 0 &&
-        self.props.attributes[index].type === AttributeType.Continuous
+        "Measures" === attributeType[self.props.attributes[index].attributeType]
       )
         return getColorSelect();
       else
@@ -107,11 +106,15 @@ export default class MenuChart extends Component {
     function getAvaliableCharts() {
       if (
         self.state.rowIndex >= 0 &&
-        self.props.attributes[self.state.rowIndex].type ===
-          AttributeType.Continuous &&
+        "Measures" ===
+          attributeType[
+            self.props.attributes[self.state.rowIndex].attributeType
+          ] &&
         self.state.columnIndex >= 0 &&
-        self.props.attributes[self.state.columnIndex].type ===
-          AttributeType.Continuous
+        "Measures" ===
+          attributeType[
+            self.props.attributes[self.state.columnIndex].attributeType
+          ]
       )
         // one of axis is continuous, only scatter is avaliable
         for (let index in self.chartTypes) {

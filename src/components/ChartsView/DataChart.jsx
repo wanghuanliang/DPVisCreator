@@ -1,21 +1,12 @@
 import * as echarts from "echarts";
-import { AttributeType } from "random-mock";
-import { AttributeConstructor } from "random-mock/src/attribute";
 import { Component } from "react";
-function isDimension(type) {
-  return (
-    type === AttributeType.Discrete ||
-    type === AttributeType.Category ||
-    type === AttributeType.Primary ||
-    type === AttributeType.Unique
-  );
-}
+import { attributeType } from "../../data/attributes";
 function getAxisOption(attribute) {
-  return isDimension(attribute.type)
+  return "Dimensions" === attributeType[attribute.type]
     ? {
         type: "category",
         name: attribute.name,
-        data: attribute.range,
+        data: attribute.value,
         nameLocation: "center",
         scale: true,
         splitLine: {
@@ -34,7 +25,7 @@ function getAxisOption(attribute) {
 }
 function getSeriesOption(type, attribute, data) {
   if (type === "scatter") {
-    return attribute.range.map((name) => {
+    return attribute.value.map((name) => {
       return {
         name,
         type: type,
@@ -44,10 +35,10 @@ function getSeriesOption(type, attribute, data) {
       };
     });
   } else {
-    return attribute.range.map((name) => {
+    return attribute.value.map((name) => {
       return {
         name,
-        type: type,
+        type,
         data: data.filter((data) => data[2] === name).map((data) => data[1]),
       };
     });
@@ -121,7 +112,7 @@ export default class DataChart extends Component {
       },
       brush: {},
       legend: {
-        data: this.props.attributes[2].range,
+        data: this.props.attributes[2].value,
         left: "10%",
         top: "10%",
       },
@@ -142,7 +133,7 @@ export default class DataChart extends Component {
         trigger: "axis",
       },
       legend: {
-        data: this.props.attributes[2].range,
+        data: this.props.attributes[2].value,
         left: "10%",
         top: "10%",
       },
@@ -186,7 +177,7 @@ export default class DataChart extends Component {
       },
       calculable: true,
       legend: {
-        data: this.props.attributes[2].range,
+        data: this.props.attributes[2].value,
         left: "10%",
         top: "10%",
       },

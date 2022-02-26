@@ -2,10 +2,12 @@ import React, { Component } from "react";
 import { Button, Row, TimePicker } from "antd";
 import MenuChart from "./MenuChart";
 import { PlusOutlined } from "@ant-design/icons";
-import getDatasets from "./dataset";
+import { attributeCharacter } from "../../data/attributes";
 class ChartsView extends Component {
   constructor(props) {
     super(props);
+    this.dataset = props.dataset;
+    console.log(this.dataset);
     this.state = {
       chartList: [],
     };
@@ -23,6 +25,12 @@ class ChartsView extends Component {
     ));
   }
   render() {
+    const attributes = Object.keys(attributeCharacter).map((name) => {
+      return {
+        name,
+        ...attributeCharacter[name],
+      };
+    });
     return (
       <div>
         {this.createCharts()}
@@ -31,7 +39,13 @@ class ChartsView extends Component {
           icon={<PlusOutlined />}
           onClick={() =>
             this.setState({
-              chartList: getDatasets(),
+              chartList: this.state.chartList.concat([
+                {
+                  dataset: this.dataset,
+                  attributes,
+                  avaliable: ["scatter", "line", "bar"],
+                },
+              ]),
             })
           }
         >
