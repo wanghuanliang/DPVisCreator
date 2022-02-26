@@ -1,6 +1,14 @@
 import * as echarts from "echarts";
 import { AttributeType } from "random-mock";
 import { Component } from "react";
+function isDimension(type) {
+  return (
+    type === AttributeType.Discrete ||
+    type === AttributeType.Category ||
+    type === AttributeType.Primary ||
+    type === AttributeType.Unique
+  );
+}
 export default class DataChart extends Component {
   constructor(props) {
     super(props);
@@ -48,53 +56,51 @@ export default class DataChart extends Component {
       },
       brush: {},
       legend: {
-        data: this.props.attributes[2].distribution.range,
+        data: this.props.attributes[2].range,
         left: "10%",
         top: "10%",
       },
-      xAxis:
-        this.props.attributes[0].type === AttributeType.Discrete
-          ? {
-              type: "category",
-              name: this.props.attributes[0].name,
-              data: this.props.attributes[0].distribution.range,
-              nameLocation: "center",
-              scale: true,
-              splitLine: {
-                show: false,
-              },
-            }
-          : {
-              type: "value",
-              name: this.props.attributes[0].name,
-              nameLocation: "center",
-              scale: true,
-              splitLine: {
-                show: false,
-              },
+      xAxis: isDimension(this.props.attributes[0].type)
+        ? {
+            type: "category",
+            name: this.props.attributes[0].name,
+            data: this.props.attributes[0].range,
+            nameLocation: "center",
+            scale: true,
+            splitLine: {
+              show: false,
             },
-      yAxis:
-        this.props.attributes[1].type === AttributeType.Discrete
-          ? {
-              type: "category",
-              name: this.props.attributes[1].name,
-              data: this.props.attributes[1].distribution.range,
-              nameLocation: "center",
-              scale: true,
-              splitLine: {
-                show: false,
-              },
-            }
-          : {
-              type: "value",
-              name: this.props.attributes[1].name,
-              nameLocation: "center",
-              scale: true,
-              splitLine: {
-                show: false,
-              },
+          }
+        : {
+            type: "value",
+            name: this.props.attributes[0].name,
+            nameLocation: "center",
+            scale: true,
+            splitLine: {
+              show: false,
             },
-      series: this.props.attributes[2].distribution.range.map((name) => {
+          },
+      yAxis: isDimension(this.props.attributes[1].type)
+        ? {
+            type: "category",
+            name: this.props.attributes[1].name,
+            data: this.props.attributes[1].range,
+            nameLocation: "center",
+            scale: true,
+            splitLine: {
+              show: false,
+            },
+          }
+        : {
+            type: "value",
+            name: this.props.attributes[1].name,
+            nameLocation: "center",
+            scale: true,
+            splitLine: {
+              show: false,
+            },
+          },
+      series: this.props.attributes[2].range.map((name) => {
         return {
           name,
           type: "scatter",
@@ -107,7 +113,77 @@ export default class DataChart extends Component {
     return option;
   }
   getLineChartOption() {
-    return {};
+    const option = {
+      tooltip: {
+        trigger: "axis",
+      },
+      legend: {
+        data: this.props.attributes[2].range,
+        left: "10%",
+        top: "10%",
+      },
+      grid: {
+        left: "3%",
+        right: "4%",
+        bottom: "3%",
+        containLabel: true,
+      },
+      toolbox: {
+        feature: {
+          saveAsImage: {},
+        },
+      },
+      xAxis: isDimension(this.props.attributes[0].type)
+        ? {
+            type: "category",
+            name: this.props.attributes[0].name,
+            data: this.props.attributes[0].range,
+            nameLocation: "center",
+            scale: true,
+            splitLine: {
+              show: false,
+            },
+          }
+        : {
+            type: "value",
+            name: this.props.attributes[0].name,
+            nameLocation: "center",
+            scale: true,
+            splitLine: {
+              show: false,
+            },
+          },
+      yAxis: isDimension(this.props.attributes[1].type)
+        ? {
+            type: "category",
+            name: this.props.attributes[1].name,
+            data: this.props.attributes[1].range,
+            nameLocation: "center",
+            scale: true,
+            splitLine: {
+              show: false,
+            },
+          }
+        : {
+            type: "value",
+            name: this.props.attributes[1].name,
+            nameLocation: "center",
+            scale: true,
+            splitLine: {
+              show: false,
+            },
+          },
+      series: this.props.attributes[2].range.map((name) => {
+        return {
+          name,
+          type: "line",
+          data: this.props.data
+            .filter((data) => data[2] === name)
+            .map((data) => data[1]),
+        };
+      }),
+    };
+    return option;
   }
   getBarChartOption() {
     return {};
