@@ -9,7 +9,6 @@ import { cloneDeep } from 'lodash';
 
 const AttributeLine = (props) => {
   const { originalData, attribute, attributeType, color, filterData, setFilterData } = props;
-
   const [isShowOverview, setIsShowOverview] = useState(false);
 
   const handleOverviewClick = () => {
@@ -17,17 +16,15 @@ const AttributeLine = (props) => {
   }
 
   const handleFilterClick = () => {
-
-    const temp = cloneDeep(filterData);
-    console.log('add', attribute, filterData);
-    temp[attribute] = {};
-    setFilterData(temp);
+    // filterData展示筛选条件，
+    if (filterData[attribute]) {
+      return;
+    } else {
+      const temp = cloneDeep(filterData);
+      temp[attribute] = {};
+      setFilterData(temp);
+    }
   }
-
-  
-  useEffect(() => {
-
-  }, [])
 
   return (
     <div>
