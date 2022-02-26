@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './FilterBlock.less'
 import { Slider, Checkbox } from 'antd';
 import { CloseOutlined } from '@ant-design/icons';
-import { cloneDeep, debounce } from 'lodash';
+import { debounce } from 'lodash';
 
 const CheckboxGroup = Checkbox.Group;
 
@@ -12,22 +12,22 @@ const FilterBlock = (props) => {
   const [checkValue, setCheckValue] = useState(null);
   useEffect(() => {
     if (sliderValue === null) return;
-    const temp = cloneDeep(filterData);
-    temp[attribute] = {attributeType: '1', min: sliderValue[0], max: sliderValue[1]}
-    setFilterData(temp);
+    // 深拷贝效率低，使用解构赋值浅比较更新了state的地址，react浅比较认为state更改触发重新渲染
+    // const temp = cloneDeep(filterData);
+    // state值不能改，但是对象的话不修改地址即可
+    filterData[attribute] = {attributeType: '1', min: sliderValue[0], max: sliderValue[1]}
+    setFilterData({...filterData});
   }, [sliderValue]);
 
   useEffect(() => {
     if (checkValue === null) return;
-    const temp = cloneDeep(filterData);
-    temp[attribute] = {attributeType: '0', value: checkValue}
-    setFilterData(temp);
+    filterData[attribute] = {attributeType: '0', value: checkValue}
+    setFilterData({...filterData});
   }, [checkValue])
 
   const handleCloseClick = () => {
-    const temp = cloneDeep(filterData)
-    delete temp[attribute]
-    setFilterData(temp);
+    delete filterData[attribute]
+    setFilterData(filterData);
   }
 
   const renderCheckbox = (attr) => {
