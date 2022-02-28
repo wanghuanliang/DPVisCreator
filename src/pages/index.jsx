@@ -15,10 +15,10 @@ const IndexPage = () => {
   // 不使用redux，直接在此处定义全局数据，通过props传递
   // 过滤操作数据，属性名为键[{'attribute': 'age, 'attributeType': '1'}]
   // 过滤条件数据{'age': {attributeType: '1', max: '55', min: '10'}, 'sex': {attributeType: '0', value: ['male', 'female']}}
-  const [filterData, setFilterData] = useState({}); 
+  const [filterData, setFilterData] = useState({});
   const [afterFilterData, setAfterFilterData] = useState(originalData);
 
-  console.log('filterData', filterData);
+  console.log("filterData", filterData);
   return (
     <>
       <Title />
@@ -47,7 +47,7 @@ const IndexPage = () => {
           <div
             style={{ width: "100%", height: "4px", backgroundColor: "#e9e9e9" }}
           ></div>
-          <ChartsView></ChartsView>
+          <ChartsView dataset={afterFilterData}></ChartsView>
         </div>
         <div className="view-box">
           <div className="block modal-view">
