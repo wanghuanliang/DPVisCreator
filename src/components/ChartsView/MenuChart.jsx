@@ -6,13 +6,19 @@ import {
   DotChartOutlined,
 } from "@ant-design/icons";
 import DataChart from "./DataChart";
-import { AttributeType } from "random-mock";
+import { attributeType } from "../../data/attributes";
 
 const { Option } = Select;
+const chartLabels = {
+  scatter: "Scatter Plot",
+  line: "Line Chart",
+  bar: "Bar Chart",
+};
+
 export default class MenuChart extends Component {
   constructor(props) {
     super(props);
-    this.chartTypes = ["scatter", "line", "bar"];
+    this.chartTypes = this.props.avaliable;
     this.state = {
       columnIndex: -1,
       rowIndex: -1,
@@ -47,34 +53,78 @@ export default class MenuChart extends Component {
     ];
   }
   getData() {
-    return this.props.dataset.map((data) => {
-      const [x, y, color] = [
-        this.props.attributes[this.state.columnIndex],
-        this.props.attributes[this.state.rowIndex],
-        this.props.attributes[this.state.colorIndex],
-      ];
-      if (color.type !== AttributeType.Discrete)
+    const [x, y, color] = [
+      this.props.attributes[this.state.columnIndex],
+      this.props.attributes[this.state.rowIndex],
+      this.props.attributes[this.state.colorIndex],
+    ];
+    const data = this.props.dataset.map((data) => {
+      if ("Dimensions" !== attributeType[color.attributeType])
         throw Error("color should be dimensions");
       return [
-        x.type === AttributeType.Discrete
-          ? x.distribution.range.indexOf(data[x.name])
+        "Dimensions" === attributeType[x.attributeType]
+          ? x.value.indexOf(data[x.name])
           : data[x.name],
-        y.type === AttributeType.Discrete
-          ? y.distribution.range.indexOf(data[y.name])
+        "Dimensions" === attributeType[y.attributeType]
+          ? y.value.indexOf(data[y.name])
           : data[y.name],
         data[color.name],
       ];
     });
+    data.sort((a, b) => a[0] - b[0]);
+    return data;
   }
   render() {
     let self = this;
     function getColorSelect() {
       let select = [];
       self.props.attributes.forEach((attribute, index) => {
-        if (attribute.type === AttributeType.Discrete)
+        if ("Dimensions" === attributeType[attribute.attributeType])
           select.push({ attribute, index });
       });
       return select;
+    }
+    function getSelectByIndex(index) {
+      if (
+        self.state.typeIndex >= 0 && // type should be selected
+        self.props.avaliable[self.state.typeIndex] !== "scatter" && // not a scatter chart
+        index >= 0 &&
+        "Measures" === attributeType[self.props.attributes[index].attributeType]
+      )
+        return getColorSelect();
+      else
+        return self.props.attributes.map((attribute, index) => {
+          return { attribute, index };
+        });
+    }
+    function getRowSelect() {
+      return getSelectByIndex(self.state.columnIndex); // if column is continous, row should be discrete
+    }
+    function getColumnSelect() {
+      return getSelectByIndex(self.state.rowIndex); // if row is continous, column should be discrete
+    }
+    function getAvaliableCharts() {
+      if (
+        self.state.rowIndex >= 0 &&
+        "Measures" ===
+          attributeType[
+            self.props.attributes[self.state.rowIndex].attributeType
+          ] &&
+        self.state.columnIndex >= 0 &&
+        "Measures" ===
+          attributeType[
+            self.props.attributes[self.state.columnIndex].attributeType
+          ]
+      )
+        // one of axis is continuous, only scatter is avaliable
+        for (let index in self.chartTypes) {
+          if (self.chartTypes[index] === "scatter")
+            return [{ type: "scatter", index }];
+        }
+      else
+        return self.chartTypes.map((type, index) => {
+          return { type, index };
+        });
     }
     return (
       <Row gutter={24}>
@@ -87,9 +137,9 @@ export default class MenuChart extends Component {
               self.setState({ columnIndex: value });
             }}
           >
-            {this.props.attributes.map((attribute, index) => (
-              <Option value={index} key={"column" + index}>
-                {attribute.name}
+            {getColumnSelect().map((select) => (
+              <Option value={select.index} key={"column" + select.index}>
+                {select.attribute.name}
               </Option>
             ))}
           </Select>
@@ -103,9 +153,9 @@ export default class MenuChart extends Component {
               self.setState({ rowIndex: value });
             }}
           >
-            {this.props.attributes.map((attribute, index) => (
-              <Option value={index} key={"row" + index}>
-                {attribute.name}
+            {getRowSelect().map((select) => (
+              <Option value={select.index} key={"row" + select.index}>
+                {select.attribute.name}
               </Option>
             ))}
           </Select>
@@ -135,9 +185,11 @@ export default class MenuChart extends Component {
               self.setState({ typeIndex: value });
             }}
           >
-            <Option value={0} key={"type0"}>
-              Scatter Plot
-            </Option>
+            {getAvaliableCharts().map((chart) => (
+              <Option value={chart.index} key={"chart-type-" + chart.index}>
+                {chartLabels[chart.type]}
+              </Option>
+            ))}
           </Select>
         </Col>
         <Col span={24}>{this.renderDataChart()}</Col>

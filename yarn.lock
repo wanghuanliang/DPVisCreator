@@ -4058,7 +4058,7 @@
   "resolved" "https://registry.npmmirror.com/date-fns/-/date-fns-2.28.0.tgz"
   "version" "2.28.0"
 
-"dayjs@^1.10.7", "dayjs@1.x":
+"dayjs@1.x":
   "integrity" "sha512-P6twpd70BcPK34K26uJ1KT3wlhpuOAPoMwJzpsIWUxHZ7wpmbdZL/hQqBDfz7hGurYSa5PhzdhDHtt319hL3ig=="
   "resolved" "https://registry.npmmirror.com/dayjs/-/dayjs-1.10.7.tgz"
   "version" "1.10.7"
@@ -5199,11 +5199,6 @@
   "integrity" "sha1-FQStJSMVjKpA20onh8sBQRmU6k8="
   "resolved" "https://registry.npmjs.org/fs.realpath/-/fs.realpath-1.0.0.tgz"
   "version" "1.0.0"
-
-"fsevents@^2.3.2", "fsevents@~2.3.2":
-  "integrity" "sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA=="
-  "resolved" "https://registry.npmmirror.com/fsevents/-/fsevents-2.3.2.tgz"
-  "version" "2.3.2"
 
 "function-bind@^1.1.1":
   "integrity" "sha512-yIovAzMX49sF8Yl58fSCWJ5svSLuaibPxXQJFLmBObTuCr0Mf1KiPopGM9NiFjiYBCbfaa2Fh6breQ6ANVTI0A=="
@@ -8133,14 +8128,6 @@
   "version" "3.4.1"
   dependencies:
     "performance-now" "^2.1.0"
-
-"random-mock@^0.1.7":
-  "integrity" "sha512-mKPWWEpBp9OKpk9lcZscAkWF8IrpklPrp/c1cL/DgC+V5dqX/UBJuA+cIELCExGZRVWWNhSm42ltANRmKcov0Q=="
-  "resolved" "https://registry.npmmirror.com/random-mock/-/random-mock-0.1.8.tgz"
-  "version" "0.1.8"
-  dependencies:
-    "dayjs" "^1.10.7"
-    "lodash" "^4.17.21"
 
 "randombytes@^2.1.0":
   "integrity" "sha512-vYl3iOX+4CKUWuxGi9Ukhie6fsqXqS9FE2Zaic4tNFD2N2QQaXOMFbuKK4QmDHC0JO6B1Zp41J0LpT0oR68amQ=="
