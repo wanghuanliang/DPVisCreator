@@ -27,7 +27,7 @@ const FilterBlock = (props) => {
 
   const handleCloseClick = () => {
     delete filterData[attribute]
-    setFilterData(filterData);
+    setFilterData({...filterData});
   }
 
   const renderCheckbox = (attr) => {
