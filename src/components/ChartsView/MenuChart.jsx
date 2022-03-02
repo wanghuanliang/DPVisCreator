@@ -14,24 +14,31 @@ const chartLabels = {
   line: "Line Chart",
   bar: "Bar Chart",
 };
-
+const computations = {
+  count: "Count",
+  average: "Average",
+};
 export default class MenuChart extends Component {
   constructor(props) {
     super(props);
     this.chartTypes = this.props.avaliable;
+    this.computation = this.props.computation;
     this.state = {
       columnIndex: -1,
-      rowIndex: -1,
+      rowTagIndex: -1,
+      rowComputeIndex: -1,
       colorIndex: -1,
       typeIndex: -1,
+      fitIndex: -1,
     };
   }
   renderDataChart() {
     if (
       this.state.columnIndex >= 0 &&
-      this.state.rowIndex >= 0 &&
-      this.state.colorIndex >= 0 &&
-      this.state.typeIndex >= 0
+      this.state.typeIndex >= 0 &&
+      ((this.chartTypes[this.state.typeIndex] === "scatter" &&
+        this.state.rowTagIndex >= 0) ||
+        (this.state.rowTagIndex >= 0 && this.state.rowComputeIndex >= 0))
     ) {
       const attributes = this.getAttributes();
       const data = this.getData();
@@ -48,60 +55,155 @@ export default class MenuChart extends Component {
   getAttributes() {
     return [
       this.props.attributes[this.state.columnIndex],
-      this.props.attributes[this.state.rowIndex],
-      this.props.attributes[this.state.colorIndex],
+      this.state.rowTagIndex >= 0
+        ? this.props.attributes[this.state.rowTagIndex]
+        : null,
+      this.state.colorIndex >= 0
+        ? this.props.attributes[this.state.colorIndex]
+        : { attributeType: "0", value: ["default"] },
+      this.state.fitIndex >= 0
+        ? this.props.attributes[this.state.fitIndex]
+        : null,
     ];
   }
   getData() {
-    const [x, y, color] = [
+    const [x, y, compute, color, fit] = [
       this.props.attributes[this.state.columnIndex],
-      this.props.attributes[this.state.rowIndex],
-      this.props.attributes[this.state.colorIndex],
+      this.state.rowTagIndex >= 0
+        ? this.props.attributes[this.state.rowTagIndex]
+        : null,
+      this.state.rowComputeIndex >= 0
+        ? this.computation[this.state.rowComputeIndex]
+        : null,
+      this.state.colorIndex >= 0
+        ? this.props.attributes[this.state.colorIndex]
+        : { attributeType: "0", value: ["default"] },
+      this.state.fitIndex >= 0
+        ? this.props.attributes[this.state.fitIndex]
+        : null,
     ];
-    const data = this.props.dataset.map((data) => {
-      if ("Dimensions" !== attributeType[color.attributeType])
-        throw Error("color should be dimensions");
-      return [
-        "Dimensions" === attributeType[x.attributeType]
-          ? x.value.indexOf(data[x.name])
-          : data[x.name],
-        "Dimensions" === attributeType[y.attributeType]
-          ? y.value.indexOf(data[y.name])
-          : data[y.name],
-        data[color.name],
-      ];
-    });
-    data.sort((a, b) => a[0] - b[0]);
-    return data;
+    const dataset = [];
+    if (compute != null) {
+      const range = [];
+      this.props.dataset.forEach((data) => {
+        if (!range.includes(data[x.name])) {
+          range.push(data[x.name]);
+        }
+      });
+      const cart = []; // 笛卡尔积
+      range.forEach((value) => {
+        color.value.forEach((colorName) => {
+          cart.push({
+            value,
+            color: colorName,
+          });
+        });
+      });
+      cart.forEach((condition) => {
+        let sum = 0;
+        const arr = this.props.dataset.filter(
+          (data) =>
+            data[x.name] === condition.value &&
+            (condition.color === "default" ||
+              condition.color === data[color.name])
+        );
+        arr.forEach((element) => (sum += element[y.name]));
+        dataset.push([
+          condition.value,
+          compute === "count"
+            ? arr.length
+            : sum / (arr.length === 0 ? 1 : arr.length),
+          condition.color,
+        ]);
+      });
+    } else {
+      this.props.dataset.forEach((data) => {
+        dataset.push([
+          data[x.name],
+          data[y.name],
+          data[color.name] ? data[color.name] : "default",
+        ]);
+      });
+    }
+    if (this.chartTypes[this.state.typeIndex] === "line")
+      dataset.sort((a, b) => a[0] - b[0]);
+    // 折线图按x值从小到大
+    else if (this.chartTypes[this.state.typeIndex] === "bar")
+      dataset.sort((a, b) => b[1] - a[1]); // 条形图按y值从大到小
+    return dataset;
   }
   render() {
     let self = this;
-    function getColorSelect() {
+    function getSpecificTypeOfAttributes(type) {
       let select = [];
       self.props.attributes.forEach((attribute, index) => {
-        if ("Dimensions" === attributeType[attribute.attributeType])
+        if (type === attributeType[attribute.attributeType])
           select.push({ attribute, index });
       });
       return select;
     }
-    function getSelectByIndex(index) {
-      if (
-        self.state.typeIndex >= 0 && // type should be selected
-        self.props.avaliable[self.state.typeIndex] !== "scatter" && // not a scatter chart
-        index >= 0 &&
-        "Measures" === attributeType[self.props.attributes[index].attributeType]
-      )
-        return getColorSelect();
-      else
-        return self.props.attributes.map((attribute, index) => {
-          return { attribute, index };
-        });
+    function getColorSelect() {
+      return getSpecificTypeOfAttributes("Dimensions");
     }
-    function getRowSelect() {
-      return getSelectByIndex(self.state.columnIndex); // if column is continous, row should be discrete
+    function getRowTagSelect() {
+      return getSpecificTypeOfAttributes("Measures");
     }
     function getColumnSelect() {
-      return getSelectByIndex(self.state.rowIndex); // if row is continous, column should be discrete
+      return getSpecificTypeOfAttributes("Measures");
+    }
+    function getRowComputeSelect() {
+      return self.computation.map((computation, index) => {
+        return { attribute: computation, index };
+      });
+    }
+    function getRowSelectElements() {
+      return self.chartTypes[self.state.typeIndex] === "scatter" ? (
+        <Col span={12}>
+          <BarsOutlined />
+          Row
+          <Select
+            placeholder="Select row"
+            onChange={(value) => {
+              self.setState({ rowTagIndex: value });
+            }}
+          >
+            {getRowTagSelect().map((select) => (
+              <Option value={select.index} key={"row" + select.index}>
+                {select.attribute.name}
+              </Option>
+            ))}
+          </Select>
+        </Col>
+      ) : (
+        <Col span={12}>
+          <BarsOutlined />
+          Row
+          <Select
+            placeholder="Select computation"
+            onChange={(value) => {
+              self.setState({ rowComputeIndex: value });
+            }}
+          >
+            {getRowComputeSelect().map((select) => (
+              <Option value={select.index} key={"computation" + select.index}>
+                {select.attribute}
+              </Option>
+            ))}
+          </Select>
+          <Select
+            placeholder="Select row"
+            onChange={(value) => {
+              self.setState({ rowTagIndex: value });
+            }}
+          >
+            {getRowTagSelect().map((select) => (
+              <Option value={select.index} key={"row" + select.index}>
+                {select.attribute.name}
+              </Option>
+            ))}
+          </Select>
+        </Col>
+      );
     }
     function getAvaliableCharts() {
       if (
@@ -144,22 +246,7 @@ export default class MenuChart extends Component {
             ))}
           </Select>
         </Col>
-        <Col span={12}>
-          <BarsOutlined />
-          Row
-          <Select
-            placeholder="Select row"
-            onChange={(value) => {
-              self.setState({ rowIndex: value });
-            }}
-          >
-            {getRowSelect().map((select) => (
-              <Option value={select.index} key={"row" + select.index}>
-                {select.attribute.name}
-              </Option>
-            ))}
-          </Select>
-        </Col>
+        {getRowSelectElements()}
         <Col span={12}>
           <BgColorsOutlined />
           Color
@@ -182,7 +269,10 @@ export default class MenuChart extends Component {
           <Select
             placeholder="Select type"
             onChange={(value) => {
-              self.setState({ typeIndex: value });
+              let state = { typeIndex: value };
+              if (self.chartTypes[value] === "scatter")
+                state.rowComputeIndex = -1;
+              self.setState(state);
             }}
           >
             {getAvaliableCharts().map((chart) => (
@@ -192,6 +282,23 @@ export default class MenuChart extends Component {
             ))}
           </Select>
         </Col>
+        <Col span={12}>
+          <DotChartOutlined />
+          Type
+          <Select
+            placeholder="Fit by"
+            onChange={(value) => {
+              self.setState({ fitIndex: value });
+            }}
+          >
+            {getAvaliableCharts().map((chart) => (
+              <Option value={chart.index} key={"chart-type-" + chart.index}>
+                {chartLabels[chart.type]}
+              </Option>
+            ))}
+          </Select>
+        </Col>
+        <Col span={12}></Col>
         <Col span={24}>{this.renderDataChart()}</Col>
       </Row>
     );

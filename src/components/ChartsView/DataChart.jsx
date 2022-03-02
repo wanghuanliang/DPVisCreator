@@ -23,6 +23,22 @@ function getAxisOption(attribute) {
         },
       };
 }
+function getXAxisOption(attribute, dataset) {
+  const values = [];
+  dataset.forEach((data) => {
+    if (!values.includes(data[0])) values.push(data[0]); // 去重
+  });
+  return {
+    type: "category",
+    name: attribute.name,
+    data: values,
+    nameLocation: "center",
+    scale: true,
+    splitLine: {
+      show: false,
+    },
+  };
+}
 function getSeriesOption(type, attribute, data) {
   if (type === "scatter") {
     return attribute.value.map((name) => {
@@ -144,7 +160,7 @@ export default class DataChart extends Component {
           saveAsImage: {},
         },
       },
-      xAxis: getAxisOption(this.props.attributes[0]),
+      xAxis: getXAxisOption(this.props.attributes[0], this.props.data),
       yAxis: getAxisOption(this.props.attributes[1]),
       series: getSeriesOption(
         "line",
@@ -182,7 +198,7 @@ export default class DataChart extends Component {
         top: "10%",
       },
       grid,
-      xAxis: getAxisOption(this.props.attributes[0]),
+      xAxis: getXAxisOption(this.props.attributes[0], this.props.data),
       yAxis: getAxisOption(this.props.attributes[1]),
       dataZoom,
       series: getSeriesOption("bar", this.props.attributes[2], this.props.data),

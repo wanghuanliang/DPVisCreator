@@ -3,6 +3,7 @@ import { Button, Row, TimePicker } from "antd";
 import MenuChart from "./MenuChart";
 import { PlusOutlined } from "@ant-design/icons";
 import { attributeCharacter } from "../../data/attributes";
+// color可以为空 row可以为average和count 选定区域后可返回点 折线图和柱状图可拟合 信息放在同一行
 class ChartsView extends Component {
   constructor(props) {
     super(props);
@@ -19,6 +20,7 @@ class ChartsView extends Component {
           dataset={chart.dataset}
           attributes={chart.attributes}
           avaliable={chart.avaliable}
+          computation={chart.computation}
           id={"chart-" + index}
         ></MenuChart>
       </Row>
@@ -44,6 +46,7 @@ class ChartsView extends Component {
                   dataset: this.dataset,
                   attributes,
                   avaliable: ["scatter", "line", "bar"],
+                  computation: ["count", "average"],
                 },
               ]),
             })
