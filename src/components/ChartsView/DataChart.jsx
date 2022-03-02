@@ -50,12 +50,12 @@ function getSeriesOption(type, attribute, data, pointSize) {
     };
   });
 }
-function getRegressionOption(attribute, selectedData) {
+function getRegressionOption(attribute, selectedData, fit = 2) {
   const lines = [];
   attribute.value.forEach((name) => {
     const data = selectedData[name];
     if (data) {
-      const regression = ecStat.regression("polynomial", data, 2);
+      const regression = ecStat.regression("polynomial", data, fit);
       lines.push({
         name: name,
         type: "line",
@@ -232,7 +232,8 @@ export default class DataChart extends Component {
         ),
         ...getRegressionOption(
           this.props.attributes[2],
-          this.selectedSeriesData
+          this.selectedSeriesData,
+          this.props.fit
         ),
       ],
     };

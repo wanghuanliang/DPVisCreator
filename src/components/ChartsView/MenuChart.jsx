@@ -1,9 +1,10 @@
 import { Component } from "react";
-import { Col, Form, Input, Row, Select, Tag } from "antd";
+import { Col, Form, Input, Row, Select, Statistic, Tag } from "antd";
 import {
   BarsOutlined,
   BgColorsOutlined,
   DotChartOutlined,
+  FunctionOutlined,
 } from "@ant-design/icons";
 import DataChart from "./DataChart";
 import { attributeType } from "../../data/attributes";
@@ -18,9 +19,11 @@ const computations = {
   count: "Count",
   average: "Average",
 };
-const onSelected = (selected) => {
-  console.log(selected);
-};
+const chartFitnesses = [
+  ["Normal", "Beta"],
+  [1, 2, 3, 4, 5],
+  ["Normal", "Beta"],
+];
 export default class MenuChart extends Component {
   constructor(props) {
     super(props);
@@ -35,6 +38,7 @@ export default class MenuChart extends Component {
       fitIndex: -1,
     };
   }
+  onSelected(selected) {}
   renderDataChart() {
     if (
       this.state.columnIndex >= 0 &&
@@ -51,7 +55,12 @@ export default class MenuChart extends Component {
           data={data}
           type={this.chartTypes[this.state.typeIndex]}
           id={"data-" + this.props.id}
-          onSelected={onSelected}
+          fit={
+            this.state.fitIndex >= 0
+              ? chartFitnesses[this.state.typeIndex][this.state.fitIndex]
+              : undefined
+          }
+          onSelected={this.onSelected}
         ></DataChart>
       );
     } else return <div style={{ height: 300 }}></div>;
@@ -210,27 +219,16 @@ export default class MenuChart extends Component {
       );
     }
     function getAvaliableCharts() {
-      if (
-        self.state.rowIndex >= 0 &&
-        "Measures" ===
-          attributeType[
-            self.props.attributes[self.state.rowIndex].attributeType
-          ] &&
-        self.state.columnIndex >= 0 &&
-        "Measures" ===
-          attributeType[
-            self.props.attributes[self.state.columnIndex].attributeType
-          ]
-      )
-        // one of axis is continuous, only scatter is avaliable
-        for (let index in self.chartTypes) {
-          if (self.chartTypes[index] === "scatter")
-            return [{ type: "scatter", index }];
-        }
-      else
-        return self.chartTypes.map((type, index) => {
+      return self.chartTypes.map((type, index) => {
+        return { type, index };
+      });
+    }
+    function getChartFitnesses() {
+      if (self.state.typeIndex >= 0)
+        return chartFitnesses[self.state.typeIndex].map((type, index) => {
           return { type, index };
         });
+      else return [];
     }
     return (
       <Row gutter={24}>
@@ -287,22 +285,24 @@ export default class MenuChart extends Component {
           </Select>
         </Col>
         <Col span={12}>
-          <DotChartOutlined />
-          Type
+          <FunctionOutlined />
+          Fit
           <Select
             placeholder="Fit by"
             onChange={(value) => {
               self.setState({ fitIndex: value });
             }}
           >
-            {getAvaliableCharts().map((chart) => (
-              <Option value={chart.index} key={"chart-type-" + chart.index}>
-                {chartLabels[chart.type]}
+            {getChartFitnesses().map((fit) => (
+              <Option value={fit.index} key={"chart-fit-" + fit.index}>
+                {fit.type}
               </Option>
             ))}
           </Select>
         </Col>
-        <Col span={12}></Col>
+        <Col span={12}>
+          <Statistic title="Points" value={this.props.dataset.length} />
+        </Col>
         <Col span={24}>{this.renderDataChart()}</Col>
       </Row>
     );
