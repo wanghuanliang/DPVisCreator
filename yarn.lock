@@ -4421,6 +4421,11 @@
   "resolved" "https://registry.npmmirror.com/duplexer/-/duplexer-0.1.2.tgz"
   "version" "0.1.2"
 
+"echarts-stat@^1.2.0":
+  "integrity" "sha512-zLd7Kgs+tuTSeaK0VQEMNmnMivEkhvHIk1gpBtLzpRerfcIQ+Bd5XudOMmtwpaTc1WDZbA7d1V//iiBccR46Qg=="
+  "resolved" "https://registry.npmjs.org/echarts-stat/-/echarts-stat-1.2.0.tgz"
+  "version" "1.2.0"
+
 "echarts@^5.3.0":
   "integrity" "sha512-zENufmwFE6WjM+24tW3xQq4ICqQtI0CGj4bDVDNd3BK3LtaA/5wBp+64ykIyKy3QElz0cieKqSYP4FX9Lv9MwQ=="
   "resolved" "https://registry.npmmirror.com/echarts/-/echarts-5.3.0.tgz"

@@ -18,6 +18,9 @@ const computations = {
   count: "Count",
   average: "Average",
 };
+const onSelected = (selected) => {
+  console.log(selected);
+};
 export default class MenuChart extends Component {
   constructor(props) {
     super(props);
@@ -48,6 +51,7 @@ export default class MenuChart extends Component {
           data={data}
           type={this.chartTypes[this.state.typeIndex]}
           id={"data-" + this.props.id}
+          onSelected={onSelected}
         ></DataChart>
       );
     } else return <div style={{ height: 300 }}></div>;

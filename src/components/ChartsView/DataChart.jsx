@@ -1,12 +1,12 @@
 import * as echarts from "echarts";
 import { Component } from "react";
 import { attributeType } from "../../data/attributes";
+import * as ecStat from "echarts-stat";
 function getAxisOption(attribute) {
   return "Dimensions" === attributeType[attribute.type]
     ? {
         type: "category",
         name: attribute.name,
-        data: attribute.value,
         nameLocation: "center",
         scale: true,
         splitLine: {
@@ -31,7 +31,6 @@ function getXAxisOption(attribute, dataset) {
   return {
     type: "category",
     name: attribute.name,
-    data: values,
     nameLocation: "center",
     scale: true,
     splitLine: {
@@ -39,26 +38,40 @@ function getXAxisOption(attribute, dataset) {
     },
   };
 }
-function getSeriesOption(type, attribute, data) {
-  if (type === "scatter") {
-    return attribute.value.map((name) => {
-      return {
-        name,
-        type: type,
-        data: data
-          .filter((data) => data[2] === name)
-          .map((data) => [data[0], data[1]]),
-      };
-    });
-  } else {
-    return attribute.value.map((name) => {
-      return {
-        name,
-        type,
-        data: data.filter((data) => data[2] === name).map((data) => data[1]),
-      };
-    });
-  }
+function getSeriesOption(type, attribute, data, pointSize) {
+  return attribute.value.map((name) => {
+    return {
+      name,
+      type: type,
+      symbolSize: pointSize,
+      data: data
+        .filter((data) => data[2] === name)
+        .map((data) => [data[0], data[1]]),
+    };
+  });
+}
+function getRegressionOption(attribute, selectedData) {
+  const lines = [];
+  attribute.value.forEach((name) => {
+    const data = selectedData[name];
+    if (data) {
+      const regression = ecStat.regression("polynomial", data, 2);
+      lines.push({
+        name: name,
+        type: "line",
+        smooth: true,
+        symbolSize: 0.1,
+        symbol: "circle",
+        lineStyle: {
+          width: 10,
+          opacity: 0.5,
+        },
+        encode: { label: 2, tooltip: 1 },
+        data: regression.points,
+      });
+    }
+  });
+  return lines;
 }
 const grid = {
   top: "12%",
@@ -90,10 +103,35 @@ export default class DataChart extends Component {
   constructor(props) {
     super(props);
     this.width = 300;
+    this.selectedSeriesData = [];
   }
   componentDidMount() {
+    let self = this;
     const chartDom = document.getElementById(this.props.id);
     this.chart = echarts.init(chartDom);
+    this.chart.on("brushSelected", (params) => {
+      const seriesData = {};
+      params.batch[0]?.selected.forEach((series) => {
+        const name = series.seriesName;
+        const data = self.props.data.filter((data) => data[2] === name);
+
+        const selectedData = [];
+        series.dataIndex.forEach((index) => {
+          selectedData.push(data[index]);
+        });
+        seriesData[name] =
+          selectedData.length > 0 ? selectedData : seriesData[name];
+      });
+      if (self.props.type === "line") {
+        self.selectedSeriesData = seriesData;
+      }
+      self.props.onSelected(seriesData);
+    });
+    this.chart.on("brushEnd", (params) => {
+      if (self.props.type === "line") {
+        this.generateData();
+      }
+    });
     const divDom = document.getElementById("container-" + this.props.id);
     this.width = divDom.offsetWidth;
     this.generateData();
@@ -123,6 +161,8 @@ export default class DataChart extends Component {
           dataZoom: {},
           brush: {
             type: ["rect", "polygon", "clear"],
+            throttleType: "debounce",
+            throttleDelay: 0,
           },
         },
       },
@@ -138,7 +178,8 @@ export default class DataChart extends Component {
       series: getSeriesOption(
         "scatter",
         this.props.attributes[2],
-        this.props.data
+        this.props.data,
+        5
       ),
     };
     return option;
@@ -147,6 +188,12 @@ export default class DataChart extends Component {
     const option = {
       tooltip: {
         trigger: "axis",
+        axisPointer: {
+          type: "shadow",
+          label: {
+            show: true,
+          },
+        },
       },
       legend: {
         data: this.props.attributes[2].value,
@@ -157,16 +204,37 @@ export default class DataChart extends Component {
       dataZoom,
       toolbox: {
         feature: {
-          saveAsImage: {},
+          dataZoom: {},
+          brush: {
+            type: ["lineX", "clear"],
+            throttleType: "debounce",
+          },
         },
       },
+      brush: {
+        throttleType: "debounce",
+      },
+      calculable: true,
       xAxis: getXAxisOption(this.props.attributes[0], this.props.data),
       yAxis: getAxisOption(this.props.attributes[1]),
-      series: getSeriesOption(
-        "line",
-        this.props.attributes[2],
-        this.props.data
-      ),
+      series: [
+        ...getSeriesOption(
+          "line",
+          this.props.attributes[2],
+          this.props.data,
+          5
+        ),
+        ...getSeriesOption(
+          "scatter",
+          this.props.attributes[2],
+          this.props.data,
+          0
+        ),
+        ...getRegressionOption(
+          this.props.attributes[2],
+          this.selectedSeriesData
+        ),
+      ],
     };
     return option;
   }
@@ -182,15 +250,15 @@ export default class DataChart extends Component {
         },
       },
       toolbox: {
-        show: true,
         feature: {
-          mark: { show: true },
-          dataView: { show: true, readOnly: false },
-          magicType: { show: true, type: ["line", "bar"] },
-          restore: { show: true },
-          saveAsImage: { show: true },
+          dataZoom: {},
+          brush: {
+            type: ["rect", "polygon", "clear"],
+            throttleType: "debounce",
+          },
         },
       },
+      brush: {},
       calculable: true,
       legend: {
         data: this.props.attributes[2].value,
