@@ -1,27 +1,26 @@
-import React from "react";
+import React, { useState } from "react";
 import "./index.less";
 import DataView from "../components/DataView/DataView";
 import ChartsView from "../components/ChartsView/ChartsView";
-import url from "../assets/system.png";
-import picture from "../assets/system-icon.svg";
-import { ReactComponent as Logo } from "../assets/system-icon.svg";
 import { ReactComponent as Title } from "../assets/title.svg";
 import { ReactComponent as DataViewIcon } from "../assets/data-view-icon.svg";
 import { ReactComponent as ChartsViewIcon } from "../assets/charts-view-icon.svg";
 import { ReactComponent as ModalViewIcon } from "../assets/modal-view-icon.svg";
 import { ReactComponent as ValidationViewIcon } from "../assets/validation-view-icon.svg";
+// 原始数据, 后端返回(或者只返回原是数据，别的自己计算)
+import { originalData } from "../data/originalData"; // 原始数据
+import { attributeData, attributeCharacter } from "../data/attributes"; // 原始数据属性、数据属性特镇
 
 const IndexPage = () => {
+  // 不使用redux，直接在此处定义全局数据，通过props传递
+  // 过滤操作数据，属性名为键[{'attribute': 'age, 'attributeType': '1'}]
+  // 过滤条件数据{'age': {attributeType: '1', max: '55', min: '10'}, 'sex': {attributeType: '0', value: ['male', 'female']}}
+  const [filterData, setFilterData] = useState({});
+  const [afterFilterData, setAfterFilterData] = useState(originalData);
+
+  console.log("filterData", filterData);
   return (
     <>
-      {/* <div className='system-title'> */}
-      {/* <Logo width='30' height='30' position='10 10' /> */}
-      {/* <span><Logo width='30' height='30' position='10 10' /></span> */}
-      {/* <img src={picture} alt='logo' width='30' height='30'/> */}
-      {/* <img src={url} alt='logo' /> */}
-      {/* <span>DPVisCreator</span>
-        <span>Imposing Visualization-inspired Prior Constraints to Differential Privacy Data Publishing</span> */}
-      {/* </div> */}
       <Title />
       <div className="system-content">
         <div className="block data-view">
@@ -32,7 +31,13 @@ const IndexPage = () => {
           <div
             style={{ width: "100%", height: "4px", backgroundColor: "#e9e9e9" }}
           ></div>
-          <DataView></DataView>
+          <DataView
+            originalData={originalData}
+            attributeData={attributeData}
+            attributeCharacter={attributeCharacter}
+            filterData={filterData}
+            setFilterData={setFilterData}
+          ></DataView>
         </div>
         <div className="block charts-view">
           <div className="view-title">
@@ -42,7 +47,7 @@ const IndexPage = () => {
           <div
             style={{ width: "100%", height: "4px", backgroundColor: "#e9e9e9" }}
           ></div>
-          <ChartsView></ChartsView>
+          <ChartsView dataset={afterFilterData}></ChartsView>
         </div>
         <div className="view-box">
           <div className="block modal-view">

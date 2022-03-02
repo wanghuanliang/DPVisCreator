@@ -1,63 +1,120 @@
-import React from 'react';
+import React, { useState} from 'react';
 import './DataView.less';
-import { attributesData } from '../../data/attributes';
+// import { attributesData } from '../../data/attributes';
 import { Upload, Button, DatePicker, Space } from 'antd'
 import { UploadOutlined } from '@ant-design/icons';
 import AttributeBlock from './AttributeBlock/AttributeBlock';
 import FilterBlock from './FilterBlock/FilterBlock';
 
-const { RangePicker } = DatePicker;
+const colorArray = ['#d0ddfa', '#d4f2e5', '#f6c3cb'];
 
-function onChange(date, dateString) {
-  console.log(date, dateString);
-}
+const DataView = (props) => {
 
+  const {
+    originalData,
+    attributeData,
+    attributeCharacter,
+    filterData,
+    setFilterData,
+  } = props;
 
-const DataView = () => {
+  const prop = {
+    action: 'https://www.mocky.io/v2/5cc8019d300000980a055e76',
+    onChange({ file, fileList }) {
+      if (file.status !== 'uploading') {
+        console.log(file, fileList);
+      }
+    },
+    defaultFileList: [
+      {
+        uid: '1',
+        name: 'xxx.csv',
+        status: 'done',
+        response: 'Server Error 500', // custom error message to show
+        url: 'http://www.baidu.com/xxx.png',
+      },
+      // {
+      //   uid: '2',
+      //   name: 'yyy.png',
+      //   status: 'done',
+      //   url: 'http://www.baidu.com/yyy.png',
+      // },
+      // {
+      //   uid: '3',
+      //   name: 'zzz.png',
+      //   status: 'error',
+      //   response: 'Server Error 500', // custom error message to show
+      //   url: 'http://www.baidu.com/zzz.png',
+      // },
+    ],
+  };
 
   return (
     <div className='data-view-box'>
       <div>
-        <Upload>
-          <Button icon={<UploadOutlined />}>Click to Upload Data</Button>
+        <div>Upload Data</div>
+        <Upload {...prop}>
+          <Button icon={<UploadOutlined />} size='small'>select file</Button>
         </Upload>
       </div>
-      <AttributeBlock
-        data={attributesData['Dimension']}
-        title='Dimension'
+      {
+        Object.keys(attributeData).map((type, index) => {
+          return (
+            <AttributeBlock
+              key={type}
+              originalData={originalData}
+              data={attributeData[type]}
+              title={type}
+              attributeType={String(index)}
+              color={colorArray[index]}
+              filterData={filterData}
+              setFilterData={setFilterData}
+            ></AttributeBlock>
+          )
+        })
+      }
+      {/* <AttributeBlock
+        originalData={originalData}
+        data={attributesData['Dimensions']}
+        title='Dimensions'
+        attributeType='0'
         color='#d0ddfa'
+        filterData={filterData}
+        setFilterData={setFilterData}
       ></AttributeBlock>
       <AttributeBlock
-        data={attributesData['Measure']}
-        title='Measure'
+        originalData={originalData}
+        data={attributesData['Measures']}
+        title='Measures'
+        attributeType='1'
         color='#d4f2e5'
+        filterData={filterData}
+        setFilterData={setFilterData}
       ></AttributeBlock>
       <AttributeBlock
-        data={attributesData['Time']}
-        title='Time'
+        originalData={originalData}
+        data={attributesData['Computation']}
+        title='Computation'
+        attributeType='2'
         color='#f6c3cb'
-      ></AttributeBlock>
-      <AttributeBlock
-        data={attributesData['Template Fields']}
-        title='Template Fields'
-        color='#d4c0d6'
-      ></AttributeBlock>
+        filterData={filterData}
+        setFilterData={setFilterData}
+      ></AttributeBlock> */}
       <div>
         <div>Filter</div>
-        <FilterBlock
-          attributeName='Age'
-          attributeType='measure'
-        ></FilterBlock>
-        <div style={{ height: 10 }}></div>
-        <FilterBlock
-          attributeName='Region'
-          attributeType='dimension'
-        ></FilterBlock>
-        {/* <RangePicker></RangePicker> */}
-        {/* <Input placeholder="Basic usage" style={{width: 500}}></Input> */}
-        {/* <Space direction="vertical">
-          <DatePicker onChange={onChange} />
-        </Space> */}
+        {
+          Object.keys(filterData).map((attribute, index) => {
+            return (
+              <FilterBlock
+                key={attribute}
+                attributeCharacter={attributeCharacter}
+                attribute={attribute}
+                filterData={filterData}
+                setFilterData={setFilterData}
+              ></FilterBlock>
+            )
+          })
+        }
       </div>
     </div>
   );
