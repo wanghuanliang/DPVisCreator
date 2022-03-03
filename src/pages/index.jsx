@@ -3,6 +3,7 @@ import "./index.less";
 import DataView from "../components/DataView/DataView";
 import ChartsView from "../components/ChartsView/ChartsView";
 import ModalView from "../components/ModelView/ModalView";
+import Validation from "../components/ValidationView/ValidationView";
 import { ReactComponent as Title } from "../assets/title.svg";
 import { ReactComponent as DataViewIcon } from "../assets/data-view-icon.svg";
 import { ReactComponent as ChartsViewIcon } from "../assets/charts-view-icon.svg";
@@ -60,6 +61,7 @@ const IndexPage = () => {
               Validation View
             </div>
             <div className="cross-line"></div>
+            <Validation></Validation>
           </div>
         </div>
       </div>

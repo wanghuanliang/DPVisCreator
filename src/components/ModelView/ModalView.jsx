@@ -6,58 +6,7 @@ import * as d3 from 'd3'
 
 const ModalView = (props) => {
   const [privacyBudgetValue, setPrivacyBudget] = useState(0.8)
-  const chordDiagramRef = useRef(null);
-  
-  useEffect(() => {
-    const svg = d3.select(chordDiagramRef.current)
-      .append("svg")
-        .attr("width", 440)
-        .attr("height", 440)
-      .append("g")
-        .attr("transform", "translate(220,220)");
-    const matrix = [
-      [11975,  5871, 8916, 2868],
-      [ 1951, 10048, 2060, 6171],
-      [ 8010, 16145, 8090, 8045],
-      [ 1013,   990,  940, 6907]
-    ];
-    var res = d3.chord()
-    .padAngle(0.05)     // padding between entities (black arc)
-    .sortSubgroups(d3.descending)
-    (matrix)
-
-// add the groups on the inner part of the circle
-svg
-  .datum(res)
-  .append("g")
-  .selectAll("g")
-  .data(function(d) { return d.groups; })
-  .enter()
-  .append("g")
-  .append("path")
-    .style("fill", "grey")
-    .style("stroke", "black")
-    .attr("d", d3.arc()
-      .innerRadius(200)
-      .outerRadius(210)
-    )
-
-// Add the links between groups
-svg
-  .datum(res)
-  .append("g")
-  .selectAll("path")
-  .data(function(d) { return d; })
-  .enter()
-  .append("path")
-    .attr("d", d3.ribbon()
-      .radius(200)
-    )
-    .style("fill", "#69b3a2")
-    .style("stroke", "black");
-    
-  },[])
-
+  const arcRef = useRef(null);
 
   const renderModalControlPanel = () => {
     return (
@@ -94,34 +43,64 @@ svg
     )
   }
 
-
+    const arc = d3.arc()
+      .innerRadius(0)
+      .outerRadius(10)
+      .startAngle(0)
+      .endAngle(Math.PI / 2);
+    const arc2 = d3.arc()
+    .innerRadius(10)
+    .outerRadius(15)
+    .startAngle(Math.PI / 4)
+    .endAngle(Math.PI);
 
   return (
+    // <div>
+    //   {renderModalControlPanel()}
+    //   <div className="flow-path">
+    //     <span>
+    //       {/* <CheckOutlined style={{color: '#000'}}/> */}
+    //       <CheckCircleOutlined style={{width:30, height: 30}}/>
+    //       Constraints
+    //     </span>
+    //     <span><RightOutlined /></span>
+    //     <span>
+    //       <CheckCircleOutlined style={{width:30, height: 30}}/>
+    //       Structure
+    //     </span>
+    //     <span><RightOutlined /></span>
+    //     <span>
+    //       <CheckCircleOutlined style={{width:30, height: 30}}/>
+    //       Parameter
+    //     </span>
+    //     <span><RightOutlined /></span>
+    //     <span>
+    //       <CheckCircleOutlined style={{width:30, height: 30}}/>
+    //       Sampling
+    //     </span>
+    //   </div>
+    //   <div ref={chordDiagramRef}></div>
+    // </div>
     <div>
       {renderModalControlPanel()}
-      <div className="flow-path">
-        <span>
-          {/* <CheckOutlined style={{color: '#000'}}/> */}
-          <CheckCircleOutlined style={{width:30, height: 30}}/>
-          Constraints
-        </span>
-        <span><RightOutlined /></span>
-        <span>
-          <CheckCircleOutlined style={{width:30, height: 30}}/>
-          Structure
-        </span>
-        <span><RightOutlined /></span>
-        <span>
-          <CheckCircleOutlined style={{width:30, height: 30}}/>
-          Parameter
-        </span>
-        <span><RightOutlined /></span>
-        <span>
-          <CheckCircleOutlined style={{width:30, height: 30}}/>
-          Sampling
-        </span>
-      </div>
-      <div ref={chordDiagramRef}></div>
+      <svg width={600} height={400}>
+        <g transform='translate(100,100)'>
+          <circle
+            r={10}
+            stroke="#cfd4dd"
+            fill='none'
+          ></circle>
+          <circle
+            r={15}
+            stroke="#cfd4dd"
+            fill='none'
+          ></circle>
+          <path d={arc()} stroke="#cfd4dd" fill='#f2d1cc' strokeWidth="1"></path>
+          <path d={arc2()} stroke="#cfd4dd" fill='#d4f2e5' strokeWidth="1"></path>
+          {/* <path d="M 100 100 m 75 0 a 75 75 0 0 1 -75 75"
+          fill="red" stroke="green" stroke-width="10"/> */}
+        </g>
+      </svg>
     </div>
   );
 };
