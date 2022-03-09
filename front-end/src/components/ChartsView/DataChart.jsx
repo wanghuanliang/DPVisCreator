@@ -3,7 +3,7 @@ import { Component } from "react";
 import { attributeType } from "../../data/attributes";
 import * as ecStat from "echarts-stat";
 import * as d3 from "d3";
-import { createEllipseController, EllipseController } from "./controller";
+import { createEllipseController } from "./controller";
 const globalColor = [
   "#5470c6",
   "#91cc75",
@@ -15,7 +15,7 @@ const globalColor = [
   "#9a60b4",
   "#ea7ccc",
 ];
-// 散点图选择之后聚类，生成椭圆，用户可以拖拽旋转 柱状图单独选择柱子 折线图生成的拟合曲线可调整宽度，纵向，背景全部调成灰色
+// 散点图选择之后聚类，生成椭圆 柱状图单独选择柱子 折线图生成的拟合曲线可调整宽度，纵向，背景全部调成灰色
 function getAxisOption(attribute) {
   return "Dimensions" === attributeType[attribute.attributeType]
     ? {
@@ -66,7 +66,7 @@ function getSeriesOption(type, attribute, data, pointSize) {
 
 const grid = {
   top: "12%",
-  left: "1%",
+  left: "10%",
   right: "10%",
 };
 export default class DataChart extends Component {
@@ -352,7 +352,7 @@ export default class DataChart extends Component {
     let option = {
       color: globalColor,
     };
-    d3.selectAll("svg > *").remove();
+    d3.selectAll("#container-" + this.props.id + " > svg > *").remove();
     if (type === "scatter") {
       option = { ...option, ...this.getScatterChartOption() };
       this.getScatterCluster();
