@@ -13,12 +13,15 @@ class ChartsView extends Component {
     };
   }
   createCharts() {
+    let self = this;
     return this.state.chartList.map((chart, index) => (
       <Row key={"chart-" + index}>
         <MenuChart
           dataset={chart.dataset}
           attributes={chart.attributes}
           avaliable={chart.avaliable}
+          computation={chart.computation}
+          setPatternData={self.setPatternData}
           id={"chart-" + index}
         ></MenuChart>
       </Row>
@@ -44,6 +47,7 @@ class ChartsView extends Component {
                   dataset: this.dataset,
                   attributes,
                   avaliable: ["scatter", "line", "bar"],
+                  computation: ["count", "average"],
                 },
               ]),
             })
