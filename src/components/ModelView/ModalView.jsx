@@ -5,6 +5,7 @@ import { CheckCircleOutlined, RightOutlined, CheckOutlined } from '@ant-design/i
 import * as d3 from 'd3'
 import ClockBlock from './ClockBlock/ClockBlock';
 import BayesianNetwork from './BayesianNetwork/BayyesianNetWork';
+import ParallelPlot from './ParallelPlot';
 
 const ModalView = (props) => {
   const [privacyBudgetValue, setPrivacyBudget] = useState(0.8)
@@ -75,8 +76,9 @@ const ModalView = (props) => {
     <div>
       {renderModalControlPanel()}
       {/* {renderFlowChart} */}
-      <ClockBlock></ClockBlock>
-      <BayesianNetwork></BayesianNetwork>
+      {/* <ClockBlock></ClockBlock> */}
+      {/* <BayesianNetwork></BayesianNetwork> */}
+      <ParallelPlot></ParallelPlot>
     </div>
   );
 };
