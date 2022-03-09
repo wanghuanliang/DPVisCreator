@@ -14,7 +14,8 @@ const ParallelPlot = (props) => {
   const chartRef = useRef(null);
   const data = [];
   // 指定dimensions， 表示轴的先后顺序
-  const dimensions = Object.keys(attributeCharacter);
+  // const dimensions = Object.keys(attributeCharacter);
+  const dimensions = ['charges', 'bmi', 'age', 'children', 'smoker', 'region', 'sex'];
   // 计算需要的data
   originalData.forEach(obj => {
     let now = [];
@@ -53,7 +54,7 @@ const ParallelPlot = (props) => {
   // ------------------------ pattern 相关 ---------------------------------
   useEffect(() => {
     // 绘制轴
-    const svg = d3.select()
+    const svg = d3.select(chartRef.current)
     svg.selectAll("axis")
       .data(dimensions)
       .enter()
@@ -74,9 +75,9 @@ const ParallelPlot = (props) => {
       .attr("d", path)
       .style("fill", "none")
       .style("stroke", "#69b3a2")
-      .style("opacity", 0.5)
+      .style("opacity", 0.1)
     
-    return () => svg.remove();
+    // return () => svg.remove();
   })
   return (
     <svg
@@ -84,7 +85,7 @@ const ParallelPlot = (props) => {
       height={height + margin.top + margin.bottom}
       
     >
-      <foreignObject
+      {/* <foreignObject
         width={margin.left-100}
         height={height}
         x={0}
@@ -96,7 +97,7 @@ const ParallelPlot = (props) => {
         <span style={{ backgroundColor: '#ccc', width: 20, float: 'right', cursor: 'col-resize', right: {} }}>
           bar
         </span>
-      </foreignObject>
+      </foreignObject> */}
       <g
         transform={`translate(${margin.left}, ${margin.top})`}
         ref={chartRef}
