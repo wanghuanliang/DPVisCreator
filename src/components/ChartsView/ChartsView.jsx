@@ -7,7 +7,7 @@ class ChartsView extends Component {
   constructor(props) {
     super(props);
     this.dataset = props.dataset;
-    console.log(this.dataset);
+    // console.log(this.dataset);
     this.state = {
       chartList: [],
     };

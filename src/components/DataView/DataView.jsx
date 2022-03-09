@@ -33,19 +33,6 @@ const DataView = (props) => {
         response: 'Server Error 500', // custom error message to show
         url: 'http://www.baidu.com/xxx.png',
       },
-      // {
-      //   uid: '2',
-      //   name: 'yyy.png',
-      //   status: 'done',
-      //   url: 'http://www.baidu.com/yyy.png',
-      // },
-      // {
-      //   uid: '3',
-      //   name: 'zzz.png',
-      //   status: 'error',
-      //   response: 'Server Error 500', // custom error message to show
-      //   url: 'http://www.baidu.com/zzz.png',
-      // },
     ],
   };
 
@@ -73,33 +60,6 @@ const DataView = (props) => {
           )
         })
       }
-      {/* <AttributeBlock
-        originalData={originalData}
-        data={attributesData['Dimensions']}
-        title='Dimensions'
-        attributeType='0'
-        color='#d0ddfa'
-        filterData={filterData}
-        setFilterData={setFilterData}
-      ></AttributeBlock>
-      <AttributeBlock
-        originalData={originalData}
-        data={attributesData['Measures']}
-        title='Measures'
-        attributeType='1'
-        color='#d4f2e5'
-        filterData={filterData}
-        setFilterData={setFilterData}
-      ></AttributeBlock>
-      <AttributeBlock
-        originalData={originalData}
-        data={attributesData['Computation']}
-        title='Computation'
-        attributeType='2'
-        color='#f6c3cb'
-        filterData={filterData}
-        setFilterData={setFilterData}
-      ></AttributeBlock> */}
       <div>
         <div>Filter</div>
         {

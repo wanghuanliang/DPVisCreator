@@ -5,7 +5,6 @@ import ColumnPlot from '../../common/ColumnPlot';
 import { ReactComponent as FilterIcon } from "../../../assets/filter-icon.svg";
 import { ReactComponent as OverviewExpandView } from "../../../assets/overview-expand-icon.svg";
 import { ReactComponent as OverviewFoldView } from "../../../assets/overview-fold-icon.svg";
-import { cloneDeep } from 'lodash';
 
 const AttributeLine = (props) => {
   const { originalData, attribute, attributeType, color, filterData, setFilterData } = props;
@@ -20,9 +19,8 @@ const AttributeLine = (props) => {
     if (filterData[attribute]) {
       return;
     } else {
-      const temp = cloneDeep(filterData);
-      temp[attribute] = {};
-      setFilterData(temp);
+      filterData[attribute] = [];
+      setFilterData({...filterData});
     }
   }
 
