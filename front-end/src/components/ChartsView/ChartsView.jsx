@@ -3,17 +3,17 @@ import { Button, Row, TimePicker } from "antd";
 import MenuChart from "./MenuChart";
 import { PlusOutlined } from "@ant-design/icons";
 import { attributeCharacter } from "../../data/attributes";
-// 选定区域后可返回点 信息放在同一行
 class ChartsView extends Component {
   constructor(props) {
     super(props);
     this.dataset = props.dataset;
-    console.log(this.dataset);
+    // console.log(this.dataset);
     this.state = {
       chartList: [],
     };
   }
   createCharts() {
+    let self = this;
     return this.state.chartList.map((chart, index) => (
       <Row key={"chart-" + index}>
         <MenuChart
@@ -21,6 +21,7 @@ class ChartsView extends Component {
           attributes={chart.attributes}
           avaliable={chart.avaliable}
           computation={chart.computation}
+          setPatternData={self.setPatternData}
           id={"chart-" + index}
         ></MenuChart>
       </Row>

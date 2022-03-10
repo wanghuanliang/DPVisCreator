@@ -8,7 +8,7 @@ import {
 } from "@ant-design/icons";
 import DataChart from "./DataChart";
 import { attributeType } from "../../data/attributes";
-
+// 布局变成右侧缩略图
 const { Option } = Select;
 const chartLabels = {
   scatter: "Scatter Plot",
@@ -38,8 +38,11 @@ export default class MenuChart extends Component {
       fitIndex: -1,
     };
   }
-  onSelected(selected) {}
+  onSelected(selected) {
+    console.log(selected);
+  }
   renderDataChart() {
+    let self = this;
     if (
       this.state.columnIndex >= 0 &&
       this.state.typeIndex >= 0 &&
@@ -61,6 +64,7 @@ export default class MenuChart extends Component {
               : undefined
           }
           onSelected={this.onSelected}
+          setPatternData={self.setPatternData}
         ></DataChart>
       );
     } else return <div style={{ height: 300 }}></div>;
@@ -138,7 +142,10 @@ export default class MenuChart extends Component {
         ]);
       });
     }
-    if (this.chartTypes[this.state.typeIndex] === "line")
+    if (
+      this.chartTypes[this.state.typeIndex] === "line" ||
+      this.chartTypes[this.state.typeIndex] === "scatter"
+    )
       dataset.sort((a, b) => a[0] - b[0]);
     // 折线图按x值从小到大
     else if (this.chartTypes[this.state.typeIndex] === "bar")
@@ -156,12 +163,15 @@ export default class MenuChart extends Component {
       return select;
     }
     function getColorSelect() {
+      if (self && self.chartTypes[self.state.typeIndex] === "bar") return [];
       return getSpecificTypeOfAttributes("Dimensions");
     }
     function getRowTagSelect() {
       return getSpecificTypeOfAttributes("Measures");
     }
     function getColumnSelect() {
+      if (self && self.chartTypes[self.state.typeIndex] === "bar")
+        return getSpecificTypeOfAttributes("Dimensions");
       return getSpecificTypeOfAttributes("Measures");
     }
     function getRowComputeSelect() {
@@ -274,6 +284,7 @@ export default class MenuChart extends Component {
               let state = { typeIndex: value };
               if (self.chartTypes[value] === "scatter")
                 state.rowComputeIndex = -1;
+              if (self.chartTypes[value] === "bar") state.colorIndex = -1;
               self.setState(state);
             }}
           >
