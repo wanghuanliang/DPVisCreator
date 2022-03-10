@@ -5,8 +5,8 @@ import { originalData } from '../../data/originalData';
 import { attributeCharacter } from '../../data/attributes';
 import { svg } from 'd3';
 
-const margin = {top: 50, right: 50, bottom: 10, left: 300},
-  width = 1000 - margin.left - margin.right,
+const margin = {top: 50, right: 50, bottom: 10, left: 50},
+  width = 600 - margin.left - margin.right,
   height = 500 - margin.top - margin.bottom;
 
 const ParallelPlot = (props) => {
