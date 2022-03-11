@@ -46,7 +46,7 @@ def getOriginalData(request):
             maxx = max(df[col])
             mean = np.mean(df[col])
             attribute_character[col] = {
-                "attribute_type": "Dimensions",
+                "attribute_type": "Measures",
                 "min": minn,
                 "max": maxx,
                 "average": mean,
@@ -54,7 +54,7 @@ def getOriginalData(request):
         else:
             Dimensions.append(col)  # 离散型
             attribute_character[col] = {
-                "attribute_type": "Measures",
+                "attribute_type": "Dimensions",
                 "values": np.unique(df[col]).tolist(),
             }
     ret = {
@@ -84,14 +84,14 @@ def cnt_poly(x, params):
 def getConstrainedResponse(request):
     global constraints, ORI_DATA
     try:
-        cur_constraints = json.loads(request.POST['constraints'])
+        cur_constraints = json.loads(request.GET['constraints'])
         constraints = cur_constraints
     except:
         pass
     describer = DataDescriber(category_threshold=threshold_value)
     description_file = "priv_bayes/out/original_data.json"
     synthetic_data = "priv_bayes/out/synthetic_data.csv"
-    # ORI_DATA = pd.read_csv(DATA_PATH) # 接口测试开启，正式使用关闭
+    # ORI_DATA = pd.read_csv(DATA_PATH)  # 接口测试开启，正式使用关闭
     describer.describe_dataset_in_correlated_attribute_mode(dataset_file=DATA_PATH,
                                                             epsilon=0,
                                                             k=degree_of_bayesian_network)
@@ -160,7 +160,17 @@ def getConstrainedResponse(request):
             pass
         if type == "order":  # 顺序
             values = params['values']  # 保持order的数据，根据比例扩展数据
-
+            dot_num = dot_basenum * cur_epsilon  # 实际增加的点数
+            ls = [len(ORI_DATA[ORI_DATA[x_axis] == id]) for id in values]
+            wghts = np.array(ls) / sum(ls)
+            cur_df = pd.DataFrame()
+            for id in range(len(values)):
+                val = values[id]
+                filtered_data = synthetic_df[
+                    synthetic_df[x_axis] == val
+                    ].sample(int(wghts[id] * dot_num)).to_json(orient="records")
+                filtered_data = json.loads(filtered_data)  # 得到的是一个数组
+                cur_df = cur_df.append(filtered_data)
             pass
         print(len(cur_df))
         cur_aug_data['data'] = json.loads(cur_df.to_json(orient="records"))
@@ -192,10 +202,10 @@ def setPattern(request):
 
 def setWeights(request):
     global bayes_epsilon, weights
-    weights = json.loads(request.POST['weights'])
-    bayes_epsilon = json.loads(request.POST['bayes_budget'])
+    weights = json.loads(request.GET['weights'])
+    bayes_epsilon = json.loads(request.GET['bayes_budget'])
     ret = getConstrainedResponse(request)
     return HttpResponse(json.dumps(ret))
 
 def getMetrics(request):
-    return HttpResponse(request.POST.get('title'))
+    return HttpResponse(request.GET.get('title'))
