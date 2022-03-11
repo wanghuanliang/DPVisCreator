@@ -46,7 +46,7 @@ def getOriginalData(request):
             maxx = max(df[col])
             mean = np.mean(df[col])
             attribute_character[col] = {
-                "attribute_type": "Dimensions",
+                "attribute_type": "Measures",
                 "min": minn,
                 "max": maxx,
                 "average": mean,
@@ -54,7 +54,7 @@ def getOriginalData(request):
         else:
             Dimensions.append(col)  # 离散型
             attribute_character[col] = {
-                "attribute_type": "Measures",
+                "attribute_type": "Dimensions",
                 "values": np.unique(df[col]).tolist(),
             }
     ret = {
@@ -84,7 +84,7 @@ def cnt_poly(x, params):
 def getConstrainedResponse(request):
     global constraints, ORI_DATA
     try:
-        cur_constraints = json.loads(request.POST['constraints'])
+        cur_constraints = json.loads(request.GET['constraints'])
         constraints = cur_constraints
     except:
         pass
@@ -192,10 +192,10 @@ def setPattern(request):
 
 def setWeights(request):
     global bayes_epsilon, weights
-    weights = json.loads(request.POST['weights'])
-    bayes_epsilon = json.loads(request.POST['bayes_budget'])
+    weights = json.loads(request.GET['weights'])
+    bayes_epsilon = json.loads(request.GET['bayes_budget'])
     ret = getConstrainedResponse(request)
     return HttpResponse(json.dumps(ret))
 
 def getMetrics(request):
-    return HttpResponse(request.POST.get('title'))
+    return HttpResponse(request.GET.get('title'))
