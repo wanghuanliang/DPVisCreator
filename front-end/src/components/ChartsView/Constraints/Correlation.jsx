@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import * as d3 from "d3";
 import * as ecStat from "echarts-stat";
-class Correlation extends Component {
+export default class Correlation extends Component {
   constructor(props) {
     super(props);
     this.id = props.id;

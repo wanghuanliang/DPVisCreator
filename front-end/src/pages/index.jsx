@@ -11,7 +11,7 @@ import { ReactComponent as ChartsViewIcon } from "../assets/charts-view-icon.svg
 import { ReactComponent as ModalViewIcon } from "../assets/modal-view-icon.svg";
 import { ReactComponent as ValidationViewIcon } from "../assets/validation-view-icon.svg";
 // 原始数据, 后端返回(或者只返回原是数据，别的自己计算)
-import { originalData } from "../data/originalData"; // 原始数据
+import { original_data, originalData } from "../data/originalData"; // 原始数据
 import { attributeData, attributeCharacter } from "../data/attributes"; // 原始数据属性、数据属性特镇
 
 const IndexPage = () => {
@@ -32,7 +32,7 @@ const IndexPage = () => {
           </div>
           <div className="cross-line"></div>
           <DataView
-            originalData={originalData}
+            originalData={original_data}
             attributeData={attributeData}
             attributeCharacter={attributeCharacter}
             filterData={filterData}
@@ -45,7 +45,7 @@ const IndexPage = () => {
             Charts View
           </div>
           <div className="cross-line"></div>
-          <ChartsView dataset={afterFilterData}></ChartsView>
+          <ChartsView data={original_data.data}></ChartsView>
         </div>
         <div className="view-box">
           <div className="block modal-view">

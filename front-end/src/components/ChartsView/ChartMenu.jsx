@@ -6,8 +6,6 @@ import {
   DotChartOutlined,
   FunctionOutlined,
 } from "@ant-design/icons";
-import DataChart from "./OriginalDataChart";
-import { attributeType } from "../../data/attributes";
 import { chart_type, computation_type } from "./constants";
 // 布局变成右侧缩略图
 const { Option } = Select;
@@ -39,11 +37,11 @@ export default class ChartMenu extends Component {
       fitIndex: -1,
     };
   }
-  componentDidUpdate() {
+  checkState() {
     if (
       this.state.columnIndex >= 0 &&
       this.state.typeIndex >= 0 &&
-      ((this.chartTypes[this.state.typeIndex] === "scatter" &&
+      ((chart_type[this.state.typeIndex] === "scatter" &&
         this.state.rowTagIndex >= 0) ||
         (this.state.rowTagIndex >= 0 && this.state.rowComputeIndex >= 0))
     ) {
@@ -79,7 +77,8 @@ export default class ChartMenu extends Component {
       let select = [];
       self.attributes.forEach((attributeName, index) => {
         const attribute = self.props.attributes[attributeName];
-        if (type === attribute.type) select.push({ attribute, index });
+        if (type === attribute.attribute_type)
+          select.push({ attribute, name: attributeName, index });
       });
       return select;
     }
@@ -109,11 +108,12 @@ export default class ChartMenu extends Component {
             placeholder="Select row"
             onChange={(value) => {
               self.setState({ rowTagIndex: value });
+              self.checkState();
             }}
           >
             {getRowTagSelect().map((select) => (
               <Option value={select.index} key={"row" + select.index}>
-                {select.attribute.name}
+                {select.name}
               </Option>
             ))}
           </Select>
@@ -126,6 +126,7 @@ export default class ChartMenu extends Component {
             placeholder="Select computation"
             onChange={(value) => {
               self.setState({ rowComputeIndex: value });
+              self.checkState();
             }}
           >
             {getRowComputeSelect().map((select) => (
@@ -138,11 +139,12 @@ export default class ChartMenu extends Component {
             placeholder="Select row"
             onChange={(value) => {
               self.setState({ rowTagIndex: value });
+              self.checkState();
             }}
           >
             {getRowTagSelect().map((select) => (
               <Option value={select.index} key={"row" + select.index}>
-                {select.attribute.name}
+                {select.name}
               </Option>
             ))}
           </Select>
@@ -150,7 +152,7 @@ export default class ChartMenu extends Component {
       );
     }
     function getAvaliableCharts() {
-      return self.chartTypes.map((type, index) => {
+      return chart_type.map((type, index) => {
         return { type, index };
       });
     }
@@ -170,11 +172,12 @@ export default class ChartMenu extends Component {
             placeholder="Select column"
             onChange={(value) => {
               self.setState({ columnIndex: value });
+              self.checkState();
             }}
           >
             {getColumnSelect().map((select) => (
               <Option value={select.index} key={"column" + select.index}>
-                {select.attribute.name}
+                {select.name}
               </Option>
             ))}
           </Select>
@@ -187,11 +190,12 @@ export default class ChartMenu extends Component {
             placeholder="Select color"
             onChange={(value) => {
               self.setState({ colorIndex: value });
+              self.checkState();
             }}
           >
             {getColorSelect().map((select) => (
               <Option value={select.index} key={"color" + select.index}>
-                {select.attribute.name}
+                {select.name}
               </Option>
             ))}
           </Select>
@@ -203,10 +207,10 @@ export default class ChartMenu extends Component {
             placeholder="Select type"
             onChange={(value) => {
               let state = { typeIndex: value };
-              if (self.chartTypes[value] === "scatter")
-                state.rowComputeIndex = -1;
-              if (self.chartTypes[value] === "bar") state.colorIndex = -1;
+              if (chart_type[value] === "scatter") state.rowComputeIndex = -1;
+              if (chart_type[value] === "bar") state.colorIndex = -1;
               self.setState(state);
+              self.checkState();
             }}
           >
             {getAvaliableCharts().map((chart) => (
@@ -223,6 +227,7 @@ export default class ChartMenu extends Component {
             placeholder="Fit by"
             onChange={(value) => {
               self.setState({ fitIndex: value });
+              self.checkState();
             }}
           >
             {getChartFitnesses().map((fit) => (
@@ -231,9 +236,6 @@ export default class ChartMenu extends Component {
               </Option>
             ))}
           </Select>
-        </Col>
-        <Col span={12}>
-          <Statistic title="Points" value={this.props.dataset.length} />
         </Col>
       </Row>
     );

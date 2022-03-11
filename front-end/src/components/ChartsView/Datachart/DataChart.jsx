@@ -3,7 +3,6 @@ import { Component } from "react";
 import { attributeType } from "../../../data/attributes";
 import * as ecStat from "echarts-stat";
 import * as d3 from "d3";
-import { createEllipseController } from "./Constraints/controller";
 const globalColor = [
   "#5470c6",
   "#91cc75",
@@ -71,8 +70,9 @@ const grid = {
 };
 export default class DataChart extends Component {
   constructor(props) {
+    super(props);
     let mapper = {};
-    if (attributeType[props.attributes[0].attributeType] === "Dimensions") {
+    if (props.attributes[0].attribute_type === "Dimensions") {
       // 解决枚举类型为数字后，被echarts解析为数值索引的问题
       let index = 0;
       props.data.forEach((d) => {
@@ -82,7 +82,6 @@ export default class DataChart extends Component {
         }
       });
     }
-    super(props);
     this.mapper = mapper;
     this.width = 300;
     this.selectedSeriesData = {};
@@ -106,14 +105,6 @@ export default class DataChart extends Component {
   componentDidMount() {
     let self = this;
     const chartDom = document.getElementById(this.props.id);
-    this.svg = d3
-      .select("#container-" + this.props.id)
-      .append("svg")
-      .style("width", this.width)
-      .style("height", 300)
-      .style("position", "absolute")
-      .style("left", 12)
-      .style("pointer-events", "none");
     this.chart = echarts.init(chartDom);
     this.chart.on("brushSelected", (params) => {
       const seriesData = {};
@@ -263,64 +254,13 @@ export default class DataChart extends Component {
     };
     return option;
   }
-  getScatterCluster() {
-    const self = this;
-    this.props.attributes[2].value.forEach((name) => {
-      const data = self.selectedSeriesData[name];
-      if (data) {
-        const xSamples = data.map((d) => d[0]);
-        const ySamples = data.map((d) => d[1]);
-        const meanx = ecStat.statistics.mean(xSamples);
-        const varx = ecStat.statistics.sampleVariance(xSamples);
-        const meany = ecStat.statistics.mean(ySamples);
-        const vary = ecStat.statistics.sampleVariance(ySamples);
-        const [cx, cy] = self.convertToPixel([meanx, meany]);
-        let [rx, ry] = self.convertToPixel([
-          meanx + 1,
-          meany - Math.sqrt(vary),
-        ]);
-        rx = (rx - cx) * Math.sqrt(varx);
-        ry -= cy;
-        const controller = createEllipseController(cx, cy, rx, ry);
-        this.svg.node().appendChild(controller.node());
-      }
-    });
-  }
-  getLineCluster() {
-    const regressions = [];
-    const self = this;
-    this.props.attributes[2].value.forEach((name, index) => {
-      const data = self.selectedSeriesData[name];
-      if (data) {
-      }
-    });
-  }
-  getBarCluster() {
-    const self = this;
-    this.props.attributes[2].value.forEach((name, index) => {
-      const data = self.selectedSeriesData[name];
-      if (data) {
-        data.forEach((point) => {
-          const [x, y] = self.convertToPixel(point);
-          self.svg
-            .append("circle")
-            .attr("cx", x)
-            .attr("cy", y)
-            .attr("r", 5)
-            .style("fill", globalColor[index])
-            .attr("opacity", 0.5)
-            .style("pointer-events", "auto")
-            .call(d3.drag().on("drag", dragBarY));
-        });
-      }
-    });
-  }
+
   generateData() {
     const type = this.props.type;
     let option = {
       color: globalColor,
     };
-    d3.selectAll("#container-" + this.props.id + " > svg > *").remove();
+
     if (type === "scatter") {
       option = { ...option, ...this.getScatterChartOption() };
       this.getScatterCluster();
@@ -333,7 +273,6 @@ export default class DataChart extends Component {
     }
     this.chart.clear();
     this.chart.resize({ width: this.width, height: 300 });
-    this.svg.style("width", this.width);
     option && this.chart.setOption(option);
   }
   render() {

@@ -1,7 +1,5 @@
 import React, { Component } from "react";
-import { Button, Col, Row, TimePicker } from "antd";
-import { PlusOutlined } from "@ant-design/icons";
-import { attributeCharacter } from "../../data/attributes";
+import { Col, Row } from "antd";
 import ChartMenu from "./ChartMenu";
 import ChartDisplay from "./ChartDisplay";
 import ConstraintSelect from "./Datachart/ConstraintSelect";
@@ -25,22 +23,22 @@ class ChartsView extends Component {
     const constraint = {
       type: chart_constraint[settings.chart_type],
       computation: settings.computation,
-      x_axis: this.state.attribute_character[settings.x_axis],
-      y_axis: settings.y_axis
-        ? this.state.attribute_character[settings.y_axis]
-        : null,
-      color: settings.color
-        ? this.state.attribute_character[settings.color]
-        : { type: "Dimensions", value: ["default"] },
+      x_axis: settings.x_axis,
+      y_axis: settings.y_axis,
+      color: settings.color,
     };
     this.getData(this.state.original_data, constraint);
   }
   getData(type_data, constraint) {
     const [x, y, compute, color, fitting, chartType] = [
       this.state.attribute_character[constraint.x_axis],
-      this.state.attribute_character[constraint.y_axis],
-      constraint.computation,
-      this.state.attribute_character[constraint.color],
+      constraint.y_axis
+        ? this.state.attribute_character[constraint.y_axis]
+        : null,
+      constraint.compute,
+      constraint.color
+        ? this.state.attribute_character[constraint.color]
+        : { attribute_type: "Dimensions", value: ["default"] },
       null,
       constraint_chart[constraint.type],
     ];
@@ -81,9 +79,9 @@ class ChartsView extends Component {
     } else {
       type_data.forEach((data) => {
         dataset.push([
-          data[x.name],
-          data[y.name],
-          data[color.name] ? data[color.name] : "default",
+          data[constraint.x_axis],
+          data[constraint.y_axis],
+          constraint.color ? data[constraint.color] : "default",
         ]);
       });
     }
@@ -91,7 +89,8 @@ class ChartsView extends Component {
       dataset.sort((a, b) => a[0] - b[0]);
     // 折线图按x值从小到大
     else if (chartType === "bar") dataset.sort((a, b) => b[1] - a[1]); // 条形图按y值从大到小
-    return dataset;
+    this.setState({ original_chart_data: dataset });
+    this.forceUpdate();
   }
   insertConstraint(constraint) {
     const constraints = this.state.constraints;
@@ -127,7 +126,9 @@ class ChartsView extends Component {
       <Row gutter={24}>
         <ChartMenu
           attributes={this.state.attribute_character}
-          initConstraint={this.initConstraint}
+          initConstraint={(settings) => {
+            this.initConstraint(settings);
+          }}
         ></ChartMenu>
         <Col span={18}>
           <ChartDisplay
@@ -135,15 +136,17 @@ class ChartsView extends Component {
             data={this.state.original_chart_data}
             attributes={this.state.attribute_character}
             constraint={this.state.original_constraint}
-            insertConstraint={this.insertConstraint}
-            updateConstraint={this.updateConstraint}
+            insertConstraint={(constraint) => this.insertConstraint(constraint)}
+            updateConstraint={(constraint) => this.updateConstraint(constraint)}
           ></ChartDisplay>
         </Col>
         <Col span={6}>
           <ConstraintSelect
             constraints={this.state.constraints}
-            removeConstraint={this.removeConstraint}
-            selectConstraint={this.selectConstraint}
+            removeConstraint={(constraint) => this.removeConstraint(constraint)}
+            selectConstraint={(index) =>
+              this.selectConstraint("original", index)
+            }
           ></ConstraintSelect>
         </Col>
         <Col span={18}>
@@ -152,14 +155,16 @@ class ChartsView extends Component {
             data={this.state.protected_chart_data}
             attributes={this.state.attribute_character}
             constraint={this.state.protected_constraint}
-            updateConstraint={this.updateConstraint}
+            updateConstraint={(constraint) => this.updateConstraint(constraint)}
           ></ChartDisplay>
         </Col>
         <Col span={6}>
           <ConstraintSelect
             constraints={this.state.constraints}
-            removeConstraint={this.removeConstraint}
-            selectConstraint={this.selectConstraint}
+            removeConstraint={(constraint) => this.removeConstraint(constraint)}
+            selectConstraint={(index) =>
+              this.selectConstraint("protected", index)
+            }
           ></ConstraintSelect>
         </Col>
       </Row>
