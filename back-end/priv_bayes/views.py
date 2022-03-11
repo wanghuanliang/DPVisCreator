@@ -91,7 +91,7 @@ def getConstrainedResponse(request):
     describer = DataDescriber(category_threshold=threshold_value)
     description_file = "priv_bayes/out/original_data.json"
     synthetic_data = "priv_bayes/out/synthetic_data.csv"
-    ORI_DATA = pd.read_csv(DATA_PATH) # 接口测试开启，正式使用关闭
+    # ORI_DATA = pd.read_csv(DATA_PATH)  # 接口测试开启，正式使用关闭
     describer.describe_dataset_in_correlated_attribute_mode(dataset_file=DATA_PATH,
                                                             epsilon=0,
                                                             k=degree_of_bayesian_network)
