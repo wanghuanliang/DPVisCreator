@@ -3,6 +3,7 @@ import { Component } from "react";
 import { attributeType } from "../../../data/attributes";
 import * as ecStat from "echarts-stat";
 import * as d3 from "d3";
+import { createEllipseController } from "../Constraints/controller";
 const globalColor = [
   "#5470c6",
   "#91cc75",
@@ -14,6 +15,7 @@ const globalColor = [
   "#9a60b4",
   "#ea7ccc",
 ];
+const chart_height = 400;
 // 散点图选择之后聚类，生成椭圆 柱状图单独选择柱子 折线图生成的拟合曲线可调整宽度，纵向，背景全部调成灰色
 function getAxisOption(attribute) {
   return "Dimensions" === attributeType[attribute.attributeType]
@@ -51,7 +53,7 @@ function getXAxisOption(attribute) {
   };
 }
 function getSeriesOption(type, attribute, data, pointSize) {
-  return attribute.value.map((name) => {
+  return attribute.values.map((name) => {
     return {
       name,
       type: type,
@@ -71,18 +73,7 @@ const grid = {
 export default class DataChart extends Component {
   constructor(props) {
     super(props);
-    let mapper = {};
-    if (props.attributes[0].attribute_type === "Dimensions") {
-      // 解决枚举类型为数字后，被echarts解析为数值索引的问题
-      let index = 0;
-      props.data.forEach((d) => {
-        if (!mapper[d[0]]) {
-          mapper[d[0]] = index;
-          index++;
-        }
-      });
-    }
-    this.mapper = mapper;
+    this.mapper = {};
     this.width = 300;
     this.selectedSeriesData = {};
   }
@@ -94,8 +85,8 @@ export default class DataChart extends Component {
         seriesName: point[2],
       },
       [
-        attributeType[this.props.attributes[0].attributeType] === "Dimensions"
-          ? this.props.attributes[0].mapper[point[0]]
+        this.props.attributes[0].attribute_type === "Dimensions"
+          ? this.props.attributes[0].values.indexOf(point[0])
           : point[0] - this.props.attributes[0].min,
         point[1],
         point[2],
@@ -104,8 +95,17 @@ export default class DataChart extends Component {
   }
   componentDidMount() {
     let self = this;
-    const chartDom = document.getElementById(this.props.id);
+    const chartDom = document.getElementById("canvas-" + this.props.name);
     this.chart = echarts.init(chartDom);
+    this.svg = d3
+      .select("#container-" + this.props.name)
+      .append("svg")
+      .style("width", this.width)
+      .style("height", chart_height)
+      .style("position", "absolute")
+      .style("left", 12)
+      .style("top", 0)
+      .style("pointer-events", "none");
     this.chart.on("brushSelected", (params) => {
       const seriesData = {};
       params.batch[0]?.selected.forEach((series) => {
@@ -124,12 +124,30 @@ export default class DataChart extends Component {
       this.props.onSelected(this.selectedSeriesData);
       this.generateData();
     });
-    const divDom = document.getElementById("container-" + this.props.id);
+    this.chart.on("click", (params) => {
+      if (this.props.type === "bar") {
+        this.selectedSeriesData[params.data[0]] = params.data;
+        this.generateData();
+      }
+    });
+    const divDom = document.getElementById("container-" + this.props.name);
     this.width = divDom.offsetWidth;
     this.generateData();
   }
   componentDidUpdate() {
-    const divDom = document.getElementById("container-" + this.props.id);
+    let mapper = {};
+    if (this.props.attributes[0]?.attribute_type === "Dimensions") {
+      // 解决枚举类型为数字后，被echarts解析为数值索引的问题
+      let index = 0;
+      this.props.data.forEach((d) => {
+        if (!mapper[d[0]]) {
+          mapper[d[0]] = index;
+          index++;
+        }
+      });
+    }
+    this.mapper = mapper;
+    const divDom = document.getElementById("container-" + this.props.name);
     this.width = divDom.offsetWidth;
     this.generateData();
   }
@@ -158,7 +176,7 @@ export default class DataChart extends Component {
       },
       brush: { throttleType: "debounce" },
       legend: {
-        data: this.props.attributes[2].value,
+        data: this.props.attributes[2].values,
         left: "10%",
         top: "10%",
       },
@@ -185,7 +203,7 @@ export default class DataChart extends Component {
         },
       },
       legend: {
-        data: this.props.attributes[2].value,
+        data: this.props.attributes[2].values,
         left: "10%",
         top: "10%",
       },
@@ -243,7 +261,7 @@ export default class DataChart extends Component {
       brush: { throttleType: "debounce" },
       calculable: true,
       legend: {
-        data: this.props.attributes[2].value,
+        data: this.props.attributes[2].values,
         left: "10%",
         top: "10%",
       },
@@ -254,31 +272,132 @@ export default class DataChart extends Component {
     };
     return option;
   }
-
+  getCluster() {
+    const self = this;
+    this.props.attributes[2].values.forEach((name) => {
+      const data = self.selectedSeriesData[name];
+      if (data) {
+        const xSamples = data.map((d) => d[0]);
+        const ySamples = data.map((d) => d[1]);
+        const meanx = ecStat.statistics.mean(xSamples);
+        const varx = ecStat.statistics.sampleVariance(xSamples);
+        const meany = ecStat.statistics.mean(ySamples);
+        const vary = ecStat.statistics.sampleVariance(ySamples);
+        const [cx, cy] = self.convertToPixel([meanx, meany]);
+        let [rx, ry] = self.convertToPixel([
+          meanx + 1,
+          meany - Math.sqrt(vary),
+        ]);
+        rx = (rx - cx) * Math.sqrt(varx);
+        ry -= cy;
+        const controller = createEllipseController(cx, cy, rx, ry);
+        this.svg.call(controller);
+      }
+    });
+  }
+  getCorrelation() {
+    const self = this;
+    this.props.attributes[2].values.forEach((name, index) => {
+      const data = self.selectedSeriesData[name];
+      if (data) {
+        const pathData = [];
+        const regression = ecStat.regression(
+          "polynomial",
+          data,
+          this.props.constraint.params.fitting
+        );
+        regression.points.forEach((point) => {
+          const [x, y] = this.convertToPixel(point);
+          pathData.push({ x, y });
+        });
+        const line = d3
+          .line()
+          .curve(d3.curveCardinal.tension(0.5))
+          .x((d) => d.x)
+          .y((d) => d.y);
+        this.svg
+          .append("path")
+          .datum(pathData)
+          .attr("fill", "none")
+          .attr("stroke", "#111111")
+          .attr("stroke-width", 10)
+          .attr("opacity", 0.5)
+          .attr("d", line)
+          .style("pointer-events", "auto")
+          .call(
+            d3
+              .drag()
+              .on("start", dragLineStart)
+              .on("drag", dragLineDragging)
+              .on("end", dragLineEnd)
+          );
+      }
+    });
+  }
+  getOrder() {
+    const self = this;
+    this.props.attributes[2].values.forEach((name, index) => {
+      const data = Object.values(self.selectedSeriesData);
+      if (data) {
+        data.forEach((point) => {
+          const [x, y] = self.convertToPixel(point);
+          const width =
+            (self.width * 0.8) / self.props.attributes[0].values.length;
+          self.svg
+            .append("rect")
+            .attr("x", x - width / 2)
+            .attr("y", y)
+            .attr("width", width)
+            .attr("height", chart_height - y)
+            .style("fill", "#111111")
+            .attr("opacity", 0.5);
+        });
+      }
+    });
+  }
   generateData() {
     const type = this.props.type;
     let option = {
       color: globalColor,
     };
-
+    // 清空
+    d3.selectAll("#container-" + this.props.name + " > svg > *").remove();
     if (type === "scatter") {
       option = { ...option, ...this.getScatterChartOption() };
-      this.getScatterCluster();
+      this.getCluster();
     } else if (type === "line") {
       option = { ...option, ...this.getLineChartOption() };
-      this.getLineCluster();
+      this.getCorrelation();
     } else if (type === "bar") {
       option = { ...option, ...this.getBarChartOption() };
-      this.getBarCluster();
+      this.getOrder();
     }
+    this.selectedSeriesData = {};
+    this.svg.style("width", this.width);
     this.chart.clear();
-    this.chart.resize({ width: this.width, height: 300 });
+    this.chart.resize({ width: this.width, height: chart_height });
     option && this.chart.setOption(option);
   }
   render() {
-    return <canvas width={"100%"} height={300} id={this.props.id}></canvas>;
+    return (
+      <div id={"container-" + this.props.name}>
+        <canvas
+          width={"100%"}
+          height={chart_height}
+          id={"canvas-" + this.props.name}
+        ></canvas>
+      </div>
+    );
   }
 }
-function dragBarY(event, d) {
+function dragLineStart(event, d) {
   d3.select(this).attr("cy", event.y);
+}
+function dragLineDragging(event, d) {
+  const width = Math.abs(parseFloat(d3.select(this).attr("cy")) - event.y);
+  d3.select(this).attr("stroke-width", width);
+}
+function dragLineEnd(event, d) {
+  const width = Math.abs(parseFloat(d3.select(this).attr("cy")) - event.y);
+  console.log(width);
 }

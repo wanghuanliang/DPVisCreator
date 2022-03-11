@@ -72,19 +72,20 @@ export function createEllipseController(meanx, meany, varx, vary) {
     scaleY = getPrerotated(x, y)[1] / ry;
     return scaleY;
   }
-  const ellipse = d3
-    .create("ellipse")
-    .attr("fill", "#69b3a2")
-    .attr("opacity", "0.4")
-    .attr("stroke", "#69b3a2")
-    .attr("stroke-width", 1.5)
-    .attr("cx", cx)
-    .attr("cy", cy)
-    .attr("rx", rx)
-    .attr("ry", ry)
-    .style("pointer-events", "auto")
-    .call(d3.drag().on("start", onStart).on("drag", dragScatterEllipse))
-    .node();
+  const ellipse = (d) =>
+    d
+      .append("ellipse")
+      .attr("fill", "#69b3a2")
+      .attr("opacity", "0.4")
+      .attr("stroke", "#69b3a2")
+      .attr("stroke-width", 1.5)
+      .attr("cx", cx)
+      .attr("cy", cy)
+      .attr("rx", rx)
+      .attr("ry", ry)
+      .style("pointer-events", "auto")
+      .call(d3.drag().on("start", onStart).on("drag", dragScatterEllipse))
+      .node();
   const right = getRectForPoint(
     cx + rx,
     cy,
@@ -130,31 +131,31 @@ export function createEllipseController(meanx, meany, varx, vary) {
     cy - ry - 20,
     d3.drag().on("drag", dragRotate)
   );
-  const group = d3.create("g");
-  group.node().appendChild(ellipse);
-  group.node().appendChild(right);
-  group.node().appendChild(left);
-  group.node().appendChild(top);
-  group.node().appendChild(bottom);
-  group.node().appendChild(rightTop);
-  group.node().appendChild(leftTop);
-  group.node().appendChild(rightBottom);
-  group.node().appendChild(leftBottom);
-  group.node().appendChild(rotater);
-  group.call(setTransform);
-  return group;
+  return (d) =>
+    d
+      .append("g")
+      .call(ellipse)
+      .call(right)
+      .call(left)
+      .call(top)
+      .call(bottom)
+      .call(rightTop)
+      .call(leftTop)
+      .call(rightBottom)
+      .call(leftBottom);
 }
 
 function getRectForPoint(x, y, caller, width = 5) {
-  return d3
-    .create("rect")
-    .attr("x", x - width)
-    .attr("y", y - width)
-    .attr("width", 2 * width)
-    .attr("height", 2 * width)
-    .attr("stroke", "#69b3a2")
-    .attr("stroke-width", 2)
-    .style("pointer-events", "auto")
-    .call(caller)
-    .node();
+  return (d) =>
+    d
+      .append("rect")
+      .attr("x", x - width)
+      .attr("y", y - width)
+      .attr("width", 2 * width)
+      .attr("height", 2 * width)
+      .attr("stroke", "#69b3a2")
+      .attr("stroke-width", 2)
+      .style("pointer-events", "auto")
+      .call(caller)
+      .node();
 }

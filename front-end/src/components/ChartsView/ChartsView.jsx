@@ -26,33 +26,36 @@ class ChartsView extends Component {
       x_axis: settings.x_axis,
       y_axis: settings.y_axis,
       color: settings.color,
+      params: {
+        fitting: settings.fitting ? settings.fitting : 2,
+      },
     };
     this.getData(this.state.original_data, constraint);
   }
   getData(type_data, constraint) {
-    const [x, y, compute, color, fitting, chartType] = [
+    const [x, y, computation, color, fitting, chartType] = [
       this.state.attribute_character[constraint.x_axis],
       constraint.y_axis
         ? this.state.attribute_character[constraint.y_axis]
         : null,
-      constraint.compute,
+      constraint.computation,
       constraint.color
         ? this.state.attribute_character[constraint.color]
-        : { attribute_type: "Dimensions", value: ["default"] },
+        : { attribute_type: "Dimensions", values: ["default"] },
       null,
       constraint_chart[constraint.type],
     ];
     const dataset = [];
-    if (compute != null) {
+    if (computation !== null) {
       const range = [];
       type_data.forEach((data) => {
-        if (!range.includes(data[x.name])) {
-          range.push(data[x.name]);
+        if (!range.includes(data[constraint.x_axis])) {
+          range.push(data[constraint.x_axis]);
         }
       });
       const cart = []; // 笛卡尔积
       range.forEach((value) => {
-        color.value.forEach((colorName) => {
+        color.values.forEach((colorName) => {
           cart.push({
             value,
             color: colorName,
@@ -63,17 +66,18 @@ class ChartsView extends Component {
         let sum = 0;
         const arr = type_data.filter(
           (data) =>
-            data[x.name] === condition.value &&
+            data[constraint.x_axis] === condition.value &&
             (condition.color === "default" ||
-              condition.color === data[color.name])
+              condition.color === data[constraint.color])
         );
-        arr.forEach((element) => (sum += element[y.name]));
+        arr.forEach((element) => (sum += element[constraint.y_axis]));
         dataset.push([
           condition.value,
-          compute === "count"
+          computation === "count"
             ? arr.length
             : sum / (arr.length === 0 ? 1 : arr.length),
           condition.color,
+          arr.map((element) => element.index),
         ]);
       });
     } else {
@@ -82,6 +86,7 @@ class ChartsView extends Component {
           data[constraint.x_axis],
           data[constraint.y_axis],
           constraint.color ? data[constraint.color] : "default",
+          data.index,
         ]);
       });
     }
@@ -89,8 +94,10 @@ class ChartsView extends Component {
       dataset.sort((a, b) => a[0] - b[0]);
     // 折线图按x值从小到大
     else if (chartType === "bar") dataset.sort((a, b) => b[1] - a[1]); // 条形图按y值从大到小
-    this.setState({ original_chart_data: dataset });
-    this.forceUpdate();
+    this.setState({
+      original_chart_data: dataset,
+      original_constraint: constraint,
+    });
   }
   insertConstraint(constraint) {
     const constraints = this.state.constraints;
@@ -101,11 +108,13 @@ class ChartsView extends Component {
   updateConstraint(constraint) {
     const constraints = this.state.constraints;
     const index = constraints.findIndex((value) => value.id === constraint.id);
-    constraints.splice(index, 1);
-    constraints.push(constraint);
-    constraints.sort(
-      (a, b) => parseInt(a.id.substring(1)) - parseInt(b.id.substring(1))
-    );
+    constraints[index] = { ...constraints[index], ...constraint };
+    this.setState({ constraints });
+  }
+  updateConstraintParams(id, params) {
+    const constraints = this.state.constraints;
+    const index = constraints.findIndex((value) => value.id === id);
+    constraints[index].params = { ...constraints[index].params, ...params };
     this.setState({ constraints });
   }
   removeConstraint(constraint) {
@@ -126,18 +135,19 @@ class ChartsView extends Component {
       <Row gutter={24}>
         <ChartMenu
           attributes={this.state.attribute_character}
-          initConstraint={(settings) => {
-            this.initConstraint(settings);
-          }}
+          initConstraint={(settings) => this.initConstraint(settings)}
+          insertConstraint={() => this.insertConstraint(this.state.original_constraint)}
         ></ChartMenu>
         <Col span={18}>
           <ChartDisplay
-            id="original-chart"
+            name="original-chart"
             data={this.state.original_chart_data}
             attributes={this.state.attribute_character}
             constraint={this.state.original_constraint}
-            insertConstraint={(constraint) => this.insertConstraint(constraint)}
             updateConstraint={(constraint) => this.updateConstraint(constraint)}
+            updateConstraintParams={(id, params) =>
+              this.updateConstraintParams(id, params)
+            }
           ></ChartDisplay>
         </Col>
         <Col span={6}>
@@ -151,11 +161,14 @@ class ChartsView extends Component {
         </Col>
         <Col span={18}>
           <ChartDisplay
-            id="protected-chart"
+            name="protected-chart"
             data={this.state.protected_chart_data}
             attributes={this.state.attribute_character}
             constraint={this.state.protected_constraint}
             updateConstraint={(constraint) => this.updateConstraint(constraint)}
+            updateConstraintParams={(id, params) =>
+              this.updateConstraintParams(id, params)
+            }
           ></ChartDisplay>
         </Col>
         <Col span={6}>

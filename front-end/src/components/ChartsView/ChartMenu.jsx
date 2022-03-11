@@ -1,5 +1,5 @@
 import { Component } from "react";
-import { Col, Form, Input, Row, Select, Statistic, Tag } from "antd";
+import { Button, Col, Form, Input, Row, Select, Statistic, Tag } from "antd";
 import {
   BarsOutlined,
   BgColorsOutlined,
@@ -27,6 +27,7 @@ export default class ChartMenu extends Component {
   constructor(props) {
     super(props);
     this.initConstraint = props.initConstraint;
+    this.insertConstraint = props.insertConstraint;
     this.attributes = Object.keys(props.attributes);
     this.state = {
       columnIndex: -1,
@@ -107,8 +108,7 @@ export default class ChartMenu extends Component {
           <Select
             placeholder="Select row"
             onChange={(value) => {
-              self.setState({ rowTagIndex: value });
-              self.checkState();
+              self.setState({ rowTagIndex: value }, self.checkState);
             }}
           >
             {getRowTagSelect().map((select) => (
@@ -125,8 +125,7 @@ export default class ChartMenu extends Component {
           <Select
             placeholder="Select computation"
             onChange={(value) => {
-              self.setState({ rowComputeIndex: value });
-              self.checkState();
+              self.setState({ rowComputeIndex: value }, self.checkState);
             }}
           >
             {getRowComputeSelect().map((select) => (
@@ -138,8 +137,7 @@ export default class ChartMenu extends Component {
           <Select
             placeholder="Select row"
             onChange={(value) => {
-              self.setState({ rowTagIndex: value });
-              self.checkState();
+              self.setState({ rowTagIndex: value }, self.checkState);
             }}
           >
             {getRowTagSelect().map((select) => (
@@ -171,8 +169,7 @@ export default class ChartMenu extends Component {
           <Select
             placeholder="Select column"
             onChange={(value) => {
-              self.setState({ columnIndex: value });
-              self.checkState();
+              self.setState({ columnIndex: value }, self.checkState);
             }}
           >
             {getColumnSelect().map((select) => (
@@ -189,8 +186,7 @@ export default class ChartMenu extends Component {
           <Select
             placeholder="Select color"
             onChange={(value) => {
-              self.setState({ colorIndex: value });
-              self.checkState();
+              self.setState({ colorIndex: value }, self.checkState);
             }}
           >
             {getColorSelect().map((select) => (
@@ -209,8 +205,7 @@ export default class ChartMenu extends Component {
               let state = { typeIndex: value };
               if (chart_type[value] === "scatter") state.rowComputeIndex = -1;
               if (chart_type[value] === "bar") state.colorIndex = -1;
-              self.setState(state);
-              self.checkState();
+              self.setState(state, self.checkState);
             }}
           >
             {getAvaliableCharts().map((chart) => (
@@ -226,8 +221,7 @@ export default class ChartMenu extends Component {
           <Select
             placeholder="Fit by"
             onChange={(value) => {
-              self.setState({ fitIndex: value });
-              self.checkState();
+              self.setState({ fitIndex: value }, self.checkState);
             }}
           >
             {getChartFitnesses().map((fit) => (
@@ -236,6 +230,11 @@ export default class ChartMenu extends Component {
               </Option>
             ))}
           </Select>
+        </Col>
+        <Col span={12}>
+          <Button block onClick={this.insertConstraint}>
+            Create new constraint
+          </Button>
         </Col>
       </Row>
     );

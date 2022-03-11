@@ -1,5 +1,6 @@
 import { Component } from "react";
 import { Radio, Space } from "antd";
+import { EditOutlined, RestOutlined } from "@ant-design/icons";
 export default class ConstraintSelect extends Component {
   constructor(props) {
     super(props);
@@ -22,7 +23,21 @@ export default class ConstraintSelect extends Component {
       <Radio.Group onChange={this.onChange} value={id}>
         <Space direction="vertical">
           {this.props.constraints.map((constraint) => (
-            <Radio.Button value={constraint.id}>{constraint.id}</Radio.Button>
+            <Space direction="horizontal">
+              {constraint.id}
+              <Radio.Button
+                value={constraint.id}
+                key={"constraint-select-" + constraint.id}
+              >
+                <EditOutlined />
+              </Radio.Button>
+              <Radio.Button
+                value={constraint.id}
+                key={"constraint-select-" + constraint.id}
+              >
+                <RestOutlined />
+              </Radio.Button>
+            </Space>
           ))}
         </Space>
       </Radio.Group>
