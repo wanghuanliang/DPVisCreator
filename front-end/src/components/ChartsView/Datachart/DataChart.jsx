@@ -1,9 +1,9 @@
 import * as echarts from "echarts";
 import { Component } from "react";
-import { attributeType } from "../../data/attributes";
+import { attributeType } from "../../../data/attributes";
 import * as ecStat from "echarts-stat";
 import * as d3 from "d3";
-import { createEllipseController } from "./controller";
+import { createEllipseController } from "./Constraints/controller";
 const globalColor = [
   "#5470c6",
   "#91cc75",
@@ -292,38 +292,6 @@ export default class DataChart extends Component {
     this.props.attributes[2].value.forEach((name, index) => {
       const data = self.selectedSeriesData[name];
       if (data) {
-        const line = d3
-          .line()
-          .curve(d3.curveCardinal.tension(0.5))
-          .x((d) => d.x)
-          .y((d) => d.y);
-        const pathData = [];
-        const regression = ecStat.regression(
-          "polynomial",
-          data,
-          self.props.fit
-        );
-        regression.points.forEach((point) => {
-          const [x, y] = self.convertToPixel(point);
-          pathData.push({ x, y });
-        });
-        regressions.push(regression.parameter);
-        this.svg
-          .append("path")
-          .datum(pathData)
-          .attr("fill", "none")
-          .attr("stroke", globalColor[index])
-          .attr("stroke-width", 10)
-          .attr("opacity", 0.5)
-          .attr("d", line)
-          .style("pointer-events", "auto")
-          .call(
-            d3
-              .drag()
-              .on("start", dragLineStart)
-              .on("drag", dragLineDragging)
-              .on("end", dragLineEnd)
-          );
       }
     });
   }
@@ -369,24 +337,9 @@ export default class DataChart extends Component {
     option && this.chart.setOption(option);
   }
   render() {
-    return (
-      <div width={"100%"} height={300} id={"container-" + this.props.id}>
-        <canvas id={this.props.id}></canvas>
-      </div>
-    );
+    return <canvas width={"100%"} height={300} id={this.props.id}></canvas>;
   }
 }
 function dragBarY(event, d) {
   d3.select(this).attr("cy", event.y);
-}
-function dragLineStart(event, d) {
-  d3.select(this).attr("cy", event.y);
-}
-function dragLineDragging(event, d) {
-  const width = Math.abs(parseFloat(d3.select(this).attr("cy")) - event.y);
-  d3.select(this).attr("stroke-width", width);
-}
-function dragLineEnd(event, d) {
-  const width = Math.abs(parseFloat(d3.select(this).attr("cy")) - event.y);
-  console.log(width);
 }

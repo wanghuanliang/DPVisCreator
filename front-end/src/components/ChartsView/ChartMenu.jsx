@@ -6,10 +6,12 @@ import {
   DotChartOutlined,
   FunctionOutlined,
 } from "@ant-design/icons";
-import DataChart from "./DataChart";
+import DataChart from "./OriginalDataChart";
 import { attributeType } from "../../data/attributes";
 // 布局变成右侧缩略图
 const { Option } = Select;
+const chart_type = ["scatter", "line", "bar"];
+const computation_type = ["average", "count"];
 const chartLabels = {
   scatter: "Scatter Plot",
   line: "Line Chart",
@@ -24,11 +26,11 @@ const chartFitnesses = [
   [1, 2, 3, 4, 5],
   ["Normal", "Beta"],
 ];
-export default class MenuChart extends Component {
+export default class ChartMenu extends Component {
   constructor(props) {
     super(props);
-    this.chartTypes = this.props.avaliable;
-    this.computation = this.props.computation;
+    this.initConstraint = props.initConstraint;
+    this.attributes = Object.keys(props.attributes);
     this.state = {
       columnIndex: -1,
       rowTagIndex: -1,
@@ -38,11 +40,7 @@ export default class MenuChart extends Component {
       fitIndex: -1,
     };
   }
-  onSelected(selected) {
-    console.log(selected);
-  }
-  renderDataChart() {
-    let self = this;
+  componentDidUpdate() {
     if (
       this.state.columnIndex >= 0 &&
       this.state.typeIndex >= 0 &&
@@ -50,137 +48,61 @@ export default class MenuChart extends Component {
         this.state.rowTagIndex >= 0) ||
         (this.state.rowTagIndex >= 0 && this.state.rowComputeIndex >= 0))
     ) {
-      const attributes = this.getAttributes();
-      const data = this.getData();
-      return (
-        <DataChart
-          attributes={attributes}
-          data={data}
-          type={this.chartTypes[this.state.typeIndex]}
-          id={"data-" + this.props.id}
-          fit={
-            this.state.fitIndex >= 0
-              ? chartFitnesses[this.state.typeIndex][this.state.fitIndex]
-              : undefined
-          }
-          onSelected={this.onSelected}
-          setPatternData={self.setPatternData}
-        ></DataChart>
-      );
-    } else return <div style={{ height: 300 }}></div>;
-  }
-  getAttributes() {
-    return [
-      this.props.attributes[this.state.columnIndex],
-      this.state.rowTagIndex >= 0
-        ? this.props.attributes[this.state.rowTagIndex]
-        : null,
-      this.state.colorIndex >= 0
-        ? this.props.attributes[this.state.colorIndex]
-        : { attributeType: "0", value: ["default"] },
-      this.state.fitIndex >= 0
-        ? this.props.attributes[this.state.fitIndex]
-        : null,
-    ];
-  }
-  getData() {
-    const [x, y, compute, color, fit] = [
-      this.props.attributes[this.state.columnIndex],
-      this.state.rowTagIndex >= 0
-        ? this.props.attributes[this.state.rowTagIndex]
-        : null,
-      this.state.rowComputeIndex >= 0
-        ? this.computation[this.state.rowComputeIndex]
-        : null,
-      this.state.colorIndex >= 0
-        ? this.props.attributes[this.state.colorIndex]
-        : { attributeType: "0", value: ["default"] },
-      this.state.fitIndex >= 0
-        ? this.props.attributes[this.state.fitIndex]
-        : null,
-    ];
-    const dataset = [];
-    if (compute != null) {
-      const range = [];
-      this.props.dataset.forEach((data) => {
-        if (!range.includes(data[x.name])) {
-          range.push(data[x.name]);
-        }
-      });
-      const cart = []; // 笛卡尔积
-      range.forEach((value) => {
-        color.value.forEach((colorName) => {
-          cart.push({
-            value,
-            color: colorName,
-          });
-        });
-      });
-      cart.forEach((condition) => {
-        let sum = 0;
-        const arr = this.props.dataset.filter(
-          (data) =>
-            data[x.name] === condition.value &&
-            (condition.color === "default" ||
-              condition.color === data[color.name])
-        );
-        arr.forEach((element) => (sum += element[y.name]));
-        dataset.push([
-          condition.value,
-          compute === "count"
-            ? arr.length
-            : sum / (arr.length === 0 ? 1 : arr.length),
-          condition.color,
-        ]);
-      });
-    } else {
-      this.props.dataset.forEach((data) => {
-        dataset.push([
-          data[x.name],
-          data[y.name],
-          data[color.name] ? data[color.name] : "default",
-        ]);
-      });
+      const settings = this.getSettings();
+      this.initConstraint(settings);
     }
-    if (
-      this.chartTypes[this.state.typeIndex] === "line" ||
-      this.chartTypes[this.state.typeIndex] === "scatter"
-    )
-      dataset.sort((a, b) => a[0] - b[0]);
-    // 折线图按x值从小到大
-    else if (this.chartTypes[this.state.typeIndex] === "bar")
-      dataset.sort((a, b) => b[1] - a[1]); // 条形图按y值从大到小
-    return dataset;
+  }
+  getSettings() {
+    return {
+      x_axis: this.attributes[this.state.columnIndex],
+      y_axis:
+        this.state.rowTagIndex >= 0
+          ? this.attributes[this.state.rowTagIndex]
+          : null,
+      computation:
+        this.state.rowComputeIndex >= 0
+          ? computation_type[this.state.rowComputeIndex]
+          : null,
+      color:
+        this.state.colorIndex >= 0
+          ? this.attributes[this.state.colorIndex]
+          : null,
+      chart_type: chart_type[this.state.typeIndex],
+      fitting:
+        this.state.fitIndex >= 0
+          ? chartFitnesses[this.state.typeIndex][this.state.fitIndex]
+          : null,
+    };
   }
   render() {
     let self = this;
     function getSpecificTypeOfAttributes(type) {
       let select = [];
-      self.props.attributes.forEach((attribute, index) => {
-        if (type === attributeType[attribute.attributeType])
-          select.push({ attribute, index });
+      self.attributes.forEach((attributeName, index) => {
+        const attribute = self.props.attributes[attributeName];
+        if (type === attribute.type) select.push({ attribute, index });
       });
       return select;
     }
     function getColorSelect() {
-      if (self && self.chartTypes[self.state.typeIndex] === "bar") return [];
+      if (self && chart_type[self.state.typeIndex] === "bar") return [];
       return getSpecificTypeOfAttributes("Dimensions");
     }
     function getRowTagSelect() {
       return getSpecificTypeOfAttributes("Measures");
     }
     function getColumnSelect() {
-      if (self && self.chartTypes[self.state.typeIndex] === "bar")
+      if (self && chart_type[self.state.typeIndex] === "bar")
         return getSpecificTypeOfAttributes("Dimensions");
       return getSpecificTypeOfAttributes("Measures");
     }
     function getRowComputeSelect() {
-      return self.computation.map((computation, index) => {
+      return computation_type.map((computation, index) => {
         return { attribute: computation, index };
       });
     }
     function getRowSelectElements() {
-      return self.chartTypes[self.state.typeIndex] === "scatter" ? (
+      return chart_type[self.state.typeIndex] === "scatter" ? (
         <Col span={12}>
           <BarsOutlined />
           Row
@@ -297,7 +219,7 @@ export default class MenuChart extends Component {
         </Col>
         <Col span={12}>
           <FunctionOutlined />
-          Fit
+          Fitting
           <Select
             placeholder="Fit by"
             onChange={(value) => {
@@ -314,7 +236,6 @@ export default class MenuChart extends Component {
         <Col span={12}>
           <Statistic title="Points" value={this.props.dataset.length} />
         </Col>
-        <Col span={24}>{this.renderDataChart()}</Col>
       </Row>
     );
   }
