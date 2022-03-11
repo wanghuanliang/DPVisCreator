@@ -5,18 +5,7 @@ import { attributeCharacter } from "../../data/attributes";
 import ChartMenu from "./ChartMenu";
 import ChartDisplay from "./ChartDisplay";
 import ConstraintSelect from "./Datachart/ConstraintSelect";
-const chart_type = ["scatter", "line", "bar"];
-const computation_type = ["average", "count"];
-const chart_constraint = {
-  scatter: "cluster",
-  line: "correlation",
-  bar: "order",
-};
-const constraint_chart = {
-  cluster: "scatter",
-  correlation: "line",
-  order: "bar",
-};
+import { chart_constraint, constraint_chart } from "./constants";
 class ChartsView extends Component {
   constructor(props) {
     super(props);
@@ -144,6 +133,7 @@ class ChartsView extends Component {
           <ChartDisplay
             id="original-chart"
             data={this.state.original_chart_data}
+            attributes={this.state.attribute_character}
             constraint={this.state.original_constraint}
             insertConstraint={this.insertConstraint}
             updateConstraint={this.updateConstraint}
@@ -160,6 +150,7 @@ class ChartsView extends Component {
           <ChartDisplay
             id="protected-chart"
             data={this.state.protected_chart_data}
+            attributes={this.state.attribute_character}
             constraint={this.state.protected_constraint}
             updateConstraint={this.updateConstraint}
           ></ChartDisplay>

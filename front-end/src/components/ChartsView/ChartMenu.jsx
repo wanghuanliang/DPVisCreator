@@ -8,10 +8,9 @@ import {
 } from "@ant-design/icons";
 import DataChart from "./OriginalDataChart";
 import { attributeType } from "../../data/attributes";
+import { chart_type, computation_type } from "./constants";
 // 布局变成右侧缩略图
 const { Option } = Select;
-const chart_type = ["scatter", "line", "bar"];
-const computation_type = ["average", "count"];
 const chartLabels = {
   scatter: "Scatter Plot",
   line: "Line Chart",
