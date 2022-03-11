@@ -84,7 +84,7 @@ def cnt_poly(x, params):
 def getConstrainedResponse(request):
     global constraints, ORI_DATA
     try:
-        cur_constraints = json.loads(request.GET['constraints'])
+        cur_constraints = json.loads(request.body).get('constraints')
         constraints = cur_constraints
     except:
         pass
@@ -202,8 +202,8 @@ def setPattern(request):
 
 def setWeights(request):
     global bayes_epsilon, weights
-    weights = json.loads(request.GET['weights'])
-    bayes_epsilon = json.loads(request.GET['bayes_budget'])
+    weights = json.loads(request.body).get('weights')
+    bayes_epsilon = json.loads(request.body).get('bayes_budget')
     ret = getConstrainedResponse(request)
     return HttpResponse(json.dumps(ret))
 
