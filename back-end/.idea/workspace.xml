@@ -2,14 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3f69cd5a-9714-48a0-85f5-4439a9dc8a27" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/back-end.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/priv_backend/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/priv_backend/settings.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/priv_bayes/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/priv_bayes/urls.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/priv_bayes/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/priv_bayes/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../front-end/src/components/DataView/DataView.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../front-end/src/components/DataView/DataView.jsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/priv_bayes/.gitignore" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -36,7 +29,7 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
-    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
   </component>
   <component name="RunManager" selected="Python.manage">
     <configuration name="manage" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
