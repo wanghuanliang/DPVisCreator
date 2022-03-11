@@ -2,7 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3f69cd5a-9714-48a0-85f5-4439a9dc8a27" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/priv_bayes/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/priv_bayes/data/augmented_data.csv" beforeDir="false" afterPath="$PROJECT_DIR$/priv_bayes/data/augmented_data.csv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/priv_bayes/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/priv_bayes/views.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

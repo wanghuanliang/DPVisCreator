@@ -86,6 +86,7 @@ def setPattern(request):
     describer = DataDescriber(category_threshold=threshold_value)
     description_file = "priv_bayes/out/original_data.json"
     synthetic_data = "priv_bayes/out/synthetic_data.csv"
+    # ORI_DATA = pd.read_csv(DATA_PATH) # 接口测试开启，正式使用关闭
     describer.describe_dataset_in_correlated_attribute_mode(dataset_file=DATA_PATH,
                                                             epsilon=0,
                                                             k=degree_of_bayesian_network)
@@ -129,11 +130,23 @@ def setPattern(request):
         if type == "correlation":  # 相关关系 => 叠加一个多项式函数
             polynomial_params = params['polynomial_params']  # 多项式系数
             padding = params['padding']  # 宽度
-            range = params['range']  # 横轴范围
-            x = np.random.uniform(range[0], range[1])
+            cur_range = params['range']  # 横轴范围
+            x = np.random.uniform(cur_range[0], cur_range[1], int(epsilon * dot_basenum))
             y = np.array([cnt_poly(it, polynomial_params) for it in x])
-
-
+            for i in range(len(x)):
+                try:
+                    filtered_data = synthetic_df[
+                        (synthetic_df[x_axis] < x[i] * (1 + perturbation)) &
+                        (synthetic_df[x_axis] > x[i] * (1 - perturbation)) &
+                        (synthetic_df[y_axis] > y[i] * (1 - perturbation)) &
+                        (synthetic_df[y_axis] > y[i] * (1 - perturbation))
+                        ].sample(1).to_json(orient="records")
+                    filtered_data = json.loads(filtered_data)  # 得到的是一个数组
+                    filtered_data[0][x_axis] = x[i]
+                    filtered_data[0][y_axis] = y[i]
+                    cur_df = cur_df.append(filtered_data)
+                except:
+                    pass
             pass
         if type == "order":  # 顺序
             values = params['values']  # 保持order的数据，根据比例扩展数据
