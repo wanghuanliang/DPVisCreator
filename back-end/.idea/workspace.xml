@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="3f69cd5a-9714-48a0-85f5-4439a9dc8a27" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/priv_bayes/data/augmented_data.csv" beforeDir="false" afterPath="$PROJECT_DIR$/priv_bayes/data/augmented_data.csv" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/priv_bayes/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/priv_bayes/views.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -132,5 +131,26 @@
       </map>
     </option>
     <option name="oldMeFiltersMigrated" value="true" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/priv_bayes/views.py</url>
+          <line>196</line>
+          <option name="timeStamp" value="27" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/priv_bayes/views.py</url>
+          <line>108</line>
+          <option name="timeStamp" value="28" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/priv_bayes/views.py</url>
+          <line>105</line>
+          <option name="timeStamp" value="29" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>
