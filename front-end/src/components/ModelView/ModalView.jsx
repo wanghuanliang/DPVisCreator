@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import './ModalView.less';
-import { Switch, Slider, InputNumber, Row, Col, Space } from 'antd';
+import { Switch, Slider, InputNumber, Row, Col, Space, Button } from 'antd';
 import { CheckCircleOutlined, RightOutlined, CheckOutlined } from '@ant-design/icons';
 import * as d3 from 'd3'
 import ClockBlock from './ClockBlock/ClockBlock';
@@ -10,43 +10,68 @@ import SankeyPlot from './SankeyPlot';
 import Matrix from './Matrix';
 import { debounce } from 'lodash';
 
+const patternData = ["c1", "c2", "c3"]
+
 const ModalView = (props) => {
-  const [privacyBudgetValue, setPrivacyBudget] = useState(0.8)
+  const { setWeights } = props;
+
+  const [privacyBudgetValue, setPrivacyBudget] = useState(0.8);
+  const initialPatternWeight = useMemo(() => {
+    const initial = {};
+    patternData.forEach(id => initial[id] = 0.8);
+    return initial;
+  }, [])
+  const [patternWeights, setPatternWeights] = useState(initialPatternWeight); //{'c1': 1, 'c2': 1}
   // 光标的水平的位置
-  const [clientX, setClientX] = useState(0)
-  // 是否在拖动
-  const [isResizing, setIsResizing] = useState(false);
-  // 左侧宽度
-  const [menuWidth, setMenuWidth] = useState(100);
-  // 开始、移动、结束拖拽事件
-  const handleStartResize = useCallback((e) => {
-    console.log(e);
-    setClientX(e.clientX)
-    setIsResizing(true)
-  }, []);
-  const handleResize = useCallback(debounce(e => {
-    if (!isResizing) return;
-    const offset = e.clientX - clientX;
-    const width = menuWidth + offset;
-    setMenuWidth(width);
-  }, 10), [menuWidth, clientX]);
-  const handleStopResize = useCallback(() => {
-    setIsResizing(false);
-  })
-  //监听光标移动
-  useEffect(() => {
-    document.addEventListener('mousemove', handleResize)
-    return () => {
-      document.removeEventListener('mousemove', handleResize)
-    }
-  }, [handleResize])
-  //监听鼠标松开
-  useEffect(() => {
-    document.addEventListener('mouseup', handleStopResize)
-    return () => {
-      document.removeEventListener('mouseup', handleStopResize)
-    }
-  }, [handleStopResize])
+  // const [clientX, setClientX] = useState(0)
+  // // 是否在拖动
+  // const [isResizing, setIsResizing] = useState(false);
+  // // 左侧宽度
+  // const [menuWidth, setMenuWidth] = useState(100);
+  // // 开始、移动、结束拖拽事件
+  // const handleStartResize = useCallback((e) => {
+  //   console.log(e);
+  //   setClientX(e.clientX)
+  //   setIsResizing(true)
+  // }, []);
+  // const handleResize = useCallback(debounce(e => {
+  //   if (!isResizing) return;
+  //   const offset = e.clientX - clientX;
+  //   const width = menuWidth + offset;
+  //   setMenuWidth(width);
+  // }, 10), [menuWidth, clientX]);
+  // const handleStopResize = useCallback(() => {
+  //   setIsResizing(false);
+  // })
+  // //监听光标移动
+  // useEffect(() => {
+  //   document.addEventListener('mousemove', handleResize)
+  //   return () => {
+  //     document.removeEventListener('mousemove', handleResize)
+  //   }
+  // }, [handleResize])
+  // //监听鼠标松开
+  // useEffect(() => {
+  //   document.addEventListener('mouseup', handleStopResize)
+  //   return () => {
+  //     document.removeEventListener('mouseup', handleStopResize)
+  //   }
+  // }, [handleStopResize])
+  
+  const handleRecordClick = () => {
+    const data = {}
+    data.bayes_budget = privacyBudgetValue;
+    data.weights = [];
+    Object.entries(patternWeights).forEach(([key, value]) => {
+      data.weights.push({ id: key, weight: value });
+    })
+    console.log('data', data);
+    setWeights(data)
+      .then(res => console.log('res', res))
+      .catch(e => console.log('e', e));
+  }
+
+  // 渲染上部控制面板
   const renderModalControlPanel = () => {
     return (
       <div className="modal-control-panel">
@@ -76,13 +101,12 @@ const ModalView = (props) => {
             <div>456</div>
             <div style={{float: 'right'}}>789</div>
           </div> */}
-          <div className="constraints-block" style={{ backgroundColor: '#f2d1cc', width: `${menuWidth}px` }}>Cluster</div>
-          <div className="resizeHandle" onMouseDown={handleStartResize}> 1</div>
+          <div className="constraints-block" style={{ backgroundColor: '#f2d1cc', width: `80px` }}>Cluster</div>
+          {/* <div className="resizeHandle" onMouseDown={handleStartResize}> 1</div> */}
           <div className="constraints-block" style={{backgroundColor: '#fae1ca'}}>Correlation</div>
           <div className="constraints-block" style={{ backgroundColor: '#fae1ec' }}>Order</div>
           <div style={{display: 'inline-block', width: 20}}></div>
-          <span>Show CPT</span>
-          <Switch></Switch>
+          <Button size='small' onClick={handleRecordClick}>Record</Button>
         </Space>
       </div>
     )
@@ -118,6 +142,24 @@ const ModalView = (props) => {
   return (
     <div>
       {renderModalControlPanel()}
+      <Space>
+        {patternData.map(id => {
+
+          return <InputNumber
+            key={id}
+            size='small'
+            min={0}
+            max={1}
+            step={0.1}
+            style={{ width: 60 }}
+            value={patternWeights?.[id]}
+            onChange={value => {
+              patternWeights[id] = value;
+              setPatternWeights({...patternWeights})
+            }}
+          ></InputNumber>
+        })}
+      </Space>
       {/* {renderFlowChart} */}
       <div style={{display:'flex'}}>
         {/* <ClockBlock></ClockBlock> */}
