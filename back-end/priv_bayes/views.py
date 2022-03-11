@@ -19,6 +19,7 @@ bayes_epsilon = 10    # 贝叶斯网络的隐私预算
 dot_basenum = 1000    # 增强分布时加点的基础数量
 degree_of_bayesian_network = 2  # 贝叶斯每个节点父亲最多个数
 perturbation = 0.10   # 根据约束采样属性值的扰动范围
+weights = None
 
 
 def index(request):
@@ -80,9 +81,13 @@ def cnt_poly(x, params):
     return ans
 
 
-def setPattern(request):
+def getConstrainedResponse(request):
     global constraints, ORI_DATA
-    constraints = json.loads(request.GET['constraints'])
+    try:
+        cur_constraints = json.loads(request.POST['constraints'])
+        constraints = cur_constraints
+    except:
+        pass
     describer = DataDescriber(category_threshold=threshold_value)
     description_file = "priv_bayes/out/original_data.json"
     synthetic_data = "priv_bayes/out/synthetic_data.csv"
@@ -98,6 +103,11 @@ def setPattern(request):
     aug_df = pd.DataFrame()
     augmented_data = []
     for constraint in constraints:
+        if weights is None:
+            cur_epsilon = epsilon
+        else:
+            selected = [weight for weight in weights if weight['id'] == constraint['id']][0]
+            cur_epsilon = selected['weight']
         cur_df = pd.DataFrame()
         cur_aug_data = {
             "id": constraint['id'],
@@ -112,7 +122,7 @@ def setPattern(request):
             radius = params['radius']  # 方差
             mean = np.array(mean)
             cov = np.array([[radius[0], 0], [0, radius[1]]])
-            f_xy = np.random.multivariate_normal(mean, cov, int(dot_basenum * epsilon))
+            f_xy = np.random.multivariate_normal(mean, cov, int(dot_basenum * cur_epsilon))
             for item in f_xy:
                 try:
                     filtered_data = synthetic_df[
@@ -173,10 +183,19 @@ def setPattern(request):
         "augmented_data": augmented_data,
         "protected_data": json.loads(augmented_synthetic_df.to_json(orient="records")),
     }
+    return ret
+
+
+def setPattern(request):
+    ret = getConstrainedResponse(request)
     return HttpResponse(json.dumps(ret))
 
 def setWeights(request):
-    return HttpResponse(request.POST.get('title'))
+    global bayes_epsilon, weights
+    weights = json.loads(request.POST['weights'])
+    bayes_epsilon = json.loads(request.POST['bayes_budget'])
+    ret = getConstrainedResponse(request)
+    return HttpResponse(json.dumps(ret))
 
 def getMetrics(request):
     return HttpResponse(request.POST.get('title'))
