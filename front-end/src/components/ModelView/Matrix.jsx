@@ -12,8 +12,6 @@ const Matrix = memo((props) => {
   const rectPadding = 3,
     rectSize = parseInt(matrixSize / data.length) - rectPadding;
   const cellSize = rectSize + rectPadding;
-  
-  console.log('matrix');
 
   return (
     <svg width={width} height={height}>

@@ -13,6 +13,7 @@ import { ReactComponent as ValidationViewIcon } from "../assets/validation-view-
 // 原始数据, 后端返回(或者只返回原是数据，别的自己计算)
 import { originalData } from "../data/originalData"; // 原始数据
 import { attributeData, attributeCharacter } from "../data/attributes"; // 原始数据属性、数据属性特镇
+import { modalData } from "../data/modalData";
 import { setWeights } from "../services/api";
 
 const IndexPage = () => {
@@ -73,6 +74,7 @@ const IndexPage = () => {
             <div className="cross-line"></div>
             <ModalView
               setWeights={setWeights}
+              modalData={modalData}
             ></ModalView>
           </div>
           <div className="block validation-view">

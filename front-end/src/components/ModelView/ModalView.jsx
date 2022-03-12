@@ -8,12 +8,14 @@ import BayesianNetwork from './BayesianNetwork/BayyesianNetWork';
 import ParallelPlot from './ParallelPlot';
 import SankeyPlot from './SankeyPlot';
 import Matrix from './Matrix';
+import AlluvialPlot from './AlluvialPlot';
 import { debounce } from 'lodash';
 
 const patternData = ["c1", "c2", "c3"]
 
 const ModalView = (props) => {
-  const { setWeights } = props;
+  const { setWeights, modalData } = props;
+  const { totalNum, proportionData, flowData } = modalData;
 
   const [privacyBudgetValue, setPrivacyBudget] = useState(0.8);
   const initialPatternWeight = useMemo(() => {
@@ -166,7 +168,12 @@ const ModalView = (props) => {
         {/* <BayesianNetwork></BayesianNetwork> */}
         {/* <SankeyPlot></SankeyPlot> */}
         <Matrix></Matrix>
-        <ParallelPlot></ParallelPlot>
+        {/* <ParallelPlot></ParallelPlot> */}
+        <AlluvialPlot
+          totalNum={totalNum}
+          proportionData={proportionData}
+          flowData={flowData}
+        ></AlluvialPlot>
       </div>
     </div>
   );
