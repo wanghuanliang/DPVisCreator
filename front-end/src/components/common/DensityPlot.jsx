@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 
 // Function to compute density
@@ -17,12 +17,13 @@ function kernelEpanechnikov(k) {
 
 const DensityPlot = (props) => {
 
-  const { originalData, attribute } = props;
+  const { originalData, attribute, svgWidth } = props;
+  const svgHeight = 100;
 
   const densitySvgRef = useRef(null);
-  const margin = {top: 30, right: 30, bottom: 0, left: 50},
-    width = 350 - margin.left - margin.right,
-    height = 100 - margin.top - margin.bottom;
+  const margin = {top: 20, right: 20, bottom: 15, left: 20},
+    width = svgWidth - margin.left - margin.right,
+    height = svgHeight - margin.top - margin.bottom;
 
   useEffect(() => {
     // get the data
@@ -31,10 +32,12 @@ const DensityPlot = (props) => {
     // append the svg object to the body of the page
     const svg = d3.select(densitySvgRef.current)
       .append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
+        .attr("width", svgWidth)
+        .attr("height", svgHeight)
       .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    
+    
     
     // calculate min max of x
     const xMin = Math.min(...data);
@@ -50,6 +53,10 @@ const DensityPlot = (props) => {
     // Compute kernel density estimation
     const kde = kernelDensityEstimator(kernelEpanechnikov(7), x.ticks(40))
     const density = kde(data);
+    console.log(kde(data));
+    let sum = 0
+    density.forEach((array, index) => sum += array[1]);
+    console.log('sum', sum);
 
     // calculate min max of y
     const minY = 0;
@@ -66,18 +73,40 @@ const DensityPlot = (props) => {
         .attr("class", "mypath")
         .datum(density)
         .attr("fill", "#daf1e6")
-        .attr("opacity", ".8")
-        .attr("stroke", "#daf1e6")
+        .attr("opacity", "0.8")
+        .attr("stroke", "#8ab0d0")
         .attr("stroke-width", 1)
         .attr("stroke-linejoin", "round")
         .attr("d",  d3.line()
           .curve(d3.curveBasis)
             .x(d => x(d[0]))
             .y(d => y(d[1]))
-        );
+    );
+    svg.on("mouseenter", (e) => {
+      console.log(d3.event)
+      return null;
+    })
   }, [])
-  
-  return <div ref={densitySvgRef}></div>
+
+  // const [data, setData] = useState(originalData.map(d => d[attribute]));
+  // const [xMin, setXMin] = useState(Math.min(...data));
+  // const [xMax, setXMax] = useState(Math.max(...data));
+
+  // const xScale = d3.scaleLinear()
+  //   .domain([xMin-(xMax-xMin)/4, xMax+(xMax-xMin)/4])
+  //   .range([0, width]);
+  return (
+    <div ref={densitySvgRef}>
+      {/* <svg
+        width={svgWidth}
+        height={svgHeight}
+      >
+        <g transform={ "translate(" + margin.left + "," + margin.top + ")"}>
+
+        </g>
+      </svg> */}
+    </div>
+  )
 }
 
 export default DensityPlot;

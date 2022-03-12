@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { memo } from 'react';
 
 const data = [[1, 0.2, 0.3], [0.8, 1, 0.5], [0.9, 0.1, 1]];
 
-const Matrix = (props) => {
+const Matrix = memo((props) => {
   const [width, height] = [400, 400];
   const margin = {
     left: 50,
@@ -12,7 +12,7 @@ const Matrix = (props) => {
   const rectPadding = 3,
     rectSize = parseInt(matrixSize / data.length) - rectPadding;
   const cellSize = rectSize + rectPadding;
-  
+
   return (
     <svg width={width} height={height}>
       <g transform={`translate(${margin.left}, ${margin.top})`}>
@@ -40,6 +40,6 @@ const Matrix = (props) => {
       </g>
     </svg>
   )
-}
+})
 
 export default Matrix;
