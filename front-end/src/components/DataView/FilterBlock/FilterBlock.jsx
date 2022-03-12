@@ -31,7 +31,7 @@ const FilterBlock = (props) => {
   }
 
   const renderCheckbox = (attr) => {
-    const plainOptions = attributeCharacter[attr]?.value;
+    const plainOptions = attributeCharacter[attr]?.values;
     return (
       <CheckboxGroup
         options={plainOptions}
@@ -67,10 +67,8 @@ const FilterBlock = (props) => {
       </div>
       <div className='filter-block-content-box'>
         <div className='filter-block-content'>
-          {
-            attributeCharacter[attribute].attributeType === '0' ?
-              renderCheckbox(attribute) : renderSlider(attribute)
-          }
+          {attributeCharacter[attribute].attribute_type === 'Dimensions' && renderCheckbox(attribute)}
+          {attributeCharacter[attribute].attribute_type === 'Measures' && renderSlider(attribute)}
         </div>
       </div>
     </div>
