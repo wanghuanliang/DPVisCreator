@@ -53,10 +53,10 @@ const DensityPlot = (props) => {
     // Compute kernel density estimation
     const kde = kernelDensityEstimator(kernelEpanechnikov(7), x.ticks(40))
     const density = kde(data);
-    console.log(kde(data));
-    let sum = 0
-    density.forEach((array, index) => sum += array[1]);
-    console.log('sum', sum);
+    // console.log(kde(data));
+    // let sum = 0
+    // density.forEach((array, index) => sum += array[1]);
+    // console.log('sum', sum);
 
     // calculate min max of y
     const minY = 0;

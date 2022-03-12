@@ -12,28 +12,26 @@ const DataView = (props) => {
 
   const {
     originalData,
+    setOriginalData,
     attributeData,
+    setAttributeData,
     attributeCharacter,
+    setAttributeCharacter,
     filterData,
     setFilterData,
   } = props;
 
   const prop = {
-    action: 'https://www.mocky.io/v2/5cc8019d300000980a055e76',
+    action: 'http://localhost:8000/api/getOriginalData',
     onChange({ file, fileList }) {
-      if (file.status !== 'uploading') {
-        console.log(file, fileList);
+      if (file.status === 'done') {
+        // console.log(file.response.data);
+        const data = file.response.data;
+        setOriginalData(data.original_data);
+        setAttributeData(data.attribute_data);
+        setAttributeCharacter(data.attribute_character);
       }
     },
-    defaultFileList: [
-      {
-        uid: '1',
-        name: 'xxx.csv',
-        status: 'done',
-        response: 'Server Error 500', // custom error message to show
-        url: 'http://www.baidu.com/xxx.png',
-      },
-    ],
   };
 
   return (
@@ -45,7 +43,7 @@ const DataView = (props) => {
         </Upload>
       </div>
       {
-        Object.keys(attributeData).map((type, index) => {
+        attributeData && Object.keys(attributeData).map((type, index) => {
           return (
             <AttributeBlock
               key={type}
@@ -61,7 +59,7 @@ const DataView = (props) => {
         })
       }
       <div>
-        <div>Filter</div>
+        {filterData && Object.keys(filterData).length !== 0 && <div>Filter</div>}
         {
           Object.keys(filterData).map((attribute, index) => {
             return (
