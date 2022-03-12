@@ -1,46 +1,38 @@
 import { Component } from "react";
-import { Radio, Space } from "antd";
+import { Button, Radio, Space } from "antd";
 import { EditOutlined, RestOutlined } from "@ant-design/icons";
 export default class ConstraintSelect extends Component {
   constructor(props) {
     super(props);
     this.state = { value: 0 };
     this.selectConstraint = props.selectConstraint;
-  }
-  onChange(e) {
-    this.setState({
-      id: e.target.value,
-    });
-    this.selectConstraint(
-      this.props.constraints.filter(
-        (constraint) => constraint.id === this.state.id
-      )[0]
-    );
+    this.removeConstraint = props.removeConstraint;
   }
   render() {
-    const { id } = this.state;
     return (
-      <Radio.Group onChange={this.onChange} value={id}>
-        <Space direction="vertical">
-          {this.props.constraints.map((constraint) => (
-            <Space direction="horizontal">
-              {constraint.id}
-              <Radio.Button
-                value={constraint.id}
-                key={"constraint-select-" + constraint.id}
-              >
-                <EditOutlined />
-              </Radio.Button>
-              <Radio.Button
-                value={constraint.id}
-                key={"constraint-select-" + constraint.id}
-              >
-                <RestOutlined />
-              </Radio.Button>
-            </Space>
-          ))}
-        </Space>
-      </Radio.Group>
+      <Space direction="vertical">
+        {this.props.constraints.map((constraint, index) => (
+          <Space direction="horizontal" key={"constraint-" + constraint.id}>
+            {constraint.id}
+            <Button
+              value={constraint.id}
+              key={"constraint-edit-" + constraint.id}
+              icon={<EditOutlined />}
+              onClick={() => {
+                this.selectConstraint(index);
+              }}
+            ></Button>
+            <Button
+              value={constraint.id}
+              key={"constraint-delete-" + constraint.id}
+              icon={<RestOutlined />}
+              onClick={() => {
+                this.removeConstraint(index);
+              }}
+            ></Button>
+          </Space>
+        ))}
+      </Space>
     );
   }
 }

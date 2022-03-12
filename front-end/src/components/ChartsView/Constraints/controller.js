@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 import * as _ from "lodash";
-export function createEllipseController(meanx, meany, varx, vary) {
+export function createEllipseController(selector, meanx, meany, varx, vary) {
   const cx = meanx;
   const cy = meany;
   const rx = 2 * varx;
@@ -12,30 +12,36 @@ export function createEllipseController(meanx, meany, varx, vary) {
   let dy = 0;
   let startX = 0;
   let startY = 0;
-  function onStart(event, d) {
+  function onStart(d) {
+    const event = d3.event;
     [startX, startY] = [event.x, event.y];
   }
-  function dragScatterEllipse(event, d) {
-    [dx, dy] = [event.x - startX, event.y - startY];
+  function dragScatterEllipse(d) {
+    const event = d3.event;
     console.log(event.x, event.y);
+    [dx, dy] = [event.x - startX, event.y - startY];
     setTransform();
   }
   _.debounce(dragScatterEllipse, 100);
-  function dragXScale(event, d) {
+  function dragXScale(d) {
+    const event = d3.event;
     setScaleX(event.x, event.y);
     setTransform();
   }
-  function dragYScale(event, d) {
+  function dragYScale(d) {
+    const event = d3.event;
     setScaleY(event.x, event.y);
     setTransform();
   }
-  function dragScale(event, d) {
+  function dragScale(d) {
+    const event = d3.event;
     const [x, y] = getPrerotated(event.x, event.y);
     scaleX = x / rx;
     scaleY = y / ry;
     setTransform();
   }
-  function dragRotate(event, d) {
+  function dragRotate(d) {
+    const event = d3.event;
     const [x, y] = [event.x, event.y];
     setRotate(x, y);
     setTransform();
@@ -49,7 +55,7 @@ export function createEllipseController(meanx, meany, varx, vary) {
     rotate = (angle * 180) / Math.PI;
   }
   function setTransform(d) {
-    d3.select("g").attr(
+    d3.select(selector + " > g").attr(
       "transform",
       `translate(${dx},${dy}) rotate(${rotate},${cx + dx},${
         cy + dy
@@ -75,17 +81,16 @@ export function createEllipseController(meanx, meany, varx, vary) {
   const ellipse = (d) =>
     d
       .append("ellipse")
-      .attr("fill", "#69b3a2")
+      .attr("fill", "#111111")
       .attr("opacity", "0.4")
-      .attr("stroke", "#69b3a2")
+      .attr("stroke", "#111111")
       .attr("stroke-width", 1.5)
       .attr("cx", cx)
       .attr("cy", cy)
       .attr("rx", rx)
       .attr("ry", ry)
       .style("pointer-events", "auto")
-      .call(d3.drag().on("start", onStart).on("drag", dragScatterEllipse))
-      .node();
+      .call(d3.drag().on("start", onStart).on("drag", dragScatterEllipse));
   const right = getRectForPoint(
     cx + rx,
     cy,
@@ -153,9 +158,8 @@ function getRectForPoint(x, y, caller, width = 5) {
       .attr("y", y - width)
       .attr("width", 2 * width)
       .attr("height", 2 * width)
-      .attr("stroke", "#69b3a2")
+      .attr("stroke", "#111111")
       .attr("stroke-width", 2)
       .style("pointer-events", "auto")
-      .call(caller)
-      .node();
+      .call(caller);
 }

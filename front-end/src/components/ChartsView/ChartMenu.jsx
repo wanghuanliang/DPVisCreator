@@ -162,7 +162,7 @@ export default class ChartMenu extends Component {
       else return [];
     }
     return (
-      <Row gutter={24}>
+      <>
         <Col span={12}>
           <BarsOutlined rotate={90} />
           Column
@@ -236,7 +236,7 @@ export default class ChartMenu extends Component {
             Create new constraint
           </Button>
         </Col>
-      </Row>
+      </>
     );
   }
 }

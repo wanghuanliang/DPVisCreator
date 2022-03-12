@@ -19,7 +19,7 @@ const IndexPage = () => {
   // 过滤条件数据{'age': {attributeType: '1', max: '55', min: '10'}, 'sex': {attributeType: '0', value: ['male', 'female']}}
   const [filterData, setFilterData] = useState({});
   const [afterFilterData, setAfterFilterData] = useState(originalData);
-
+  const [pattern, setPattern] = useState({});
   console.log("filterData", filterData);
   return (
     <>
@@ -45,7 +45,10 @@ const IndexPage = () => {
             Charts View
           </div>
           <div className="cross-line"></div>
-          <ChartsView data={original_data.data}></ChartsView>
+          <ChartsView
+            data={original_data.data}
+            setPattern={setPattern}
+          ></ChartsView>
         </div>
         <div className="view-box">
           <div className="block modal-view">
