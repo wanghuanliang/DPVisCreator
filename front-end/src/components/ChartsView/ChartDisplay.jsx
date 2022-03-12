@@ -1,3 +1,4 @@
+import { index } from "d3";
 import { Component } from "react";
 import { constraint_chart } from "./constants";
 import DataChart from "./Datachart/DataChart";
@@ -14,7 +15,16 @@ export default class ChartDisplay extends Component {
     this.selected_data = [];
   }
   onSelected(selected_data) {
-    console.log(selected_data);
+    const constraint = this.props.constraint;
+    const indexes = [];
+    Object.values(selected_data).forEach((seriesData) => {
+      seriesData.forEach((data) => {
+        if (this.props.constraint.type === "cluster") indexes.push(data[3]);
+        else indexes.push(...data[3]);
+      });
+    });
+    constraint.data = indexes;
+    this.updateConstraint(constraint);
   }
   render() {
     const attributes = [

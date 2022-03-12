@@ -152,9 +152,13 @@ export default class DataChart extends Component {
       if (this.props.type === "bar") {
         if (this.selectBar[params.data[0]])
           delete this.selectBar[params.data[0]];
-        else this.selectBar[params.data[0]] = params.data;
+        else
+          this.selectBar[params.data[0]] = self.props.data.filter(
+            (d) => d[0] == params.data[0]
+          )[0];
         d3.selectAll("#container-" + this.props.name + " > svg > *").remove();
         self.updateParams({ values: Object.keys(self.selectBar) });
+        this.props.onSelected({ default: Object.values(self.selectBar) });
         this.getOrder();
       }
     });
@@ -558,7 +562,7 @@ export default class DataChart extends Component {
       self.selectBar = {};
       self.props.constraint.params.values.forEach((value) => {
         const data = self.props.data.filter((d) => d[0] == value)[0];
-        self.selectBar[value] = [data[0], data[1]];
+        self.selectBar[value] = data;
       });
     }
     const data = Object.values(self.selectBar);
