@@ -7,13 +7,22 @@ import { chart_constraint, constraint_chart } from "./constants";
 class ChartsView extends Component {
   constructor(props) {
     super(props);
-    this.setPattern = props.setPattern;
+    this.setAugmentedData = props.setAugmentedData;
+    this.setProtectedData = props.setProtectedData;
+    this.setPattern = () => {
+      const self = this;
+      this.props
+        .setPattern({ constraints: this.state.constraints })
+        .then((body) => {
+          if (body.status === "success") {
+            self.setAugmentedData(body.augmented_data);
+            self.setProtectedData(body.protected_data);
+          }
+        });
+    };
     this.constraintId = 0;
     this.state = {
-      attribute_character: props.data.attribute_character,
       constraints: [],
-      original_data: props.data.original_data,
-      protected_data: props.data.original_data, // 暂时设为原始值
       original_constraint: {},
       protected_constraint: {},
       original_chart_data: [],
@@ -31,18 +40,22 @@ class ChartsView extends Component {
         fitting: settings.fitting ? settings.fitting : 2,
       },
     };
-    this.getData("original", this.state.original_data, constraint);
-    this.getData("protected", this.state.protected_data, constraint);
+    this.getData("original", this.props.original_data, constraint);
+    this.getData(
+      "protected",
+      this.props.protected_data || this.props.original_data,
+      constraint
+    );
   }
   getData(type, type_data, constraint) {
     const [x, y, computation, color, fitting, chartType] = [
-      this.state.attribute_character[constraint.x_axis],
+      this.props.attribute_character[constraint.x_axis],
       constraint.y_axis
-        ? this.state.attribute_character[constraint.y_axis]
+        ? this.props.attribute_character[constraint.y_axis]
         : null,
       constraint.computation,
       constraint.color
-        ? this.state.attribute_character[constraint.color]
+        ? this.props.attribute_character[constraint.color]
         : { attribute_type: "Dimensions", values: ["default"] },
       null,
       constraint_chart[constraint.type],
@@ -113,7 +126,8 @@ class ChartsView extends Component {
     constraints.push({ ...constraint, id: "C" + this.constraintId });
     this.constraintId++;
     this.setState({ constraints });
-    this.setPattern({ constraints: this.state.constraints });
+    console.log({ constraints: this.state.constraints });
+    this.setPattern();
   }
   updateConstraint(constraint) {
     const constraints = this.state.constraints;
@@ -122,11 +136,11 @@ class ChartsView extends Component {
       constraints[index] = { ...constraints[index], ...constraint };
       this.getData("original", this.state.original_data, constraint);
       this.setState({ constraints });
+      this.setPattern();
     } else {
-      console.log(this.state.original_constraint);
       this.setState({ original_constraint: constraint });
     }
-    this.setPattern({ constraints: this.state.constraints });
+    console.log({ constraints: this.state.constraints });
   }
   updateConstraintParams(constraint, params) {
     constraint.params = { ...constraint.params, ...params };
@@ -137,19 +151,20 @@ class ChartsView extends Component {
     const index = constraints.findIndex((value) => value.id === constraint.id);
     constraints.splice(index, 1);
     this.setState({ constraints });
-    this.setPattern({ constraints: this.state.constraints });
+    console.log({ constraints: this.state.constraints });
+    this.setPattern();
   }
   selectConstraint(type, index) {
     if (type === "original") {
       this.getData(
         type,
-        this.state.original_data,
+        this.props.original_data,
         this.state.constraints[index]
       );
     } else if (type === "protected") {
       this.getData(
         type,
-        this.state.protected_data,
+        this.props.protected_data || this.props.original_data,
         this.state.constraints[index]
       );
     }
@@ -158,7 +173,7 @@ class ChartsView extends Component {
     return (
       <Row gutter={24}>
         <ChartMenu
-          attributes={this.state.attribute_character}
+          attributes={this.props.attribute_character || {}}
           initConstraint={(settings) => this.initConstraint(settings)}
           insertConstraint={() =>
             this.insertConstraint(this.state.original_constraint)
@@ -168,7 +183,7 @@ class ChartsView extends Component {
           <ChartDisplay
             name="original-chart"
             data={this.state.original_chart_data}
-            attributes={this.state.attribute_character}
+            attributes={this.props.attribute_character || {}}
             constraint={this.state.original_constraint}
             updateConstraint={(constraint) => this.updateConstraint(constraint)}
             updateConstraintParams={(id, params) =>
@@ -191,7 +206,7 @@ class ChartsView extends Component {
           <ChartDisplay
             name="protected-chart"
             data={this.state.protected_chart_data}
-            attributes={this.state.attribute_character}
+            attributes={this.props.attribute_character || {}}
             constraint={this.state.protected_constraint}
             updateConstraint={(constraint) => this.updateConstraint(constraint)}
             updateConstraintParams={(id, params) =>

@@ -14,7 +14,7 @@ import { ReactComponent as ValidationViewIcon } from "../assets/validation-view-
 import { original_data, originalData } from "../data/originalData"; // 原始数据
 import { attributeData, attributeCharacter } from "../data/attributes"; // 原始数据属性、数据属性特镇
 import { modalData } from "../data/modalData";
-import { setWeights } from "../services/api";
+import { setWeights, setPattern } from "../services/api";
 
 const IndexPage = () => {
   // 不使用redux，直接在此处定义全局数据，通过props传递
@@ -24,6 +24,9 @@ const IndexPage = () => {
   // 过滤条件数据{'age': {attributeType: '1', max: '55', min: '10'}, 'sex': {attributeType: '0', value: ['male', 'female']}}
   const [filterData, setFilterData] = useState({});
   const [afterFilterData, setAfterFilterData] = useState(originalData);
+  // 约束
+  const [augmentedData, setAugmentedData] = useState(null);
+  const [protectedData, setProtectedData] = useState(null);
 
   //接口测试
   useEffect(() => {
@@ -73,8 +76,13 @@ const IndexPage = () => {
           </div>
           <div className="cross-line"></div>
           <ChartsView
-            data={original_data.data}
+            original_data={originalData}
+            protected_data={protectedData}
+            attribute_data={attributeData}
+            attribute_character={attributeCharacter}
             setPattern={setPattern}
+            setAugmentedData={setAugmentedData}
+            setProtectedData={setProtectedData}
           ></ChartsView>
         </div>
         <div className="view-box">

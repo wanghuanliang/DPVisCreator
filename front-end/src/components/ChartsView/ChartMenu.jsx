@@ -38,6 +38,9 @@ export default class ChartMenu extends Component {
       fitIndex: -1,
     };
   }
+  componentDidUpdate() {
+    this.attributes = Object.keys(this.props.attributes);
+  }
   checkState() {
     if (
       this.state.columnIndex >= 0 &&
