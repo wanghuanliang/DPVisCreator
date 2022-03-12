@@ -73,6 +73,7 @@ const LineupTable = (props) => {
     return <svg style={{ backgroundColor: '#82c6e8', height: 20 }} width={nowWidth}>
       {newArray.map((item, index) => {
         return <line
+          key={index}
           x1={item * nowWidth / sum}
           y1={0}
           x2={item * nowWidth / sum}

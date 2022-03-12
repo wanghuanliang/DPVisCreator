@@ -20,14 +20,16 @@ const countArr = (arr, attr) => {
 }
 
 const ColumnPlot = (props) => {
-  const { originalData, attribute } = props;
+  const { originalData, attribute, svgWidth } = props;
+  const svgHeight = 100;
 
   const columnPlotRef = useRef(null);
-  const margin = {top: 30, right: 30, bottom: 0, left: 50},
-    width = 350 - margin.left - margin.right,
-    height = 100 - margin.top - margin.bottom;
+  const margin = {top: 20, right: 20, bottom: 15, left: 20},
+    width = svgWidth - margin.left - margin.right,
+    height = svgHeight - margin.top - margin.bottom;
   
   useEffect(() => {
+    // data预处理成[{}, {}]
     const data = countArr(originalData, attribute);
     const svg = d3.select(columnPlotRef.current)
       .append("svg")
@@ -38,9 +40,19 @@ const ColumnPlot = (props) => {
     
     // x axis
     const xScale = d3.scaleBand()
-      .range([0, width])
       .domain(data.map(d => d[attribute]))
+      .range([0, width])
       .padding(0.2);
+
+    // 绘制x轴
+    const axis = svg.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(xScale))
+    // 仅保留x轴文本
+    axis.selectAll(".domain").attr("opacity", 0);
+    axis.selectAll("line").attr("opacity", 0);
+    axis.selectAll("text").attr("transform", "translate(0,-5)")
+      
     // y axis
     const yMax = Math.max(...data.map(d => d.value));
     const yScale = d3.scaleLinear()
@@ -56,7 +68,20 @@ const ColumnPlot = (props) => {
       .attr("y", d => yScale(d.value))
       .attr("width", xScale.bandwidth())
       .attr("height", d => height - yScale(d.value))
-      .attr("fill", "#d0ddfa");
+      .attr("fill", "#d0ddfa")
+      .on('mouseover', (d, i) => {
+        svg.append("text")
+          .attr("class", "tooltip")
+          .attr("x", xScale(d[attribute])+xScale.bandwidth()/2)
+          .attr("y", yScale(d.value))
+          .attr('dy', '-3px')
+          .attr('text-anchor', 'middle')
+          .attr('fill', '#333')
+          .text(d.value)
+      })
+      .on("mouseout", () => {
+        d3.selectAll(".tooltip").remove();
+      })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

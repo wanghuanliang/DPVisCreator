@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import * as d3 from 'd3';
 import * as echarts from 'echarts';
 import { originalData } from '../../data/originalData';
@@ -9,7 +9,7 @@ const margin = {top: 50, right: 50, bottom: 10, left: 50},
   width = 600 - margin.left - margin.right,
   height = 500 - margin.top - margin.bottom;
 
-const ParallelPlot = (props) => {
+const ParallelPlot = memo((props) => {
   const [patternWidth, setPatternWidth] = useState(100);
   const chartRef = useRef(null);
   const data = [];
@@ -122,7 +122,7 @@ const ParallelPlot = (props) => {
       </g>
     </svg>
   )
-}
+})
 
 export default ParallelPlot;
 

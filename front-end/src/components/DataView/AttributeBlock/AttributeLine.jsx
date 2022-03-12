@@ -9,6 +9,7 @@ import { ReactComponent as OverviewFoldView } from "../../../assets/overview-fol
 const AttributeLine = (props) => {
   const { originalData, attribute, attributeType, color, filterData, setFilterData } = props;
   const [isShowOverview, setIsShowOverview] = useState(false);
+  const divRef = useRef(null);
 
   const handleOverviewClick = () => {
     setIsShowOverview(!isShowOverview);
@@ -26,7 +27,7 @@ const AttributeLine = (props) => {
 
   return (
     <div>
-      <div className='attribute-block-line' style={{ backgroundColor: color}}>
+      <div className='attribute-block-line' ref={divRef} style={{ backgroundColor: color}}>
         <span>
           {/* <span style={{ padding: '0px 5px' }}><SettingOutlined /></span> */}
           <span style={{ padding: '0px 5px' }}>{attribute}</span>
@@ -36,12 +37,12 @@ const AttributeLine = (props) => {
             <FilterIcon className='small-icon' />
           </span>
           <span style={{ padding: '0px 5px' }} onClick={handleOverviewClick}>
-            {isShowOverview ? <OverviewExpandView className='small-icon' /> : <OverviewFoldView className='small-icon' />}
+            {isShowOverview ? <OverviewFoldView className='small-icon' /> : <OverviewExpandView className='small-icon' />}
           </span>
         </span>}
       </div>
-      {isShowOverview && attributeType === '0' && <ColumnPlot originalData={originalData} attribute={attribute}></ColumnPlot>}
-      {isShowOverview && attributeType === '1' && <DensityPlot originalData={originalData} attribute={attribute}></DensityPlot>}
+      {isShowOverview && attributeType === '0' && <ColumnPlot originalData={originalData} attribute={attribute} svgWidth={divRef.current.offsetWidth}></ColumnPlot>}
+      {isShowOverview && attributeType === '1' && <DensityPlot originalData={originalData} attribute={attribute} svgWidth={divRef.current.offsetWidth}></DensityPlot>}
     </div>
   )
 
