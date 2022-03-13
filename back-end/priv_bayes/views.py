@@ -1,5 +1,6 @@
 import os
 import json
+import copy
 import pandas as pd
 import numpy as np
 from django.http import HttpResponse
@@ -35,7 +36,7 @@ def getOriginalData(request):
     data = request.FILES['file']
     DATA_PATH = default_storage.save('priv_bayes/data/1.csv', ContentFile(data.read()))
     df = pd.read_csv(DATA_PATH)
-    ORI_DATA = df  # 保存原始数据，用于后续数据生成
+    ORI_DATA = copy.deepcopy(df)  # 保存原始数据，用于后续数据生成
     df['index'] = range(len(df))
     original_data = json.loads(df.to_json(orient="records"))
     attribute_character = {}
@@ -190,6 +191,7 @@ def getConstrainedResponse(request):
         aug_df = aug_df.append(cur_aug_data['data'])
     # 使用aug_df做一轮隐私保护数据生成
     AUG_PATH = 'priv_bayes/data/augmented_data.csv'
+    aug_df = aug_df.append(ORI_DATA)
     aug_df.to_csv('priv_bayes/data/augmented_data.csv', index=False)
     augmented_description_file = "priv_bayes/out/augmented_data.json"
     augmented_synthetic_data = "priv_bayes/out/augmented_synthetic_data.csv"
