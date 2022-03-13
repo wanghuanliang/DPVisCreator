@@ -21,6 +21,9 @@ dot_basenum = 1000    # 增强分布时加点的基础数量
 degree_of_bayesian_network = 2  # 贝叶斯每个节点父亲最多个数
 perturbation = 0.10   # 根据约束采样属性值的扰动范围
 weights = None
+Dimensions = []
+Measures = []
+INT_TYPE = []
 
 
 def index(request):
@@ -28,19 +31,19 @@ def index(request):
 
 
 def getOriginalData(request):
-    global DATA_PATH, ORI_DATA
+    global DATA_PATH, ORI_DATA, Dimensions, Measures, INT_TYPE
     data = request.FILES['file']
     DATA_PATH = default_storage.save('priv_bayes/data/1.csv', ContentFile(data.read()))
     df = pd.read_csv(DATA_PATH)
     ORI_DATA = df  # 保存原始数据，用于后续数据生成
     df['index'] = range(len(df))
     original_data = json.loads(df.to_json(orient="records"))
-    Dimensions = []
-    Measures = []
     attribute_character = {}
     for col in df:
         if col == 'index':
             continue
+        if df[col].dtype == int:
+            INT_TYPE.append(col)
         if len(df[col].value_counts()) > threshold_value:  # 数值型
             Measures.append(col)
             minn = min(df[col])
@@ -83,7 +86,7 @@ def cnt_poly(x, params):
 
 
 def getConstrainedResponse(request):
-    global constraints, ORI_DATA
+    global constraints, ORI_DATA, Dimensions, Measures, INT_TYPE
     try:
         cur_constraints = json.loads(request.body).get('constraints')
         constraints = cur_constraints
@@ -105,6 +108,8 @@ def getConstrainedResponse(request):
     synthetic_df = pd.read_csv(synthetic_data)  # 内含10w数据，用于后续采样生成增强数据点
     aug_df = pd.DataFrame()
     augmented_data = []
+    if constraints is None:
+        return HttpResponse(json.dumps({"error_msg": "没有设置约束，无法配置权重"}))
     for constraint in constraints:
         if weights is None:
             cur_epsilon = epsilon
@@ -135,6 +140,10 @@ def getConstrainedResponse(request):
                         (synthetic_df[y_axis] > item[1] * (1 - perturbation))
                         ].sample(1).to_json(orient="records")
                     filtered_data = json.loads(filtered_data)  # 得到的是一个数组
+                    if x_axis in INT_TYPE:
+                        item[0] = int(item[0])
+                    if y_axis in INT_TYPE:
+                        item[1] = int(item[1])
                     filtered_data[0][x_axis] = item[0]
                     filtered_data[0][y_axis] = item[1]
                     cur_df = cur_df.append(filtered_data)
