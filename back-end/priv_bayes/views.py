@@ -165,6 +165,10 @@ def getConstrainedResponse(request):
                         (synthetic_df[y_axis] > y[i] * (1 - perturbation))
                         ].sample(1).to_json(orient="records")
                     filtered_data = json.loads(filtered_data)  # 得到的是一个数组
+                    if x_axis in INT_TYPE:
+                        x[i] = int(x[i])
+                    if y_axis in INT_TYPE:
+                        y[i] = int(y[i])
                     filtered_data[0][x_axis] = x[i]
                     filtered_data[0][y_axis] = y[i]
                     cur_df = cur_df.append(filtered_data)
@@ -183,6 +187,8 @@ def getConstrainedResponse(request):
                     synthetic_df[x_axis] == val
                     ].sample(int(wghts[id] * dot_num)).to_json(orient="records")
                 filtered_data = json.loads(filtered_data)  # 得到的是一个数组
+                if x_axis in INT_TYPE:
+                    filtered_data[0][x_axis] = int(filtered_data[0][x_axis])
                 cur_df = cur_df.append(filtered_data)
             pass
         print(len(cur_df))
