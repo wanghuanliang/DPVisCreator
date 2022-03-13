@@ -48,6 +48,8 @@ const IndexPage = () => {
   console.log("attributeData", attributeData);
   console.log("attributeCharacter", attributeCharacter);
   console.log("filterData", filterData);
+  console.log("augmentedData", augmentedData);
+  console.log("protectedData", protectedData);
   return (
     <>
       <Title />

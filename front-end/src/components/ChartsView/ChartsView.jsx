@@ -14,9 +14,10 @@ class ChartsView extends Component {
       this.props
         .setPattern({ constraints: this.state.constraints })
         .then((body) => {
-          if (body.status === "success") {
-            self.setAugmentedData(body.augmented_data);
-            self.setProtectedData(body.protected_data);
+          const data = body.data;
+          if (data.status === "success") {
+            self.setAugmentedData(data.augmented_data);
+            self.setProtectedData(data.protected_data);
           }
         });
     };
