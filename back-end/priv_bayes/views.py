@@ -43,7 +43,7 @@ def getOriginalData(request):
     for col in df:
         if col == 'index':
             continue
-        if df[col].dtype == int:
+        if df[col].dtype == int or df[col].dtype == np.int64:
             INT_TYPE.append(col)
         if len(df[col].value_counts()) > threshold_value:  # 数值型
             Measures.append(col)
