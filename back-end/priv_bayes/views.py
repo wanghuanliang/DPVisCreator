@@ -87,10 +87,11 @@ def cnt_poly(x, params):
 
 
 def getConstrainedResponse(request):
-    global constraints, ORI_DATA, Dimensions, Measures, INT_TYPE
+    global constraints, ORI_DATA, Dimensions, Measures, INT_TYPE, weights
     try:
         cur_constraints = json.loads(request.body).get('constraints')
-        constraints = cur_constraints
+        if cur_constraints is not None:
+            constraints = cur_constraints
     except:
         pass
     if not os.path.exists('priv_bayes/out'):
@@ -110,13 +111,16 @@ def getConstrainedResponse(request):
     aug_df = pd.DataFrame()
     augmented_data = []
     if constraints is None:
-        return HttpResponse(json.dumps({"error_msg": "没有设置约束，无法配置权重"}))
+        return HttpResponse("no constraints")
     for constraint in constraints:
         if weights is None:
             cur_epsilon = epsilon
         else:
-            selected = [weight for weight in weights if weight['id'] == constraint['id']][0]
-            cur_epsilon = selected['weight']
+            try:  # 若没有对应权重，则采用默认epsilon
+                selected = [weight for weight in weights if weight['id'] == constraint['id']][0]
+                cur_epsilon = selected['weight']
+            except:
+                cur_epsilon = epsilon
         cur_df = pd.DataFrame()
         cur_aug_data = {
             "id": constraint['id'],
@@ -178,7 +182,7 @@ def getConstrainedResponse(request):
         if type == "order":  # 顺序
             values = params['values']  # 保持order的数据，根据比例扩展数据
             dot_num = int(dot_basenum * cur_epsilon)  # 实际增加的点数
-            if ORI_DATA[x_axis].dtype is not object:
+            if ORI_DATA[x_axis].dtype is not object:  # 如果不是object类型，则其是数值型
                 values = [float(id) for id in values]
             ls = [len(ORI_DATA[ORI_DATA[x_axis] == id]) for id in values]
             wghts = np.array(ls) / sum(ls)
@@ -198,7 +202,7 @@ def getConstrainedResponse(request):
     # 使用aug_df做一轮隐私保护数据生成
     AUG_PATH = 'priv_bayes/data/augmented_data.csv'
     aug_df = aug_df.append(ORI_DATA)
-    aug_df.to_csv('priv_bayes/data/augmented_data.csv', index=False)
+    aug_df.to_csv(AUG_PATH, index=False)
     augmented_description_file = "priv_bayes/out/augmented_data.json"
     augmented_synthetic_data = "priv_bayes/out/augmented_synthetic_data.csv"
     describer.describe_dataset_in_correlated_attribute_mode(dataset_file=AUG_PATH,
