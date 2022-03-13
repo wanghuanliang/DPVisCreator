@@ -177,7 +177,9 @@ def getConstrainedResponse(request):
             pass
         if type == "order":  # 顺序
             values = params['values']  # 保持order的数据，根据比例扩展数据
-            dot_num = dot_basenum * cur_epsilon  # 实际增加的点数
+            dot_num = int(dot_basenum * cur_epsilon)  # 实际增加的点数
+            if ORI_DATA[x_axis].dtype is not object:
+                values = [float(id) for id in values]
             ls = [len(ORI_DATA[ORI_DATA[x_axis] == id]) for id in values]
             wghts = np.array(ls) / sum(ls)
             cur_df = pd.DataFrame()
@@ -187,8 +189,6 @@ def getConstrainedResponse(request):
                     synthetic_df[x_axis] == val
                     ].sample(int(wghts[id] * dot_num)).to_json(orient="records")
                 filtered_data = json.loads(filtered_data)  # 得到的是一个数组
-                if x_axis in INT_TYPE:
-                    filtered_data[0][x_axis] = int(filtered_data[0][x_axis])
                 cur_df = cur_df.append(filtered_data)
             pass
         print(len(cur_df))
