@@ -1,3 +1,4 @@
+import os
 import json
 import pandas as pd
 import numpy as np
@@ -88,6 +89,8 @@ def getConstrainedResponse(request):
         constraints = cur_constraints
     except:
         pass
+    if not os.path.exists('priv_bayes/out'):
+        os.mkdir('priv_bayes/out')
     describer = DataDescriber(category_threshold=threshold_value)
     description_file = "priv_bayes/out/original_data.json"
     synthetic_data = "priv_bayes/out/synthetic_data.csv"
