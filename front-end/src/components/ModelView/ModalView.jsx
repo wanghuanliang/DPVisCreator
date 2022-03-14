@@ -15,7 +15,13 @@ const patternData = ["c1", "c2", "c3"]
 
 const ModalView = (props) => {
   const { setWeights, modalData } = props;
-  const { totalNum, proportionData, flowData } = modalData;
+  const {
+    total_num: totalNum,
+    axis_order: axisOrder,
+    proportion_data: proportionData,
+    flow_data: flowData,
+    matrix_data:  matrixData
+  } = modalData;
 
   const [privacyBudgetValue, setPrivacyBudget] = useState(0.8);
   const initialPatternWeight = useMemo(() => {
@@ -167,10 +173,13 @@ const ModalView = (props) => {
         {/* <ClockBlock></ClockBlock> */}
         {/* <BayesianNetwork></BayesianNetwork> */}
         {/* <SankeyPlot></SankeyPlot> */}
-        <Matrix></Matrix>
+        <Matrix
+          matrixData={matrixData}
+        ></Matrix>
         {/* <ParallelPlot></ParallelPlot> */}
         <AlluvialPlot
           totalNum={totalNum}
+          axisOrder={axisOrder}
           proportionData={proportionData}
           flowData={flowData}
         ></AlluvialPlot>

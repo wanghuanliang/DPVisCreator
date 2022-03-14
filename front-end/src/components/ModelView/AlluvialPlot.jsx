@@ -13,10 +13,10 @@ const intervalTotalHeight = 20; //柱子上下间隔高度，暂定都相同
 const AlluvialPlot = memo((props) => {
   const {
     totalNum,
+    axisOrder,
     proportionData,
     flowData,
   } = props;
-
   // xScale
   const xScale = useMemo(() => {
     return d3.scalePoint()
@@ -29,13 +29,16 @@ const AlluvialPlot = memo((props) => {
   // flowPos {charges: [0, 0, 0, 0], bmi: [,,,]}
   const [linePos, flowPos] = useMemo(() => {
     let linePos = {}, flowPos = {};
-    Object.keys(proportionData).forEach(attr => {
+    axisOrder.forEach(attr => {
       linePos[attr] = [];
       flowPos[attr] = [];
       let start = 0;
+      // 间隔高度
       let intervalHeight = proportionData[attr].length > 1 ?
         intervalTotalHeight / (proportionData[attr].length - 1) : 0;
-      proportionData[attr].forEach((num, index) => {
+      
+      proportionData[attr].forEach(obj=> {
+        let num = obj.num;
         let height = num / totalNum * lineTotalHeight;
         linePos[attr].push({ start: start, height: height })
         flowPos[attr].push(start);
@@ -43,7 +46,8 @@ const AlluvialPlot = memo((props) => {
       })
     })
     return [linePos, flowPos];
-  }, [proportionData, totalNum])
+  }, [proportionData, totalNum, axisOrder])
+  console.log("linePos", linePos);
 
   // console.log(xScale.bandwidth())
   // console.log(xScale('charges'))
