@@ -31,19 +31,19 @@ def index(request):
     return HttpResponse("priv_bayes_backend")
 
 
-def getOriginalData(request):
+def getOriginalData(request):   # 获取原始数据
     global DATA_PATH, ORI_DATA, Dimensions, Measures, INT_TYPE
     data = request.FILES['file']
     DATA_PATH = default_storage.save('priv_bayes/data/1.csv', ContentFile(data.read()))
     df = pd.read_csv(DATA_PATH)
     ORI_DATA = copy.deepcopy(df)  # 保存原始数据，用于后续数据生成
-    df['index'] = range(len(df))
+    df['index'] = range(len(df))  # 给每条记录按顺序编号，后续可能会用到
     original_data = json.loads(df.to_json(orient="records"))
     attribute_character = {}
     for col in df:
         if col == 'index':
             continue
-        if df[col].dtype == int or df[col].dtype == np.int64:
+        if df[col].dtype == int or df[col].dtype == np.int64:  # 记录整型数据
             INT_TYPE.append(col)
         if len(df[col].value_counts()) > threshold_value:  # 数值型
             Measures.append(col)
@@ -78,7 +78,7 @@ def getOriginalData(request):
     return HttpResponse(json.dumps(ret))
 
 
-def cnt_poly(x, params):
+def cnt_poly(x, params):  # 根据x和多项式系数params计算返回值
     ans = 0
     for item in params:
         ans *= x
@@ -86,19 +86,17 @@ def cnt_poly(x, params):
     return ans
 
 
-def getConstrainedResponse(request):
+def getConstrainedResponse(request, flag=False):
     global constraints, ORI_DATA, Dimensions, Measures, INT_TYPE, weights
-    try:
-        cur_constraints = json.loads(request.body).get('constraints')
-        if cur_constraints is not None:
-            constraints = cur_constraints
-    except:
-        pass
-    if not os.path.exists('priv_bayes/out'):
+    if flag:  # setConstraints过来的，需要更新constraints
+        constraints = json.loads(request.body).get('constraints')
+    if not os.path.exists('priv_bayes/out'):  # 创建输出文件夹
         os.mkdir('priv_bayes/out')
+
+    # 随机生成10000个数据点服务后续采样
     describer = DataDescriber(category_threshold=threshold_value)
-    description_file = "priv_bayes/out/original_data.json"
-    synthetic_data = "priv_bayes/out/synthetic_data.csv"
+    description_file = "priv_bayes/out/original_data.json"  # 贝叶斯网络描述文件
+    synthetic_data = "priv_bayes/out/synthetic_data.csv"    #
     # ORI_DATA = pd.read_csv(DATA_PATH)  # 接口测试开启，正式使用关闭
     describer.describe_dataset_in_correlated_attribute_mode(dataset_file=DATA_PATH,
                                                             epsilon=0,
@@ -221,8 +219,9 @@ def getConstrainedResponse(request):
 
 
 def setPattern(request):
-    ret = getConstrainedResponse(request)
+    ret = getConstrainedResponse(request, True)
     return HttpResponse(json.dumps(ret))
+
 
 def setWeights(request):
     global bayes_epsilon, weights
