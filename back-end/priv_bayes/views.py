@@ -182,7 +182,7 @@ def getConstrainedResponse(request):
         if type == "order":  # 顺序
             values = params['values']  # 保持order的数据，根据比例扩展数据
             dot_num = int(dot_basenum * cur_epsilon)  # 实际增加的点数
-            if ORI_DATA[x_axis].dtype is not object:  # 如果不是object类型，则其是数值型
+            if ORI_DATA[x_axis].dtype != object:  # 如果不是object类型，则其是数值型
                 values = [float(id) for id in values]
             ls = [len(ORI_DATA[ORI_DATA[x_axis] == id]) for id in values]
             wghts = np.array(ls) / sum(ls)
@@ -230,6 +230,7 @@ def setWeights(request):
     bayes_epsilon = json.loads(request.body).get('bayes_budget')
     ret = getConstrainedResponse(request)
     return HttpResponse(json.dumps(ret))
+
 
 def getMetrics(request):
     return HttpResponse(request.GET.get('title'))
