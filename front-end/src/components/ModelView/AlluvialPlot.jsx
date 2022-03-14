@@ -26,12 +26,12 @@ const AlluvialPlot = memo((props) => {
 
 
   // linePos {charges: [{start: 0  height: 100}, {}, {}]}
-  // flowPos {charges: [0, 0, 0, 0], bmi: [,,,]}
-  const [linePos, flowPos] = useMemo(() => {
-    let linePos = {}, flowPos = {};
+  // currentStartPos {charges: [0, 0, 0, 0], bmi: [,,,]}
+  const [linePos, currentStartPos] = useMemo(() => {
+    let linePos = {}, currentStartPos = {};
     axisOrder.forEach(attr => {
       linePos[attr] = [];
-      flowPos[attr] = [];
+      currentStartPos[attr] = [];
       let start = 0;
       // 间隔高度
       let intervalHeight = proportionData[attr].length > 1 ?
@@ -41,14 +41,55 @@ const AlluvialPlot = memo((props) => {
         let num = obj.num;
         let height = num / totalNum * lineTotalHeight;
         linePos[attr].push({ start: start, height: height })
-        flowPos[attr].push(start);
+        currentStartPos[attr].push(start);
         start += height + intervalHeight;
       })
     })
-    return [linePos, flowPos];
+    return [linePos, currentStartPos];
   }, [proportionData, totalNum, axisOrder])
   console.log("linePos", linePos);
 
+  //相关约束属性集合
+  const attrArray = Object.keys(proportionData);
+
+  // flowPos: [{flowIndex: 0, patternId: c1, pos: ['d', 'd', 'd']}]
+  // const flowPos = useMemo(() => {
+  //   const flowPos = [];
+  //   flowData.forEach(obj => {
+  //     const currentPos = {};
+  //     currentPos.flowIndex = obj.flowIndex
+  //     currentPos.pos = []
+  //     const pos = obj.pos;
+  //     const flowHeight = obj.num / totalNum * lineTotalHeight;
+  //     // fix: attrArray.length 为1时候处理
+  //     for (let i = 0; i < attrArray.length - 1; i++) {
+  //       // 计算每个点的坐标
+  //       const firstX = xScale(attrArray[i]) + lineWidth;
+  //       const firstY = currentPos[attrArray[i]][pos[i]];
+  //       const secondX = xScale(attrArray[i + 1]);
+  //       const secondY = currentPos[attrArray[i + 1]][pos[i + 1]];
+  //       const thirdX = secondX;
+  //       const thirdY = secondY + flowHeight;
+  //       const fourthX = firstX;
+  //       const fourthY = firstY + flowHeight;
+  //       const p = d3.path();
+  //       p.moveTo(firstX, firstY);
+  //       p.lineTo(secondX, secondY);
+  //       p.lineTo(thirdX, thirdY);
+  //       p.lineTo(fourthX, fourthY);
+  //       currentPos.pos.push(p._);
+  //     }
+  //     flowPos.push(currentPos);
+  //   })
+  //   return flowPos;
+  // });
+  // console.log(flowPos);
+  // const p = d3.path();
+  // p.moveTo(0, 0);
+  // p.lineTo(200, 0);
+  // p.lineTo(200, 50);
+  // p.lineTo(0, 50);
+  // p.closePath();
   // console.log(xScale.bandwidth())
   // console.log(xScale('charges'))
   return (
@@ -88,7 +129,12 @@ const AlluvialPlot = memo((props) => {
           })
         }
         {/* 绘制flow，先直线 */}
-        {
+        {/* {
+          <path
+            d={p._}
+          ></path>
+        } */}
+        {/* {
           flowData.map(flow => {
             const height = flow.num / totalNum * lineTotalHeight;
             return <g key={flow.flowIndex}>
@@ -101,7 +147,7 @@ const AlluvialPlot = memo((props) => {
               ></line>
             </g>
           })
-        }
+        } */}
       </g>
     </svg>
   )
