@@ -325,11 +325,13 @@ def getModelData(request):
 
     ret = {
         "status": "success",
-        "total_num": len(ORI_DATA),
-        "axis_order": axis_order,
-        "proportion_data": proportion_data,
-        "flow_data": flow_data,
-        "matrix_data": matrix_data.tolist()
+        "data": {
+            "total_num": len(ORI_DATA),
+            "axis_order": axis_order,
+            "proportion_data": proportion_data,
+            "flow_data": flow_data,
+            "matrix_data": matrix_data.tolist()
+        }
     }
     return HttpResponse(json.dumps(ret))
 
