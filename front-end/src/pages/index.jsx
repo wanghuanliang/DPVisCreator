@@ -2,19 +2,19 @@ import React, { useEffect, useState } from "react";
 import "./index.less";
 import DataView from "../components/DataView/DataView";
 import ChartsView from "../components/ChartsView/ChartsView";
-import ModalView from "../components/ModelView/ModalView";
+import ModelView from "../components/ModelView/ModelView";
 import Validation from "../components/ValidationView/ValidationView";
 import LineupTable from "../components/ValidationView/LineupTable";
 import { ReactComponent as Title } from "../assets/title.svg";
 import { ReactComponent as DataViewIcon } from "../assets/data-view-icon.svg";
 import { ReactComponent as ChartsViewIcon } from "../assets/charts-view-icon.svg";
-import { ReactComponent as ModalViewIcon } from "../assets/modal-view-icon.svg";
+import { ReactComponent as ModelViewIcon } from "../assets/model-view-icon.svg";
 import { ReactComponent as ValidationViewIcon } from "../assets/validation-view-icon.svg";
 // 原始数据, 后端返回(或者只返回原是数据，别的自己计算)
 import { original_data, originalData } from "../data/originalData"; // 原始数据
 import { attributeData, attributeCharacter } from "../data/attributes"; // 原始数据属性、数据属性特镇
-import { modalData } from "../data/modalData";
-import { setWeights, setPattern, getModalData } from "../services/api";
+import { modelData } from "../data/modelData";
+import { setWeights, setPattern, getModelData } from "../services/api";
 
 const IndexPage = () => {
   // 不使用redux，直接在此处定义全局数据，通过props传递
@@ -28,12 +28,12 @@ const IndexPage = () => {
   const [augmentedData, setAugmentedData] = useState(null);
   const [protectedData, setProtectedData] = useState(null);
   // model
-  // const [modalData, setModalData] = useState(null);
+  // const [modelData, setModelData] = useState(null);
 
   // useEffect(() => {
   //   if (!originalData) return;
-  //   getModalData()
-  //     .then(res => setModalData(res.data))
+  //   getModelData()
+  //     .then(res => setModelData(res.data))
   //     .catch(e => console.log(e));
   // }, [originalData])
 
@@ -97,16 +97,16 @@ const IndexPage = () => {
           ></ChartsView>
         </div>
         <div className="view-box">
-          <div className="block modal-view">
+          <div className="block model-view">
             <div className="view-title">
-              <ModalViewIcon className="view-icon" />
-              Modal View
+              <ModelViewIcon className="view-icon" />
+              Model View
             </div>
             <div className="cross-line"></div>
-            {modalData && <ModalView
+            {modelData && <ModelView
               setWeights={setWeights}
-              modalData={modalData}
-            ></ModalView>}
+              modelData={modelData}
+            ></ModelView>}
           </div>
           <div className="block validation-view">
             <div className="view-title">

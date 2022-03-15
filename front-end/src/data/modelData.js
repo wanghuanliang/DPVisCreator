@@ -1,4 +1,4 @@
-export const modalData = {
+export const modelData = {
   total_num: 100,
   axis_order: ["charges", "bmi", "age", "children"],
   proportion_data: {

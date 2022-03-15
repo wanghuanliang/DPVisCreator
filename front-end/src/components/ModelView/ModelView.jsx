@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import './ModalView.less';
+import './ModelView.less';
 import { Switch, Slider, InputNumber, Row, Col, Space, Button } from 'antd';
 import { CheckCircleOutlined, RightOutlined, CheckOutlined } from '@ant-design/icons';
 import * as d3 from 'd3'
@@ -13,15 +13,15 @@ import { debounce } from 'lodash';
 
 const patternData = ["c1", "c2", "c3"]
 
-const ModalView = (props) => {
-  const { setWeights, modalData } = props;
+const ModelView = (props) => {
+  const { setWeights, modelData } = props;
   const {
     total_num: totalNum,
     axis_order: axisOrder,
     proportion_data: proportionData,
     flow_data: flowData,
     matrix_data:  matrixData
-  } = modalData;
+  } = modelData;
 
   const [privacyBudgetValue, setPrivacyBudget] = useState(0.8);
   const initialPatternWeight = useMemo(() => {
@@ -80,9 +80,9 @@ const ModalView = (props) => {
   }
 
   // 渲染上部控制面板
-  const renderModalControlPanel = () => {
+  const renderModelControlPanel = () => {
     return (
-      <div className="modal-control-panel">
+      <div className="model-control-panel">
         <Space>
           <span>Privacy Budget</span>
           <Slider
@@ -149,7 +149,7 @@ const ModalView = (props) => {
 
   return (
     <div>
-      {renderModalControlPanel()}
+      {renderModelControlPanel()}
       <Space>
         {patternData.map(id => {
 
@@ -169,7 +169,7 @@ const ModalView = (props) => {
         })}
       </Space>
       {/* {renderFlowChart} */}
-      {modalData && <div style={{display:'flex'}}>
+      {modelData && <div style={{display:'flex'}}>
         {/* <ClockBlock></ClockBlock> */}
         {/* <BayesianNetwork></BayesianNetwork> */}
         {/* <SankeyPlot></SankeyPlot> */}
@@ -188,4 +188,4 @@ const ModalView = (props) => {
   );
 };
 
-export default ModalView;
+export default ModelView;
