@@ -14,7 +14,7 @@ import { ReactComponent as ValidationViewIcon } from "../assets/validation-view-
 import { original_data, originalData } from "../data/originalData"; // 原始数据
 import { attributeData, attributeCharacter } from "../data/attributes"; // 原始数据属性、数据属性特镇
 import { modalData } from "../data/modalData";
-import { setWeights, setPattern } from "../services/api";
+import { setWeights, setPattern, getModalData } from "../services/api";
 
 const IndexPage = () => {
   // 不使用redux，直接在此处定义全局数据，通过props传递
@@ -27,6 +27,15 @@ const IndexPage = () => {
   // 约束
   const [augmentedData, setAugmentedData] = useState(null);
   const [protectedData, setProtectedData] = useState(null);
+  // model
+  // const [modalData, setModalData] = useState(null);
+
+  // useEffect(() => {
+  //   if (!originalData) return;
+  //   getModalData()
+  //     .then(res => setModalData(res.data))
+  //     .catch(e => console.log(e));
+  // }, [originalData])
 
   //接口测试
   useEffect(() => {
@@ -94,10 +103,10 @@ const IndexPage = () => {
               Modal View
             </div>
             <div className="cross-line"></div>
-            <ModalView
+            {modalData && <ModalView
               setWeights={setWeights}
               modalData={modalData}
-            ></ModalView>
+            ></ModalView>}
           </div>
           <div className="block validation-view">
             <div className="view-title">

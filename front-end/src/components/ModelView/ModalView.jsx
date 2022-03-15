@@ -169,7 +169,7 @@ const ModalView = (props) => {
         })}
       </Space>
       {/* {renderFlowChart} */}
-      <div style={{display:'flex'}}>
+      {modalData && <div style={{display:'flex'}}>
         {/* <ClockBlock></ClockBlock> */}
         {/* <BayesianNetwork></BayesianNetwork> */}
         {/* <SankeyPlot></SankeyPlot> */}
@@ -183,7 +183,7 @@ const ModalView = (props) => {
           proportionData={proportionData}
           flowData={flowData}
         ></AlluvialPlot>
-      </div>
+      </div>}
     </div>
   );
 };

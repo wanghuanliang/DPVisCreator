@@ -4,7 +4,6 @@ import React, { memo } from 'react';
 
 const Matrix = memo((props) => {
   const { matrixData } = props;
-  console.log('matrixData', matrixData);
 
   const [width, height] = [400, 400];
   const margin = {
