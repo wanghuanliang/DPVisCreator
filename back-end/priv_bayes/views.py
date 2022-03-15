@@ -7,11 +7,12 @@ from django.http import HttpResponse
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 # 隐私保护相关包
-from DataSynthesizer.DataDescriber import DataDescriber
-from DataSynthesizer.DataGenerator import DataGenerator
-from DataSynthesizer.ModelInspector import ModelInspector
-from DataSynthesizer.lib.utils import read_json_file, display_bayesian_network
 
+from priv_bayes.DataSynthesizer.DataDescriber import DataDescriber
+from priv_bayes.DataSynthesizer.DataGenerator import DataGenerator
+from priv_bayes.DataSynthesizer.ModelInspector import ModelInspector
+from priv_bayes.DataSynthesizer.lib.utils import read_json_file, display_bayesian_network
+os.chdir("../")
 DATA_PATH = 'priv_bayes/data/1.csv'
 constraints = None
 ORI_DATA = None
@@ -216,6 +217,97 @@ def getConstrainedResponse(request, flag=False):
         "protected_data": json.loads(augmented_synthetic_df.to_json(orient="records")),
     }
     return ret
+
+
+def getModelData(request):
+    global constraints
+    cur_df = copy.deepcopy(ORI_DATA)
+    DEFAULT_CATEGORIES = 3
+    slice_methods = json.loads(request.body).get('slice_methods')
+    axis_order = []
+    # 补全所有需要处理的坐标轴
+    for constraint in constraints:
+        if constraint['x_axis'] is not None and constraint['x_axis'] not in axis_order:
+            axis_order.append(constraint['x_axis'])
+        if constraint['y_axis'] is not None and constraint['y_axis'] not in axis_order:
+            axis_order.append(constraint['y_axis'])
+
+    # 对每个坐标轴，如果是Measures类型数据，则做一个分位数分段
+    new_df = pd.DataFrame()
+    for axis in axis_order:
+        if axis not in Measures:    # 不是数值型的数据，不需要离散化
+            new_df[axis] = ORI_DATA[axis]
+            continue
+        categories = slice_methods.get(axis)
+        if categories is None:  # 未提供切分份数
+            categories = DEFAULT_CATEGORIES
+        cut_points = [100 / categories * item for item in range(0, categories + 1)]
+        cut_points = [np.percentile(ORI_DATA[axis], item) for item in cut_points]
+        cut_points[-1] += 1e-10  # 最后一个分位点加一个微小的偏移量
+        new_df[axis] = pd.cut(ORI_DATA[axis], cut_points, right=False)
+    cur_df['index'] = range(len(cur_df))
+    cur_df['constraint'] = "empty"
+    for constraint in constraints:
+        cur_df.loc[cur_df['index'].isin(constraint['data']), 'constraint'] = constraint['id']
+    new_df['count'] = 1
+    new_df['constraint'] = cur_df['constraint']
+    data_df = new_df.groupby(axis_order + ['constraint']).agg('count')
+    c_df = pd.DataFrame(data_df)
+    c_df.reset_index(inplace=True)
+    raw_data = json.loads(c_df.to_json(orient="records"))
+    filtered_data = [dt for dt in raw_data if dt['count'] != 0]
+
+    proportion_data = {}
+
+    for axis in axis_order:
+        tmp_df = pd.DataFrame()
+        tmp_df[axis] = new_df[axis]
+        tmp_df['count'] = 1
+        cc_df = pd.DataFrame(tmp_df.groupby(axis).agg('count'))
+        cc_df.reset_index(inplace=True)
+        cur_proportiondata = []
+        tmp_data = json.loads(cc_df.to_json(orient="columns"))
+        if axis in Measures:
+            for key in tmp_data[axis]:
+                cur_bin = dict()
+                cur_bin['minn'] = tmp_data[axis][key]['left']
+                cur_bin['maxx'] = tmp_data[axis][key]['right']
+                cur_bin['num'] = tmp_data['count'][key]
+                cur_proportiondata.append(cur_bin)
+        else:
+            for key in tmp_data[axis]:
+                cur_bin = dict()
+                cur_bin['value'] = tmp_data[axis][key]
+                cur_bin['num'] = tmp_data['count'][key]
+                cur_proportiondata.append(cur_bin)
+
+        proportion_data[axis] = cur_proportiondata
+
+    flow_data = []
+    idx = 0
+    for item in filtered_data:
+        cur_flow = {"flow_index": idx, "constraint_id": item['constraint'], "num": item['count'], "pos": {}}
+        for key in axis_order:
+            if key in Measures:
+                for i in range(len(proportion_data[key])):
+                    if proportion_data[key][i]['minn'] == item[key]['left']:
+                        cur_flow['pos'][key] = i
+                        break
+            else:
+                for i in range(len(proportion_data[key])):
+                    if proportion_data[key][i]['value'] == item[key]:
+                        cur_flow['pos'][key] = i
+                        break
+        flow_data.append(cur_flow)
+        idx = idx + 1
+
+    ret = {
+        "status": "success",
+        "axis_order": axis_order,
+        "proportion_data": proportion_data,
+        "flow_data": flow_data,
+    }
+    return HttpResponse(json.dumps(ret))
 
 
 def setPattern(request):
