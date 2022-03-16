@@ -12,6 +12,13 @@ import AlluvialPlot from './AlluvialPlot';
 import { debounce } from 'lodash';
 
 const patternData = ["c1", "c2", "c3"]
+const [svgWidth, svgHeight] = [1000, 500];
+const margin = {
+  left: 0,
+  top: 0,
+  right: 0,
+  bottom: 0
+}
 
 const ModelView = (props) => {
   const { setWeights, modelData } = props;
@@ -120,33 +127,6 @@ const ModelView = (props) => {
     )
   }
 
-  // const renderFlowChart = () => {
-  //   return (
-  //     <div className="flow-path">
-  //       <span>
-  //         {/* <CheckOutlined style={{color: '#000'}}/> */}
-  //       <CheckCircleOutlined style={{width:30, height: 30}}/>
-  //       Constraints
-  //       </span>
-  //       <span><RightOutlined /></span>
-  //       <span>
-  //         <CheckCircleOutlined style={{width:30, height: 30}}/>
-  //         Structure
-  //       </span>
-  //       <span><RightOutlined /></span>
-  //       <span>
-  //         <CheckCircleOutlined style={{width:30, height: 30}}/>
-  //         Parameter
-  //       </span>
-  //       <span><RightOutlined /></span>
-  //       <span>
-  //         <CheckCircleOutlined style={{width:30, height: 30}}/>
-  //       Sampling
-  //       </span>
-  //     </div>
-  //   )
-  // }
-
   return (
     <div>
       {renderModelControlPanel()}
@@ -168,21 +148,35 @@ const ModelView = (props) => {
           ></InputNumber>
         })}
       </Space>
-      {/* {renderFlowChart} */}
+      {/* 整理放入一个svg */}
+      {/* <svg width={svgWidth} height={svgHeight}>
+        <g transform={`translate(${margin.left}, ${margin.top})`}>
+          <Matrix
+              matrixData={matrixData}
+          ></Matrix>
+          <AlluvialPlot
+            totalNum={totalNum}
+            axisOrder={axisOrder}
+            proportionData={proportionData}
+            flowData={flowData}
+          ></AlluvialPlot> */}
+          {/* <ClockBlock></ClockBlock> */}
+          {/* <BayesianNetwork></BayesianNetwork> */}
+          {/* <SankeyPlot></SankeyPlot> */}
+          {/* <ParallelPlot></ParallelPlot> */}
+        {/* </g>
+      </svg> */}
       {modelData && <div style={{display:'flex'}}>
-        {/* <ClockBlock></ClockBlock> */}
-        {/* <BayesianNetwork></BayesianNetwork> */}
-        {/* <SankeyPlot></SankeyPlot> */}
         <Matrix
           matrixData={matrixData}
         ></Matrix>
-        {/* <ParallelPlot></ParallelPlot> */}
         <AlluvialPlot
           totalNum={totalNum}
           axisOrder={axisOrder}
           proportionData={proportionData}
           flowData={flowData}
         ></AlluvialPlot>
+        {/* <SankeyPlot></SankeyPlot> */}
       </div>}
     </div>
   );

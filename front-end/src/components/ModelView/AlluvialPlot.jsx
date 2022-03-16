@@ -95,18 +95,31 @@ const AlluvialPlot = memo((props) => {
     return flowPos;
   // currentStartPOs对象更改，浅比较也是没有变得
   }, [axisOrder, totalNum, flowData, xScale]);
-  console.log('flowPos', flowPos);
-  // const p = d3.path();
-  // p.moveTo(0, 0);
-  // p.lineTo(200, 0);
-  // p.lineTo(200, 50);
-  // p.lineTo(0, 50);
-  // p.closePath();
-  // console.log(xScale.bandwidth())
-  // console.log(xScale('charges'))
+
   return (
     <svg width={svgWidth} height={svgHeight}>
       <g transform={`translate(${margin.left}, ${margin.top})`}>
+        {/* 绘制flow，先直线 */}
+        {
+          flowPos.map(obj => {
+            let color = "#ccc";
+            if (obj.constraintId === "C0") color = "#dcd6e7";
+            else if (obj.constraintId === "C2") color = "#cdd7d0";
+            return <g key={obj.flowIndex}>
+              {
+                obj.pos.map((d, i) => {
+                  return <path
+                    key={i}
+                    d={d}
+                    fill={color}
+                    stroke={color}
+                    // strokeOpacity={0.5}
+                  ></path>
+                })
+              }
+            </g>
+          })
+        }
         {/* 绘制柱子 */}
         {
           Object.keys(linePos).map(attr => {
@@ -140,43 +153,6 @@ const AlluvialPlot = memo((props) => {
             
           })
         }
-        {/* 绘制flow，先直线 */}
-        {
-          flowPos.map(obj => {
-            return <g key={obj.flowIndex}>
-              {
-                obj.pos.map((d, i) => {
-                  return <path
-                    key={i}
-                    d={d}
-                    fill="#ccc"
-                    stroke='#000'
-                    strokeOpacity={0.5}
-                  ></path>
-                })
-              }
-            </g>
-          })
-        }
-        {/* {
-          <path
-            d={p._}
-          ></path>
-        } */}
-        {/* {
-          flowData.map(flow => {
-            const height = flow.num / totalNum * lineTotalHeight;
-            return <g key={flow.flowIndex}>
-              <line
-                x1={xScale('charges')}
-                y1={0}
-                x2={xScale('bmi')}
-                y2={100}
-                fill='#333'
-              ></line>
-            </g>
-          })
-        } */}
       </g>
     </svg>
   )

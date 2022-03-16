@@ -300,7 +300,7 @@ const d3Sankey = function() {
 
 const SankeyPlot = (props) => {
 
-  const data = {
+  const graph = {
     "nodes":[
     {"node":0,"name":"node0"},
     {"node":1,"name":"node1"},
@@ -310,11 +310,11 @@ const SankeyPlot = (props) => {
     ],
     "links":[
     {"source":0,"target":2,"value":2},
-    {"source":1,"target":2,"value":2},
+    // {"source":1,"target":2,"value":2},
     {"source":1,"target":3,"value":2},
     {"source":0,"target":4,"value":2},
     {"source":2,"target":3,"value":2},
-    {"source":2,"target":4,"value":2},
+    // {"source":2,"target":4,"value":2},
     {"source":3,"target":4,"value":4}
     ]}
   // set the dimensions and margins of the graph
@@ -341,7 +341,7 @@ const SankeyPlot = (props) => {
       .size([width, height]);
 
       // load the data
-      d3.json("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/data_sankey.json", function(error, graph) {
+
 
       // Constructs a new Sankey generator with the default settings.
       sankey
@@ -408,7 +408,6 @@ const SankeyPlot = (props) => {
       sankey.relayout();
       link.attr("d", sankey.link() );
       }
-      });
     return () => svg.remove()
   })
   

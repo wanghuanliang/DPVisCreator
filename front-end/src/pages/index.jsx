@@ -29,13 +29,13 @@ const IndexPage = () => {
   const [protectedData, setProtectedData] = useState(null);
   // model
   // const [modelData, setModelData] = useState(null);
-
+  // console.log('modelData', modelData);
   // useEffect(() => {
-  //   if (!originalData) return;
-  //   getModelData()
+  //   if (!augmentedData) return;
+  //   getModelData({ slice_methods: {}})
   //     .then(res => setModelData(res.data))
   //     .catch(e => console.log(e));
-  // }, [originalData])
+  // }, [augmentedData])
 
   //接口测试
   useEffect(() => {
