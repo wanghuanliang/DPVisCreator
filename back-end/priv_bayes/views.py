@@ -240,6 +240,8 @@ def getModelData(request):
         if axis not in Measures:    # 不是数值型的数据，不需要离散化
             new_df[axis] = ORI_DATA[axis]
             continue
+        # 根据K-Means和elbow_method去选择合适的切分份数
+
         categories = slice_methods.get(axis)
         if categories is None:  # 未提供切分份数
             categories = DEFAULT_CATEGORIES
@@ -323,6 +325,48 @@ def getModelData(request):
         flow_data.append(cur_flow)
         idx = idx + 1
 
+    sankey_data = []
+    conses = [constraint['id'] for constraint in constraints]
+
+    for axis_id in range(len(axis_order) - 1):
+        x = axis_order[axis_id]
+        y = axis_order[axis_id + 1]
+        x_len = len(proportion_data[x])
+        y_len = len(proportion_data[y])
+        back_ground = []
+        for i in range(x_len):
+            for j in range(y_len):
+                tar = sum([flow['num'] for flow in flow_data if flow['pos'][x] == i and flow['pos'][y] == j])
+                if tar == 0:
+                    continue
+                back_ground.append({
+                    "source": i,
+                    "target": j,
+                    "num": tar
+                })
+        cur_conses = []
+        for cons in conses:
+            cons_dt = []
+            for i in range(x_len):
+                for j in range(y_len):
+                    tar = sum([flow['num'] for flow in flow_data if
+                               flow['pos'][x] == i and flow['pos'][y] == j and flow['constraint_id'] == cons])
+                    if tar == 0:
+                        continue
+                    cons_dt.append({cons: {
+                        "source": i,
+                        "target": j,
+                        "num": tar
+                    }})
+            cur_conses.append(cons_dt)
+        cur_data = {
+            "source_attr": x,
+            "target_attr": y,
+            "background": back_ground,
+            "constraints": cur_conses
+        }
+        sankey_data.append(cur_data)
+
     ret = {
         "status": "success",
         "data": {
@@ -330,10 +374,16 @@ def getModelData(request):
             "axis_order": axis_order,
             "proportion_data": proportion_data,
             "flow_data": flow_data,
-            "matrix_data": matrix_data.tolist()
+            "matrix_data": matrix_data.tolist(),
+            "sankey_data": sankey_data
         }
     }
     return HttpResponse(json.dumps(ret))
+
+
+def getSankeyData(request):
+
+    pass
 
 
 def setPattern(request):
