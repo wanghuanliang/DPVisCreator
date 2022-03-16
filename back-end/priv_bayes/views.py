@@ -344,7 +344,7 @@ def getModelData(request):
                     "target": j,
                     "num": tar
                 })
-        cur_conses = []
+        cur_conses = {}
         for cons in conses:
             cons_dt = []
             for i in range(x_len):
@@ -353,12 +353,12 @@ def getModelData(request):
                                flow['pos'][x] == i and flow['pos'][y] == j and flow['constraint_id'] == cons])
                     if tar == 0:
                         continue
-                    cons_dt.append({cons: {
+                    cons_dt.append({
                         "source": i,
                         "target": j,
                         "num": tar
-                    }})
-            cur_conses.append(cons_dt)
+                    })
+            cur_conses[cons] = cons_dt
         cur_data = {
             "source_attr": x,
             "target_attr": y,
@@ -374,7 +374,8 @@ def getModelData(request):
             "axis_order": axis_order,
             "proportion_data": proportion_data,
             "flow_data": flow_data,
-            "matrix_data": matrix_data.tolist(),
+            "constraints": conses,
+            "matrix_data": ((matrix_data - np.min(matrix_data)) / (np.max(matrix_data) - np.min(matrix_data))).tolist(),
             "sankey_data": sankey_data
         }
     }
