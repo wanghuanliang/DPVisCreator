@@ -149,7 +149,7 @@ export default class DataChart extends Component {
       this.generateData();
     });
     this.chart.on("click", (params) => {
-      if (this.props.type === "bar") {
+      if (this.props.type === "bar" && this.props.name === "original-chart") {
         if (this.selectBar[params.data[0]])
           delete this.selectBar[params.data[0]];
         else
@@ -201,9 +201,11 @@ export default class DataChart extends Component {
       },
       toolbox: {
         feature: {
-          dataZoom: {},
           brush: {
-            type: ["rect", "polygon", "clear"],
+            type:
+              this.props.name === "protected-chart"
+                ? []
+                : ["rect", "polygon", "clear"],
           },
         },
       },
@@ -243,9 +245,9 @@ export default class DataChart extends Component {
       grid,
       toolbox: {
         feature: {
-          dataZoom: {},
           brush: {
-            type: ["lineX", "clear"],
+            type:
+              this.props.name === "protected-chart" ? [] : ["lineX", "clear"],
           },
         },
       },
@@ -284,9 +286,7 @@ export default class DataChart extends Component {
         },
       },
       toolbox: {
-        feature: {
-          dataZoom: {},
-        },
+        feature: {},
       },
       calculable: true,
       legend: {

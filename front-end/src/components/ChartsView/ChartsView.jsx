@@ -4,6 +4,7 @@ import ChartMenu from "./ChartMenu";
 import ChartDisplay from "./ChartDisplay";
 import ConstraintSelect from "./Datachart/ConstraintSelect";
 import { chart_constraint, constraint_chart } from "./constants";
+import Title from "antd/lib/typography/Title";
 class ChartsView extends Component {
   constructor(props) {
     super(props);
@@ -37,19 +38,16 @@ class ChartsView extends Component {
       x_axis: settings.x_axis,
       y_axis: settings.y_axis,
       color: settings.color,
+      x_step: settings.x_step,
       params: {
         fitting: settings.fitting ? settings.fitting : 2,
       },
     };
     this.getData("original", this.props.original_data, constraint);
-    this.getData(
-      "protected",
-      this.props.protected_data || this.props.original_data,
-      constraint
-    );
+    this.getData("protected", this.props.original_data, constraint);
   }
   getData(type, type_data, constraint) {
-    const [x, y, computation, color, fitting, chartType] = [
+    const [x, y, computation, color, fitting, chartType, step] = [
       this.props.attribute_character[constraint.x_axis],
       constraint.y_axis
         ? this.props.attribute_character[constraint.y_axis]
@@ -60,15 +58,26 @@ class ChartsView extends Component {
         : { attribute_type: "Dimensions", values: ["default"] },
       null,
       constraint_chart[constraint.type],
+      constraint.x_step,
     ];
     const dataset = [];
     if (computation !== null) {
       const range = [];
-      type_data.forEach((data) => {
-        if (!range.includes(data[constraint.x_axis])) {
-          range.push(data[constraint.x_axis]);
+      if (isNaN(step)) {
+        type_data.forEach((data) => {
+          if (!range.includes(data[constraint.x_axis])) {
+            range.push(data[constraint.x_axis]);
+          }
+        });
+        range.push(this.props.attribute_character[constraint.x_axis].max + 1);
+        range.sort((a, b) => a - b);
+      } else {
+        let { min, max } = this.props.attribute_character[constraint.x_axis];
+        for (let i = min; i <= max + step; i += step) {
+          range.push(i);
         }
-      });
+      }
+      console.log(range);
       const cart = []; // 笛卡尔积
       range.forEach((value) => {
         color.values.forEach((colorName) => {
@@ -78,32 +87,47 @@ class ChartsView extends Component {
           });
         });
       });
-      cart.forEach((condition) => {
+      for (let i = 0; i < cart.length - 1; i++) {
+        let current = cart[i];
+        let next = cart[i + 1];
         let sum = 0;
         const arr = type_data.filter(
           (data) =>
-            data[constraint.x_axis] === condition.value &&
-            (condition.color === "default" ||
-              condition.color === data[constraint.color])
+            data[constraint.x_axis] >= current.value &&
+            data[constraint.x_axis] < next.value &&
+            (current.color === "default" ||
+              current.color === data[constraint.color])
         );
         arr.forEach((element) => (sum += element[constraint.y_axis]));
         dataset.push([
-          condition.value,
+          current.value,
           computation === "count"
             ? arr.length
             : sum / (arr.length === 0 ? 1 : arr.length),
-          condition.color,
+          current.color,
           arr.map((element) => element.index),
         ]);
-      });
+      }
     } else {
       type_data.forEach((data) => {
-        dataset.push([
-          data[constraint.x_axis],
-          data[constraint.y_axis],
-          constraint.color ? data[constraint.color] : "default",
-          data.index,
-        ]);
+        if (isNaN(step)) {
+          dataset.push([
+            data[constraint.x_axis],
+            data[constraint.y_axis],
+            constraint.color ? data[constraint.color] : "default",
+            data.index,
+          ]);
+        } else {
+          dataset.push([
+            data[constraint.x_axis] -
+              ((data[constraint.x_axis] -
+                this.props.attribute_character[constraint.x_axis].min) %
+                step),
+            data[constraint.y_axis],
+            constraint.color ? data[constraint.color] : "default",
+            data.index,
+          ]);
+        }
       });
     }
     if (chartType === "line" || chartType === "scatter")
@@ -176,6 +200,9 @@ class ChartsView extends Component {
         <ChartMenu
           attributes={this.props.attribute_character || {}}
           initConstraint={(settings) => this.initConstraint(settings)}
+          removeConstraint={() =>
+            this.removeConstraint(this.state.original_constraint)
+          }
           insertConstraint={() =>
             this.insertConstraint(this.state.original_constraint)
           }
@@ -202,6 +229,9 @@ class ChartsView extends Component {
               this.selectConstraint("original", index)
             }
           ></ConstraintSelect>
+        </Col>
+        <Col span={24}>
+          <Title level={5}>Pattern Comparison</Title>
         </Col>
         <Col span={18}>
           <ChartDisplay

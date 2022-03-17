@@ -10,24 +10,18 @@ export default class ConstraintSelect extends Component {
   }
   render() {
     return (
-      <Space direction="vertical">
+      <Space direction="horizontal">
         {this.props.constraints.map((constraint, index) => (
-          <Space direction="horizontal" key={"constraint-" + constraint.id}>
+          <Space
+            direction="horizontal"
+            key={"constraint-select-" + constraint.id}
+          >
             {constraint.id}
             <Button
               value={constraint.id}
-              key={"constraint-edit-" + constraint.id}
               icon={<EditOutlined />}
               onClick={() => {
                 this.selectConstraint(index);
-              }}
-            ></Button>
-            <Button
-              value={constraint.id}
-              key={"constraint-delete-" + constraint.id}
-              icon={<RestOutlined />}
-              onClick={() => {
-                this.removeConstraint(index);
               }}
             ></Button>
           </Space>
