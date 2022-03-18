@@ -10,13 +10,21 @@ const lineTotalHeight = height - 20;
 const lineWidth = 20; // 每根柱子的宽度
 const intervalTotalHeight = 20; // 柱子间总间隔相同
 
+const constraints = [{
+  id: 'C0',
+  type: 'cluster',
+}, {
+  id: 'C2',
+  type: 'order'
+}];
+
 const SankeyPlot = (props) => {
   const {
     totalNum,
     axisOrder,
     proportionData,
     sankeyData,
-    constraints,
+    // constraints,
   } = props;
 
   // xScale
@@ -54,7 +62,10 @@ const SankeyPlot = (props) => {
   const [backgroundSankeyPos, constraintsSankeyPos] = useMemo(() => {
     const backgroundSankeyPos = [];
     const constraintsSankeyPos = {};
-    constraints.forEach(constraintId => constraintsSankeyPos[constraintId] = []);
+    constraints.forEach(constraint => {
+      const constraintId = constraint.id;
+      constraintsSankeyPos[constraintId] = []
+    });
     // 遍历每一个间隔
     sankeyData.forEach(obj => {
       const x1 = xScale(obj.source_attr) + lineWidth; // source x坐标
@@ -98,7 +109,8 @@ const SankeyPlot = (props) => {
         targetStartPos[sankey.target] += sankeyHeight;
       })
       // 遍历每一个间隔内的约束桑基
-      constraints.forEach(constraintId => {
+      constraints.forEach(constraint => {
+        const constraintId = constraint.id;
         obj.constraints[constraintId].forEach(sankey => {
           // 计算每个点坐标
           const sankeyHeight = sankey.num / totalNum * lineTotalHeight; // 一条sankey高度
