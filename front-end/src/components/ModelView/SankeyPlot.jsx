@@ -1,418 +1,211 @@
-import React, { useEffect } from 'react';
+import React, { memo, useMemo } from 'react';
 import * as d3 from 'd3';
-import './SankeyPlot.less';
-import { originalData } from '../../data/originalData';
 
-const d3Sankey = function() {
-  var sankey = {},
-      nodeWidth = 24,
-      nodePadding = 8,
-      size = [1, 1],
-      nodes = [],
-      links = [];
+const svgWidth = 700, svgHeight = 540;
+const margin = { top: 80, right: 50, bottom: 30, left: 60 };
+const width = svgWidth - margin.left - margin.right,
+  height = svgHeight - margin.top - margin.bottom;
 
-  sankey.nodeWidth = function(_) {
-    if (!arguments.length) return nodeWidth;
-    nodeWidth = +_;
-    return sankey;
-  };
-
-  sankey.nodePadding = function(_) {
-    if (!arguments.length) return nodePadding;
-    nodePadding = +_;
-    return sankey;
-  };
-
-  sankey.nodes = function(_) {
-    if (!arguments.length) return nodes;
-    nodes = _;
-    return sankey;
-  };
-
-  sankey.links = function(_) {
-    if (!arguments.length) return links;
-    links = _;
-    return sankey;
-  };
-
-  sankey.size = function(_) {
-    if (!arguments.length) return size;
-    size = _;
-    return sankey;
-  };
-
-  sankey.layout = function(iterations) {
-    computeNodeLinks();
-    computeNodeValues();
-    computeNodeBreadths();
-    computeNodeDepths(iterations);
-    computeLinkDepths();
-    return sankey;
-  };
-
-  sankey.relayout = function() {
-    computeLinkDepths();
-    return sankey;
-  };
-
-  sankey.link = function() {
-    var curvature = .5;
-
-    function link(d) {
-      var x0 = d.source.x + d.source.dx,
-          x1 = d.target.x,
-          xi = d3.interpolateNumber(x0, x1),
-          x2 = xi(curvature),
-          x3 = xi(1 - curvature),
-          y0 = d.source.y + d.sy + d.dy / 2,
-          y1 = d.target.y + d.ty + d.dy / 2;
-      return "M" + x0 + "," + y0
-           + "C" + x2 + "," + y0
-           + " " + x3 + "," + y1
-           + " " + x1 + "," + y1;
-    }
-
-    link.curvature = function(_) {
-      if (!arguments.length) return curvature;
-      curvature = +_;
-      return link;
-    };
-
-    return link;
-  };
-
-  // Populate the sourceLinks and targetLinks for each node.
-  // Also, if the source and target are not objects, assume they are indices.
-  function computeNodeLinks() {
-    nodes.forEach(function(node) {
-      node.sourceLinks = [];
-      node.targetLinks = [];
-    });
-    links.forEach(function(link) {
-      var source = link.source,
-          target = link.target;
-      if (typeof source === "number") source = link.source = nodes[link.source];
-      if (typeof target === "number") target = link.target = nodes[link.target];
-      source.sourceLinks.push(link);
-      target.targetLinks.push(link);
-    });
-  }
-
-  // Compute the value (size) of each node by summing the associated links.
-  function computeNodeValues() {
-    nodes.forEach(function(node) {
-      node.value = Math.max(
-        d3.sum(node.sourceLinks, value),
-        d3.sum(node.targetLinks, value)
-      );
-    });
-  }
-
-  // Iteratively assign the breadth (x-position) for each node.
-  // Nodes are assigned the maximum breadth of incoming neighbors plus one;
-  // nodes with no incoming links are assigned breadth zero, while
-  // nodes with no outgoing links are assigned the maximum breadth.
-  function computeNodeBreadths() {
-    var remainingNodes = nodes,
-        nextNodes,
-        x = 0;
-
-    while (remainingNodes.length) {
-      nextNodes = [];
-      remainingNodes.forEach(function(node) {
-        node.x = x;
-        node.dx = nodeWidth;
-        node.sourceLinks.forEach(function(link) {
-          if (nextNodes.indexOf(link.target) < 0) {
-            nextNodes.push(link.target);
-          }
-        });
-      });
-      remainingNodes = nextNodes;
-      ++x;
-    }
-
-    //
-    moveSinksRight(x);
-    scaleNodeBreadths((size[0] - nodeWidth) / (x - 1));
-  }
-
-  function moveSourcesRight() {
-    nodes.forEach(function(node) {
-      if (!node.targetLinks.length) {
-        node.x = d3.min(node.sourceLinks, function(d) { return d.target.x; }) - 1;
-      }
-    });
-  }
-
-  function moveSinksRight(x) {
-    nodes.forEach(function(node) {
-      if (!node.sourceLinks.length) {
-        node.x = x - 1;
-      }
-    });
-  }
-
-  function scaleNodeBreadths(kx) {
-    nodes.forEach(function(node) {
-      node.x *= kx;
-    });
-  }
-
-  function computeNodeDepths(iterations) {
-    var nodesByBreadth = d3.nest()
-        .key(function(d) { return d.x; })
-        .sortKeys(d3.ascending)
-        .entries(nodes)
-        .map(function(d) { return d.values; });
-
-    //
-    initializeNodeDepth();
-    resolveCollisions();
-    for (var alpha = 1; iterations > 0; --iterations) {
-      relaxRightToLeft(alpha *= .99);
-      resolveCollisions();
-      relaxLeftToRight(alpha);
-      resolveCollisions();
-    }
-
-    function initializeNodeDepth() {
-      var ky = d3.min(nodesByBreadth, function(nodes) {
-        return (size[1] - (nodes.length - 1) * nodePadding) / d3.sum(nodes, value);
-      });
-
-      nodesByBreadth.forEach(function(nodes) {
-        nodes.forEach(function(node, i) {
-          node.y = i;
-          node.dy = node.value * ky;
-        });
-      });
-
-      links.forEach(function(link) {
-        link.dy = link.value * ky;
-      });
-    }
-
-    function relaxLeftToRight(alpha) {
-      nodesByBreadth.forEach(function(nodes, breadth) {
-        nodes.forEach(function(node) {
-          if (node.targetLinks.length) {
-            var y = d3.sum(node.targetLinks, weightedSource) / d3.sum(node.targetLinks, value);
-            node.y += (y - center(node)) * alpha;
-          }
-        });
-      });
-
-      function weightedSource(link) {
-        return center(link.source) * link.value;
-      }
-    }
-
-    function relaxRightToLeft(alpha) {
-      nodesByBreadth.slice().reverse().forEach(function(nodes) {
-        nodes.forEach(function(node) {
-          if (node.sourceLinks.length) {
-            var y = d3.sum(node.sourceLinks, weightedTarget) / d3.sum(node.sourceLinks, value);
-            node.y += (y - center(node)) * alpha;
-          }
-        });
-      });
-
-      function weightedTarget(link) {
-        return center(link.target) * link.value;
-      }
-    }
-
-    function resolveCollisions() {
-      nodesByBreadth.forEach(function(nodes) {
-        var node,
-            dy,
-            y0 = 0,
-            n = nodes.length,
-            i;
-
-        // Push any overlapping nodes down.
-        nodes.sort(ascendingDepth);
-        for (i = 0; i < n; ++i) {
-          node = nodes[i];
-          dy = y0 - node.y;
-          if (dy > 0) node.y += dy;
-          y0 = node.y + node.dy + nodePadding;
-        }
-
-        // If the bottommost node goes outside the bounds, push it back up.
-        dy = y0 - nodePadding - size[1];
-        if (dy > 0) {
-          y0 = node.y -= dy;
-
-          // Push any overlapping nodes back up.
-          for (i = n - 2; i >= 0; --i) {
-            node = nodes[i];
-            dy = node.y + node.dy + nodePadding - y0;
-            if (dy > 0) node.y -= dy;
-            y0 = node.y;
-          }
-        }
-      });
-    }
-
-    function ascendingDepth(a, b) {
-      return a.y - b.y;
-    }
-  }
-
-  function computeLinkDepths() {
-    nodes.forEach(function(node) {
-      node.sourceLinks.sort(ascendingTargetDepth);
-      node.targetLinks.sort(ascendingSourceDepth);
-    });
-    nodes.forEach(function(node) {
-      var sy = 0, ty = 0;
-      node.sourceLinks.forEach(function(link) {
-        link.sy = sy;
-        sy += link.dy;
-      });
-      node.targetLinks.forEach(function(link) {
-        link.ty = ty;
-        ty += link.dy;
-      });
-    });
-
-    function ascendingSourceDepth(a, b) {
-      return a.source.y - b.source.y;
-    }
-
-    function ascendingTargetDepth(a, b) {
-      return a.target.y - b.target.y;
-    }
-  }
-
-  function center(node) {
-    return node.y + node.dy / 2;
-  }
-
-  function value(link) {
-    return link.value;
-  }
-
-  return sankey;
-};
+const lineTotalHeight = height - 20;
+const lineWidth = 20; // 每根柱子的宽度
+const intervalTotalHeight = 20; // 柱子间总间隔相同
 
 const SankeyPlot = (props) => {
+  const {
+    totalNum,
+    axisOrder,
+    proportionData,
+    sankeyData,
+    constraints,
+  } = props;
 
-  const data = {
-    "nodes":[
-    {"node":0,"name":"node0"},
-    {"node":1,"name":"node1"},
-    {"node":2,"name":"node2"},
-    {"node":3,"name":"node3"},
-    {"node":4,"name":"node4"}
-    ],
-    "links":[
-    {"source":0,"target":2,"value":2},
-    {"source":1,"target":2,"value":2},
-    {"source":1,"target":3,"value":2},
-    {"source":0,"target":4,"value":2},
-    {"source":2,"target":3,"value":2},
-    {"source":2,"target":4,"value":2},
-    {"source":3,"target":4,"value":4}
-    ]}
-  // set the dimensions and margins of the graph
-  var margin = {top: 10, right: 10, bottom: 10, left: 10},
-  width = 450 - margin.left - margin.right,
-  height = 480 - margin.top - margin.bottom;
+  // xScale
+  const xScale = useMemo(() => {
+    return d3.scalePoint()
+      .domain(Object.keys(proportionData))
+      .range([0, width]);
+  }, [proportionData])
 
-  useEffect(() => {
-    // append the svg object to the body of the page
-      var svg = d3.select("#my_dataviz").append("svg")
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + margin.bottom)
-      .append("g")
-      .attr("transform",
-            "translate(" + margin.left + "," + margin.top + ")");
+  // linePos {charges: [{start: 0  height: 100}, {}, {}]}
+  // currentStartPos {charges: [0, 0, 0, 0], bmi: [,,,]}
+  const [linePos, currentStartPos] = useMemo(() => {
+    let linePos = {}, currentStartPos = {};
+    axisOrder.forEach(attr => {
+      linePos[attr] = [];
+      currentStartPos[attr] = [];
+      let start = 0;
+      // 间隔高度
+      let intervalHeight = proportionData[attr].length > 1 ?
+        intervalTotalHeight / (proportionData[attr].length - 1) : 0;
+      
+      proportionData[attr].forEach(obj=> {
+        let num = obj.num;
+        let height = num / totalNum * lineTotalHeight;
+        linePos[attr].push({ start: start, height: height })
+        currentStartPos[attr].push(start);
+        start += height + intervalHeight;
+      })
+    })
+    return [linePos, currentStartPos];
+  }, [proportionData, totalNum, axisOrder])
 
-      // Color scale used
-      var color = d3.scaleOrdinal(d3.schemeCategory10);
+  // backgroundSankeyPos: [d, d, d, d, d......]
+  // constraintsSankeyPos: {c1: [d, d, d, d......], c2: [d, d, d, d......]}
+  const [backgroundSankeyPos, constraintsSankeyPos] = useMemo(() => {
+    const backgroundSankeyPos = [];
+    const constraintsSankeyPos = {};
+    constraints.forEach(constraintId => constraintsSankeyPos[constraintId] = []);
+    // 遍历每一个间隔
+    sankeyData.forEach(obj => {
+      const x1 = xScale(obj.source_attr) + lineWidth; // source x坐标
+      const x2 = xScale(obj.target_attr); // target x坐标
+      // 当前每根小柱子起点坐标 [, , ,] [, , ,], 每个间隔初始化为0, 深拷贝
+      const sourceStartPos = [...currentStartPos[obj.source_attr]];
+      const targetStartPos = [...currentStartPos[obj.target_attr]];
+      // y二维数组，source的i，target的j对应的起始坐标
+      const sourceLength = proportionData[obj.source_attr].length;
+      const targetLength = proportionData[obj.target_attr].length;
+      const ySource = new Array(sourceLength).fill().map(() => new Array(targetLength).fill(0));
+      const yTarget = new Array(sourceLength).fill().map(() => new Array(targetLength).fill(0));
+      // 遍历每一个间隔内的背景桑基
+      obj.background.forEach(sankey => {
+        // 计算每个点的坐标
+        const sankeyHeight = sankey.num / totalNum * lineTotalHeight; // 一条sankey高度
+        // const x1 = x1;
+        const y1 = sourceStartPos[sankey.source];
+        // const x2 = x2;
+        const y2 = targetStartPos[sankey.target];
+        const x3 = x2;
+        const y3 = y2 + sankeyHeight;
+        const x4 = x1;
+        const y4 = y1 + sankeyHeight;
+        const p = d3.path();
+        p.moveTo(x1, y1);
+        // p.lineTo(x2, y2);
+        // 二次贝塞尔
+        p.bezierCurveTo((x1 + x2) / 2, y1, (x1 + x2) / 2, y2, x2, y2);
+        p.lineTo(x3, y3);
+        // p.lineTo(x4, y4);
+        // 二次贝塞尔
+        p.bezierCurveTo((x3 + x4) / 2, y3, (x3 + x4) / 2, y4, x4, y4);
+        p.closePath();
+        backgroundSankeyPos.push(p._);
+        // 更新y二维数组, 记录每根sankey位置
+        ySource[sankey.source][sankey.target] = y1;
+        yTarget[sankey.source][sankey.target] = y2;
+        // 更新每根小柱子下一个起点
+        sourceStartPos[sankey.source] += sankeyHeight;
+        targetStartPos[sankey.target] += sankeyHeight;
+      })
+      // 遍历每一个间隔内的约束桑基
+      constraints.forEach(constraintId => {
+        obj.constraints[constraintId].forEach(sankey => {
+          // 计算每个点坐标
+          const sankeyHeight = sankey.num / totalNum * lineTotalHeight; // 一条sankey高度
+          // const x1 = x1;
+          const y1 = ySource[sankey.source][sankey.target];
+          // const x2 = x2;
+          const y2 = yTarget[sankey.source][sankey.target];
+          const x3 = x2;
+          const y3 = y2 + sankeyHeight;
+          const x4 = x1;
+          const y4 = y1 + sankeyHeight;
+          const p = d3.path();
+          p.moveTo(x1, y1);
+          // p.lineTo(x2, y2);
+          // 二次贝塞尔
+          p.bezierCurveTo((x1 + x2) / 2, y1, (x1 + x2) / 2, y2, x2, y2);
+          p.lineTo(x3, y3);
+          // p.lineTo(x4, y4);
+          // 二次贝塞尔
+          p.bezierCurveTo((x3 + x4) / 2, y3, (x3 + x4) / 2, y4, x4, y4);
+          p.closePath();
+          constraintsSankeyPos[constraintId].push(p._);
+        })
+      })
+    })
 
-      // Set the sankey diagram properties
-      var sankey = d3Sankey()
-      .nodeWidth(36)
-      .nodePadding(290)
-      .size([width, height]);
+    return [backgroundSankeyPos, constraintsSankeyPos];
+  }, [sankeyData, proportionData, currentStartPos, totalNum, xScale, constraints])
 
-      // load the data
-      d3.json("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/data_sankey.json", function(error, graph) {
-
-      // Constructs a new Sankey generator with the default settings.
-      sankey
-        .nodes(graph.nodes)
-        .links(graph.links)
-        .layout(1);
-
-      // add in the links
-      var link = svg.append("g")
-      .selectAll(".link")
-      .data(graph.links)
-      .enter()
-      .append("path")
-        .attr("class", "link")
-        .attr("d", sankey.link() )
-        .style("stroke-width", function(d) { return Math.max(1, d.dy); })
-        .sort(function(a, b) { return b.dy - a.dy; });
-
-      // add in the nodes
-      var node = svg.append("g")
-      .selectAll(".node")
-      .data(graph.nodes)
-      .enter().append("g")
-        .attr("class", "node")
-        .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
-        .call(d3.drag()
-          .subject(function(d) { return d; })
-          .on("start", function() { this.parentNode.appendChild(this); })
-          .on("drag", dragmove));
-
-      // add the rectangles for the nodes
-      node
-      .append("rect")
-        .attr("height", function(d) { return d.dy; })
-        .attr("width", sankey.nodeWidth())
-        .style("fill", function(d) { return d.color = color(d.name.replace(/ .*/, "")); })
-        .style("stroke", function(d) { return d3.rgb(d.color).darker(2); })
-      // Add hover text
-      .append("title")
-        .text(function(d) { return d.name + "\n" + "There is " + d.value + " stuff in this node"; });
-
-      // add in the title for the nodes
-      node
-        .append("text")
-          .attr("x", -6)
-          .attr("y", function(d) { return d.dy / 2; })
-          .attr("dy", ".35em")
-          .attr("text-anchor", "end")
-          .attr("transform", null)
-          .text(function(d) { return d.name; })
-        .filter(function(d) { return d.x < width / 2; })
-          .attr("x", 6 + sankey.nodeWidth())
-          .attr("text-anchor", "start");
-
-      // the function for moving the nodes
-      function dragmove(d) {
-      d3.select(this)
-        .attr("transform",
-              "translate("
-                + d.x + ","
-                + (d.y = Math.max(
-                    0, Math.min(height - d.dy, d3.event.y))
-                  ) + ")");
-      sankey.relayout();
-      link.attr("d", sankey.link() );
-      }
-      });
-    return () => svg.remove()
-  })
-  
-  return <div id='my_dataviz'></div>
+  return (
+    <svg width={svgWidth} height={svgHeight}>
+      <g transform={`translate(${margin.left}, ${margin.top})`}>
+        {/* 背景桑基 */}
+        <g key="background">
+          {
+            backgroundSankeyPos.map((d, i) => {
+              let color = "#ccc";
+              return <path
+                key={i}
+                d={d}
+                fill={color}
+                fillOpacity={0.3}
+                // stroke="#333"
+                // strokeOpacity={0.5}
+              ></path>
+            })
+          }
+        </g>
+        {/* 约束桑基 */}
+        {
+          Object.keys(constraintsSankeyPos).map((constraintId, i) => {
+            let colorArray = ['#d0c7df', '#e0cdc1'];
+            let color = colorArray[i];
+            // if (i === 1) return;
+            return <g key={constraintId}>
+              {
+                constraintsSankeyPos[constraintId].map((d, i) => {
+                  // let color = "#000";
+                  return <path
+                    key={i}
+                    d={d}
+                    fill={color}
+                    fillOpacity={0.6}
+                    stroke="#333"
+                    strokeOpacity={0.3}
+                  ></path>
+                })
+              }
+            </g>
+          })
+        }
+        {/* 绘制柱子 */}
+        {
+          Object.keys(linePos).map(attr => {
+            const x = xScale(attr);
+            return <g key={attr + '-axis'}>
+              <text
+                x={x}
+                y={lineTotalHeight+intervalTotalHeight}
+                textAnchor='middle'
+                dx={lineWidth / 2}
+                dy={20}
+                fontSize={16}
+              >{attr}</text>
+              {/* 绘制每段柱子 */}
+              {
+                linePos[attr].map(info => {
+                  const y = info.start;
+                  const height = info.height;
+                  return <rect
+                    key={attr+info.start}
+                    x={x}
+                    y={y}
+                    width={lineWidth}
+                    height={height}
+                    fill='#fff'
+                    stroke='#333'
+                  ></rect>
+                })
+              }
+            </g>
+          })
+        }
+        
+      </g>
+    </svg>
+  )
 }
 
 export default SankeyPlot;

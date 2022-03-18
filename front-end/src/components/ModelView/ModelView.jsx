@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import './ModalView.less';
+import './ModelView.less';
 import { Switch, Slider, InputNumber, Row, Col, Space, Button } from 'antd';
 import { CheckCircleOutlined, RightOutlined, CheckOutlined } from '@ant-design/icons';
 import * as d3 from 'd3'
@@ -8,14 +8,32 @@ import BayesianNetwork from './BayesianNetwork/BayyesianNetWork';
 import ParallelPlot from './ParallelPlot';
 import SankeyPlot from './SankeyPlot';
 import Matrix from './Matrix';
+import Legend from './Legend';
 import AlluvialPlot from './AlluvialPlot';
 import { debounce } from 'lodash';
 
 const patternData = ["c1", "c2", "c3"]
+const [svgWidth, svgHeight] = [1118, 540];
+const margin = {
+  left: 0,
+  top: 50,
+  right: 0,
+  bottom: 0
+}
+const [startColor, endColor] = ['#c4ccdf', '#436b92']
+const computeColor = d3.interpolate(startColor, endColor);
 
-const ModalView = (props) => {
-  const { setWeights, modalData } = props;
-  const { totalNum, proportionData, flowData } = modalData;
+const ModelView = (props) => {
+  const { setWeights, modelData } = props;
+  const {
+    total_num: totalNum,
+    axis_order: axisOrder,
+    proportion_data: proportionData,
+    flow_data: flowData,
+    constraints,
+    matrix_data: matrixData,
+    sankey_data: sankeyData,
+  } = modelData;
 
   const [privacyBudgetValue, setPrivacyBudget] = useState(0.8);
   const initialPatternWeight = useMemo(() => {
@@ -74,9 +92,9 @@ const ModalView = (props) => {
   }
 
   // 渲染上部控制面板
-  const renderModalControlPanel = () => {
+  const renderModelControlPanel = () => {
     return (
-      <div className="modal-control-panel">
+      <div className="model-control-panel">
         <Space>
           <span>Privacy Budget</span>
           <Slider
@@ -114,37 +132,10 @@ const ModalView = (props) => {
     )
   }
 
-  // const renderFlowChart = () => {
-  //   return (
-  //     <div className="flow-path">
-  //       <span>
-  //         {/* <CheckOutlined style={{color: '#000'}}/> */}
-  //       <CheckCircleOutlined style={{width:30, height: 30}}/>
-  //       Constraints
-  //       </span>
-  //       <span><RightOutlined /></span>
-  //       <span>
-  //         <CheckCircleOutlined style={{width:30, height: 30}}/>
-  //         Structure
-  //       </span>
-  //       <span><RightOutlined /></span>
-  //       <span>
-  //         <CheckCircleOutlined style={{width:30, height: 30}}/>
-  //         Parameter
-  //       </span>
-  //       <span><RightOutlined /></span>
-  //       <span>
-  //         <CheckCircleOutlined style={{width:30, height: 30}}/>
-  //       Sampling
-  //       </span>
-  //     </div>
-  //   )
-  // }
-
   return (
     <div>
-      {renderModalControlPanel()}
-      <Space>
+      {renderModelControlPanel()}
+      {/* <Space>
         {patternData.map(id => {
 
           return <InputNumber
@@ -161,22 +152,53 @@ const ModalView = (props) => {
             }}
           ></InputNumber>
         })}
-      </Space>
-      {/* {renderFlowChart} */}
-      <div style={{display:'flex'}}>
+      </Space> */}
+      {/* 一个大的svg放置小svg */}
+      {modelData && <svg width={svgWidth} height={svgHeight}>
+        <Matrix
+          constraints={constraints}
+          matrixData={matrixData}
+          computeColor={computeColor}
+        ></Matrix>
+        <g transform='translate(400,0)'>
+          <SankeyPlot
+            totalNum={totalNum}
+            axisOrder={axisOrder}
+            proportionData={proportionData}
+            sankeyData={sankeyData}
+            constraints={constraints}
+          ></SankeyPlot>
+        </g>
+        <g transform='translate(50, 480)'>
+          <Legend
+            computeColor={computeColor}
+          ></Legend>
+        </g>
         {/* <ClockBlock></ClockBlock> */}
         {/* <BayesianNetwork></BayesianNetwork> */}
         {/* <SankeyPlot></SankeyPlot> */}
-        <Matrix></Matrix>
         {/* <ParallelPlot></ParallelPlot> */}
-        <AlluvialPlot
+      </svg>}
+      {/* {modelData && <div style={{display:'flex'}}>
+        <Matrix
+          matrixData={matrixData}
+        ></Matrix>
+        {/* <AlluvialPlot
           totalNum={totalNum}
+          axisOrder={axisOrder}
           proportionData={proportionData}
           flowData={flowData}
-        ></AlluvialPlot>
-      </div>
+        ></AlluvialPlot> */}
+        {/* <SankeyPlot
+          totalNum={totalNum}
+          axisOrder={axisOrder}
+          proportionData={proportionData}
+          sankeyData={sankeyData}
+          constraints={constraints}
+        ></SankeyPlot>
+      </div>} */}
     </div>
   );
 };
 
-export default ModalView;
+export default ModelView;
