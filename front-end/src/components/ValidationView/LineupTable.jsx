@@ -123,13 +123,11 @@ const LineupTable = (props) => {
   ];
 
   return (
-    <div>
-        <Table
-          columns={columns}
-          pagination={false}
-          dataSource={data}
-        />
-    </div>
+    <Table
+      columns={columns}
+      pagination={false}
+      dataSource={data}
+    />
   )
 }
 
