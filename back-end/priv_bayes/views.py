@@ -3,6 +3,7 @@ import json
 import copy
 import pandas as pd
 import numpy as np
+from priv_bayes.kl import KLdivergence
 from django.http import HttpResponse
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
@@ -222,6 +223,7 @@ def getConstrainedResponse(request, flag=False):
 def getModelData(request):
     global constraints
     cur_df = copy.deepcopy(ORI_DATA)
+    kl_df = copy.deepcopy(ORI_DATA)
     DEFAULT_CATEGORIES = 3
     slice_methods = json.loads(request.body).get('slice_methods')
     axis_order = []
@@ -238,6 +240,8 @@ def getModelData(request):
         if axis not in Measures:    # 不是数值型的数据，不需要离散化
             new_df[axis] = ORI_DATA[axis]
             continue
+        # 根据K-Means和elbow_method去选择合适的切分份数
+
         categories = slice_methods.get(axis)
         if categories is None:  # 未提供切分份数
             categories = DEFAULT_CATEGORIES
@@ -246,7 +250,27 @@ def getModelData(request):
         cut_points[-1] += 1e-10  # 最后一个分位点加一个微小的偏移量
         new_df[axis] = pd.cut(ORI_DATA[axis], cut_points, right=False)
     cur_df['index'] = range(len(cur_df))
+    kl_df['index'] = range(len(kl_df))
+    for dim in Dimensions:
+        if ORI_DATA[dim].dtype == object:  # string类型，重新编码
+            vals = np.unique(ORI_DATA[dim]).tolist()
+            value_to_bin_idx = {value: idx for idx, value in enumerate(vals)}
+            kl_df[dim] = kl_df[dim].map(lambda x: value_to_bin_idx[x], na_action='ignore')
     cur_df['constraint'] = "empty"
+    num_of_constraints = len(constraints)
+    matrix_data = np.zeros((num_of_constraints, num_of_constraints))
+    for i in range(num_of_constraints):
+        for j in range(num_of_constraints):
+            if i == j:
+                continue
+            data_c1 = constraints[i]['data']
+            data_c2 = constraints[j]['data']
+            data_c1_diff = list(set(data_c1).difference(set(data_c2)))
+            data_c2_diff = list(set(data_c2).difference(set(data_c1)))
+            df_c1 = kl_df.loc[kl_df['index'].isin(data_c1_diff)]
+            df_c2 = kl_df.loc[kl_df['index'].isin(data_c2_diff)]
+            matrix_data[i][j] = KLdivergence(df_c1.values.tolist(), df_c2.values.tolist())
+
     for constraint in constraints:
         cur_df.loc[cur_df['index'].isin(constraint['data']), 'constraint'] = constraint['id']
     new_df['count'] = 1
@@ -301,13 +325,66 @@ def getModelData(request):
         flow_data.append(cur_flow)
         idx = idx + 1
 
+    sankey_data = []
+    conses = [constraint['id'] for constraint in constraints]
+
+    for axis_id in range(len(axis_order) - 1):
+        x = axis_order[axis_id]
+        y = axis_order[axis_id + 1]
+        x_len = len(proportion_data[x])
+        y_len = len(proportion_data[y])
+        back_ground = []
+        for i in range(x_len):
+            for j in range(y_len):
+                tar = sum([flow['num'] for flow in flow_data if flow['pos'][x] == i and flow['pos'][y] == j])
+                if tar == 0:
+                    continue
+                back_ground.append({
+                    "source": i,
+                    "target": j,
+                    "num": tar
+                })
+        cur_conses = {}
+        for cons in conses:
+            cons_dt = []
+            for i in range(x_len):
+                for j in range(y_len):
+                    tar = sum([flow['num'] for flow in flow_data if
+                               flow['pos'][x] == i and flow['pos'][y] == j and flow['constraint_id'] == cons])
+                    if tar == 0:
+                        continue
+                    cons_dt.append({
+                        "source": i,
+                        "target": j,
+                        "num": tar
+                    })
+            cur_conses[cons] = cons_dt
+        cur_data = {
+            "source_attr": x,
+            "target_attr": y,
+            "background": back_ground,
+            "constraints": cur_conses
+        }
+        sankey_data.append(cur_data)
+
     ret = {
         "status": "success",
-        "axis_order": axis_order,
-        "proportion_data": proportion_data,
-        "flow_data": flow_data,
+        "data": {
+            "total_num": len(ORI_DATA),
+            "axis_order": axis_order,
+            "proportion_data": proportion_data,
+            "flow_data": flow_data,
+            "constraints": conses,
+            "matrix_data": ((matrix_data - np.min(matrix_data)) / (np.max(matrix_data) - np.min(matrix_data))).tolist(),
+            "sankey_data": sankey_data
+        }
     }
     return HttpResponse(json.dumps(ret))
+
+
+def getSankeyData(request):
+
+    pass
 
 
 def setPattern(request):
