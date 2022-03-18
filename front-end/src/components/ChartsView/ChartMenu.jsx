@@ -38,8 +38,9 @@ const chartFitnesses = [
 export default class ChartMenu extends Component {
   constructor(props) {
     super(props);
+    this.constraintParams = props.constraintParams;
     this.initConstraint = props.initConstraint;
-    this.insertConstraint = props.insertConstraint;
+    this.saveConstraint = props.saveConstraint;
     this.removeConstraint = props.removeConstraint;
     this.attributes = Object.keys(props.attributes);
     this.state = {
@@ -54,6 +55,7 @@ export default class ChartMenu extends Component {
   }
   componentDidUpdate() {
     this.attributes = Object.keys(this.props.attributes);
+    this.constraintParams = this.props.constraintParams;
   }
   checkState() {
     if (
@@ -141,6 +143,7 @@ export default class ChartMenu extends Component {
                   self.checkState
                 );
               }}
+              disabled={self.state.typeIndex < 0 ? true : false}
             >
               {getColumnSelect().map((select) => (
                 <Option value={select.index} key={"row" + select.index}>
@@ -148,10 +151,6 @@ export default class ChartMenu extends Component {
                 </Option>
               ))}
             </Select>
-          </Col>
-          <Col span={12}>Computation</Col>
-          <Col span={12}>
-            <Select size="small" placeholder="computation" disabled></Select>
           </Col>
           <Col span={12}>Step</Col>
           <Col span={12}>
@@ -182,6 +181,7 @@ export default class ChartMenu extends Component {
               onChange={(value) => {
                 self.setState({ rowTagIndex: value }, self.checkState);
               }}
+              disabled={self.state.typeIndex < 0 ? true : false}
             >
               {getRowTagSelect().map((select) => (
                 <Option value={select.index} key={"row" + select.index}>
@@ -198,6 +198,12 @@ export default class ChartMenu extends Component {
               onChange={(value) => {
                 self.setState({ rowComputeIndex: value }, self.checkState);
               }}
+              disabled={
+                self.state.typeIndex < 0 ||
+                chart_type[self.state.typeIndex] === "scatter"
+                  ? true
+                  : false
+              }
             >
               {getRowComputeSelect().map((select) => (
                 <Option value={select.index} key={"computation" + select.index}>
@@ -205,10 +211,6 @@ export default class ChartMenu extends Component {
                 </Option>
               ))}
             </Select>
-          </Col>
-          <Col span={12}>Step</Col>
-          <Col span={12}>
-            <InputNumber onChange={changeStep} size="small" disabled />
           </Col>
         </Row>
       );
@@ -227,83 +229,81 @@ export default class ChartMenu extends Component {
     }
     return (
       <>
-        <Descriptions title="Responsive Descriptions" bordered column={2}>
-          <Descriptions.Item
-            label={
-              <>
-                <DotChartOutlined />
-                Type
-              </>
-            }
-          >
-            <Select
-              size="small"
-              placeholder="Select type"
-              onChange={(value) => {
-                let state = { typeIndex: value, step: NaN };
-                if (chart_type[value] === "scatter") state.rowComputeIndex = -1;
-                if (chart_type[value] === "bar") state.colorIndex = -1;
-                self.setState(state, self.checkState);
-              }}
-            >
-              {getAvaliableCharts().map((chart) => (
-                <Option value={chart.index} key={"chart-type-" + chart.index}>
-                  {chartLabels[chart.type]}
-                </Option>
-              ))}
-            </Select>
-          </Descriptions.Item>
-          <Descriptions.Item
-            label={
-              <>
-                <BgColorsOutlined />
-                Color
-              </>
-            }
-          >
-            <Select
-              size="small"
-              placeholder="Select color"
-              onChange={(value) => {
-                self.setState({ colorIndex: value }, self.checkState);
-              }}
-            >
-              {getColorSelect().map((select) => (
-                <Option value={select.index} key={"color" + select.index}>
-                  {select.name}
-                </Option>
-              ))}
-            </Select>
-          </Descriptions.Item>
-          <Descriptions.Item
-            label={
-              <>
-                <BarsOutlined rotate={90} />
-                X-axis
-              </>
-            }
-          >
-            {getXAxisElements()}
-          </Descriptions.Item>
-          <Descriptions.Item
-            label={
-              <>
-                <BarsOutlined />
-                Y-axis
-              </>
-            }
-          >
-            {getYAxisElements()}
-          </Descriptions.Item>
-        </Descriptions>
-
+        <Col span={24}>
+          <Title level={5}>Responsive Descriptions</Title>
+        </Col>
+        <Col span={12}>
+          <Row>
+            <Col span={8}>
+              <DotChartOutlined />
+              Type
+            </Col>
+            <Col span={16}>
+              <Select
+                size="small"
+                placeholder="Select type"
+                onChange={(value) => {
+                  let state = { typeIndex: value, step: NaN };
+                  if (chart_type[value] === "scatter")
+                    state.rowComputeIndex = -1;
+                  if (chart_type[value] === "bar") state.colorIndex = -1;
+                  self.setState(state, self.checkState);
+                }}
+              >
+                {getAvaliableCharts().map((chart) => (
+                  <Option value={chart.index} key={"chart-type-" + chart.index}>
+                    {chartLabels[chart.type]}
+                  </Option>
+                ))}
+              </Select>
+            </Col>
+            <Col span={8}>
+              <BarsOutlined rotate={90} />
+              X-axis
+            </Col>
+            <Col span={16}>{getXAxisElements()}</Col>
+          </Row>
+        </Col>
+        <Col span={12}>
+          <Row>
+            <Col span={8}>
+              <BgColorsOutlined />
+              Color
+            </Col>
+            <Col span={16}>
+              <Select
+                size="small"
+                placeholder="Select color"
+                onChange={(value) => {
+                  self.setState({ colorIndex: value }, self.checkState);
+                }}
+                disabled={
+                  self.state.typeIndex < 0 ||
+                  chart_type[self.state.typeIndex] === "bar"
+                    ? true
+                    : false
+                }
+              >
+                {getColorSelect().map((select) => (
+                  <Option value={select.index} key={"color" + select.index}>
+                    {select.name}
+                  </Option>
+                ))}
+              </Select>
+            </Col>
+            <Col span={8}>
+              <BarsOutlined />
+              Y-axis
+            </Col>
+            <Col span={16}>{getYAxisElements()}</Col>
+          </Row>
+        </Col>
         <Col span={24}>
           <Title level={5}>Pattern Configuration</Title>
         </Col>
         <Col span={12}>
           <Row>
             <Col span={24}>
-              <FunctionOutlined />
               Fitting
               <Select
                 placeholder="Fit by"
@@ -319,7 +319,7 @@ export default class ChartMenu extends Component {
               </Select>
             </Col>
             <Col span={12}>
-              <Button block onClick={this.insertConstraint}>
+              <Button block onClick={this.saveConstraint}>
                 Save
               </Button>
             </Col>
@@ -330,7 +330,20 @@ export default class ChartMenu extends Component {
             </Col>
           </Row>
         </Col>
-        <Col span={12}></Col>
+        <Col span={5}>Parameters</Col>
+        <Col span={7}>
+          {this.constraintParams
+            ? Object.keys(this.constraintParams).map((key) => {
+                const str = "" + key + ":" + this.constraintParams[key];
+                return (
+                  <>
+                    {str}
+                    <br />
+                  </>
+                );
+              })
+            : ""}
+        </Col>
       </>
     );
   }

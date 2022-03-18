@@ -1,4 +1,5 @@
 import { Component } from "react";
+import * as d3 from "d3";
 import { Button, Radio, Space } from "antd";
 import { EditOutlined, RestOutlined } from "@ant-design/icons";
 export default class ConstraintSelect extends Component {
@@ -8,22 +9,27 @@ export default class ConstraintSelect extends Component {
     this.selectConstraint = props.selectConstraint;
     this.removeConstraint = props.removeConstraint;
   }
+  componentDidUpdate() {
+    this.props.constraints.forEach((constraint, index) => {
+      document
+        .getElementById("constraint-select-" + constraint.id)
+        .append(constraint.svgImage, constraint.canvasImage);
+    });
+  }
   render() {
     return (
-      <Space direction="horizontal">
+      <Space direction="vertical">
         {this.props.constraints.map((constraint, index) => (
           <Space
             direction="horizontal"
             key={"constraint-select-" + constraint.id}
+            id={"constraint-select-" + constraint.id}
+            onClick={() => {
+              console.log(constraint.id);
+              this.selectConstraint(index);
+            }}
           >
             {constraint.id}
-            <Button
-              value={constraint.id}
-              icon={<EditOutlined />}
-              onClick={() => {
-                this.selectConstraint(index);
-              }}
-            ></Button>
           </Space>
         ))}
       </Space>

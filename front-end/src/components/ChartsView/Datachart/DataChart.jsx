@@ -18,6 +18,7 @@ const globalColor = [
   "#ea7ccc",
 ];
 const chart_height = 400;
+const thumbnailHeight = 100;
 // 散点图选择之后聚类，生成椭圆 柱状图单独选择柱子 折线图生成的拟合曲线可调整宽度，纵向，背景全部调成灰色
 function getAxisOption(attribute) {
   return "Dimensions" === attributeType[attribute.attributeType]
@@ -83,7 +84,8 @@ export default class DataChart extends Component {
   }
   updateParams(params) {
     this.params = { ...this.params, ...params };
-    this.props.updateConstraintParams(this.props.constraint, this.params);
+    const constraint = { ...this.props.constraint, ...this.convertToImages() };
+    this.props.updateConstraintParams(constraint, this.params);
   }
   convertToPixel(point) {
     return this.chart.convertToPixel(
@@ -116,6 +118,24 @@ export default class DataChart extends Component {
         : values[0] + this.props.attributes[0].min,
       values[1],
     ];
+  }
+  convertToImages() {
+    const canvas = document.getElementById("canvas-" + this.props.name);
+    const canvasImage = new Image();
+    canvasImage.src = canvas.toDataURL("image/png");
+    canvasImage.width = this.width / 3;
+    canvasImage.height = thumbnailHeight;
+    canvasImage.style = "position: absolute";
+    const svgXml = this.svg.html();
+    const svgImage = new Image();
+    svgImage.setAttribute(
+      "src",
+      "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgXml)))
+    );
+    svgImage.width = this.width / 3;
+    svgImage.height = thumbnailHeight;
+    svgImage.style = "position: absolute";
+    return { canvasImage, svgImage };
   }
   componentDidMount() {
     let self = this;
@@ -165,6 +185,16 @@ export default class DataChart extends Component {
     const divDom = document.getElementById("container-" + this.props.name);
     this.width = divDom.offsetWidth;
     this.generateData();
+  }
+  getSnapshotBeforeUpdate(prevProps, prevState) {
+    if (
+      prevProps.attributes[0].name !== this.props.attributes[0].name ||
+      prevProps.attributes[1].name !== this.props.attributes[1].name ||
+      prevProps.attributes[2].name !== this.props.attributes[2].name
+    ) {
+      this.selectBar = {};
+      this.selectedSeriesData = {};
+    }
   }
   componentDidUpdate() {
     let mapper = {};
@@ -356,14 +386,14 @@ export default class DataChart extends Component {
       let [rx, ry] = self.convertToPixel([meanx + 1, meany - Math.sqrt(vary)]);
       rx = (rx - cx) * Math.sqrt(varx);
       ry -= cy;
-      rx *= 2;
-      ry *= 2;
+      rx *= 4;
+      ry *= 4;
       this.svg
         .append("ellipse")
-        .attr("fill", "#111111")
         .attr("opacity", "0.4")
+        .attr("fill", "none")
         .attr("stroke", "#111111")
-        .attr("stroke-width", 1.5)
+        .attr("stroke-width", 5)
         .attr("cx", cx)
         .attr("cy", cy)
         .attr("rx", rx)
@@ -387,24 +417,21 @@ export default class DataChart extends Component {
           const meany = ecStat.statistics.mean(ySamples);
           const vary = ecStat.statistics.sampleVariance(ySamples);
           const [cx, cy] = self.convertToPixel([meanx, meany]);
-          let [rx, ry] = self.convertToPixel([
-            meanx + 1,
-            meany - Math.sqrt(vary),
-          ]);
+          let [rx, ry] = self.convertToPixel([meanx + 1, meany - 1]);
           self.updateParams({
             mean: [meanx, meany],
             radius: [Math.sqrt(varx), Math.sqrt(vary)],
           });
           rx = (rx - cx) * Math.sqrt(varx);
-          ry -= cy;
-          rx *= 2;
-          ry *= 2;
+          ry = (cy - ry) * Math.sqrt(vary);
+          rx *= 4;
+          ry *= 4;
           this.svg
             .append("ellipse")
-            .attr("fill", "#111111")
             .attr("opacity", "0.4")
+            .attr("fill", "none")
             .attr("stroke", "#111111")
-            .attr("stroke-width", 1.5)
+            .attr("stroke-width", 5)
             .attr("cx", cx)
             .attr("cy", cy)
             .attr("rx", rx)
@@ -574,7 +601,7 @@ export default class DataChart extends Component {
         self.svg
           .append("rect")
           .attr("x", x - width / 2)
-          .attr("y", y - 10)
+          .attr("y", y)
           .attr("value", point[0])
           .attr("width", width)
           .attr("height", chart_height * 0.85 - y)
