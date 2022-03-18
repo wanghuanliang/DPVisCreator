@@ -11,25 +11,33 @@ import { ReactComponent as ChartsViewIcon } from "../assets/charts-view-icon.svg
 import { ReactComponent as ModelViewIcon } from "../assets/model-view-icon.svg";
 import { ReactComponent as ValidationViewIcon } from "../assets/validation-view-icon.svg";
 // 原始数据, 后端返回(或者只返回原是数据，别的自己计算)
-import { original_data, originalData } from "../data/originalData"; // 原始数据
-import { attributeData, attributeCharacter } from "../data/attributes"; // 原始数据属性、数据属性特镇
-import { modelData } from "../data/modelData";
+import { original_data as initialOriginalData } from "../data/originalData"; // 原始数据
+import { attributeData as initialAttributeData, attributeCharacter as initialAttributeCharacter } from "../data/attributes"; // 原始数据属性、数据属性特镇
+import { modelData as tempModelData } from "../data/modelData";
 import { setWeights, setPattern, getModelData } from "../services/api";
+import { Button } from "antd";
 
 const IndexPage = () => {
   // 不使用redux，直接在此处定义全局数据，通过props传递
-  const [originalData, setOriginalData] = useState(null);
-  const [attributeData, setAttributeData] = useState(null);
-  const [attributeCharacter, setAttributeCharacter] = useState(null);
+  const [originalData, setOriginalData] = useState(initialOriginalData);
+  const [attributeData, setAttributeData] = useState(initialAttributeData);
+  const [attributeCharacter, setAttributeCharacter] = useState(initialAttributeCharacter);
   // 过滤条件数据{'age': {attributeType: '1', max: '55', min: '10'}, 'sex': {attributeType: '0', value: ['male', 'female']}}
   const [filterData, setFilterData] = useState({});
   const [afterFilterData, setAfterFilterData] = useState(originalData);
   // 约束
   const [augmentedData, setAugmentedData] = useState(null);
   const [protectedData, setProtectedData] = useState(null);
-  // model
-  // const [modelData, setModelData] = useState(null);
-  // console.log('modelData', modelData);
+  // model 开关，是否使用临时数据
+  const [modelData, setModelData] = useState(tempModelData); // null
+  const handleNextClick = () => {
+    getModelData({ slice_methods: {} })
+      .then(res => setModelData(res.data))
+      .catch(e => {
+        console.log(e);
+        setModelData(null);
+      });
+  }
   // useEffect(() => {
   //   if (!augmentedData) return;
   //   getModelData({ slice_methods: {}})
@@ -58,7 +66,10 @@ const IndexPage = () => {
   console.log("attributeCharacter", attributeCharacter);
   console.log("filterData", filterData);
   console.log("augmentedData", augmentedData);
-  console.log("protectedData", protectedData);
+  // console.log("protectedData", protectedData);
+  console.log('modelData', modelData);
+  
+
   return (
     <>
       <Title />
@@ -84,6 +95,12 @@ const IndexPage = () => {
           <div className="view-title">
             <ChartsViewIcon className="view-icon" />
             Charts View
+            {/* 暂时加个按钮，用于进入model view */}
+            <Button
+              size="small"
+              style={{ float: 'right', top: 2 }}
+              onClick={handleNextClick}
+            >next</Button>
           </div>
           <div className="cross-line"></div>
           <ChartsView

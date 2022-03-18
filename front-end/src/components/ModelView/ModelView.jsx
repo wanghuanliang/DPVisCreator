@@ -8,17 +8,20 @@ import BayesianNetwork from './BayesianNetwork/BayyesianNetWork';
 import ParallelPlot from './ParallelPlot';
 import SankeyPlot from './SankeyPlot';
 import Matrix from './Matrix';
+import Legend from './Legend';
 import AlluvialPlot from './AlluvialPlot';
 import { debounce } from 'lodash';
 
 const patternData = ["c1", "c2", "c3"]
-const [svgWidth, svgHeight] = [1000, 500];
+const [svgWidth, svgHeight] = [1118, 540];
 const margin = {
   left: 0,
-  top: 0,
+  top: 50,
   right: 0,
   bottom: 0
 }
+const [startColor, endColor] = ['#c4ccdf', '#436b92']
+const computeColor = d3.interpolate(startColor, endColor);
 
 const ModelView = (props) => {
   const { setWeights, modelData } = props;
@@ -27,7 +30,9 @@ const ModelView = (props) => {
     axis_order: axisOrder,
     proportion_data: proportionData,
     flow_data: flowData,
-    matrix_data:  matrixData
+    constraints,
+    matrix_data: matrixData,
+    sankey_data: sankeyData,
   } = modelData;
 
   const [privacyBudgetValue, setPrivacyBudget] = useState(0.8);
@@ -130,7 +135,7 @@ const ModelView = (props) => {
   return (
     <div>
       {renderModelControlPanel()}
-      <Space>
+      {/* <Space>
         {patternData.map(id => {
 
           return <InputNumber
@@ -147,37 +152,51 @@ const ModelView = (props) => {
             }}
           ></InputNumber>
         })}
-      </Space>
-      {/* 整理放入一个svg */}
-      {/* <svg width={svgWidth} height={svgHeight}>
-        <g transform={`translate(${margin.left}, ${margin.top})`}>
-          <Matrix
-              matrixData={matrixData}
-          ></Matrix>
-          <AlluvialPlot
+      </Space> */}
+      {/* 一个大的svg放置小svg */}
+      {modelData && <svg width={svgWidth} height={svgHeight}>
+        <Matrix
+          constraints={constraints}
+          matrixData={matrixData}
+          computeColor={computeColor}
+        ></Matrix>
+        <g transform='translate(400,0)'>
+          <SankeyPlot
             totalNum={totalNum}
             axisOrder={axisOrder}
             proportionData={proportionData}
-            flowData={flowData}
-          ></AlluvialPlot> */}
-          {/* <ClockBlock></ClockBlock> */}
-          {/* <BayesianNetwork></BayesianNetwork> */}
-          {/* <SankeyPlot></SankeyPlot> */}
-          {/* <ParallelPlot></ParallelPlot> */}
-        {/* </g>
-      </svg> */}
-      {modelData && <div style={{display:'flex'}}>
+            sankeyData={sankeyData}
+            constraints={constraints}
+          ></SankeyPlot>
+        </g>
+        <g transform='translate(50, 480)'>
+          <Legend
+            computeColor={computeColor}
+          ></Legend>
+        </g>
+        {/* <ClockBlock></ClockBlock> */}
+        {/* <BayesianNetwork></BayesianNetwork> */}
+        {/* <SankeyPlot></SankeyPlot> */}
+        {/* <ParallelPlot></ParallelPlot> */}
+      </svg>}
+      {/* {modelData && <div style={{display:'flex'}}>
         <Matrix
           matrixData={matrixData}
         ></Matrix>
-        <AlluvialPlot
+        {/* <AlluvialPlot
           totalNum={totalNum}
           axisOrder={axisOrder}
           proportionData={proportionData}
           flowData={flowData}
-        ></AlluvialPlot>
-        {/* <SankeyPlot></SankeyPlot> */}
-      </div>}
+        ></AlluvialPlot> */}
+        {/* <SankeyPlot
+          totalNum={totalNum}
+          axisOrder={axisOrder}
+          proportionData={proportionData}
+          sankeyData={sankeyData}
+          constraints={constraints}
+        ></SankeyPlot>
+      </div>} */}
     </div>
   );
 };
