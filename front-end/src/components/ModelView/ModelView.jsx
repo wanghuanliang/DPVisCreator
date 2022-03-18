@@ -7,8 +7,8 @@ import ClockBlock from './ClockBlock/ClockBlock';
 import BayesianNetwork from './BayesianNetwork/BayyesianNetWork';
 import ParallelPlot from './ParallelPlot';
 import SankeyPlot from './SankeyPlot';
-import Matrix from './Matrix';
-import Legend from './Legend';
+import Matrix from './Matrix/Matrix';
+import Legend from './Matrix/Legend';
 import AlluvialPlot from './AlluvialPlot';
 import { debounce } from 'lodash';
 
@@ -113,27 +113,9 @@ const ModelView = (props) => {
   return (
     <div>
       {renderModelControlPanel()}
-      {/* <Space>
-        {patternData.map(id => {
-
-          return <InputNumber
-            key={id}
-            size='small'
-            min={0}
-            max={1}
-            step={0.1}
-            style={{ width: 60 }}
-            value={patternWeights?.[id]}
-            onChange={value => {
-              patternWeights[id] = value;
-              setPatternWeights({...patternWeights})
-            }}
-          ></InputNumber>
-        })}
-      </Space> */}
       {/* 一个大的svg放置小svg */}
       {modelData && <svg width={svgWidth} height={svgHeight}>
-        <Matrix
+        {/* <Matrix
           constraints={constraints}
           matrixData={matrixData}
           computeColor={computeColor}
@@ -141,6 +123,11 @@ const ModelView = (props) => {
           patternWeights={patternWeights}
           setPatternWeights={setPatternWeights}
         ></Matrix>
+        <g transform='translate(50, 480)'>
+          <Legend
+            computeColor={computeColor}
+          ></Legend>
+        </g> */}
         <g transform='translate(400,0)'>
           <SankeyPlot
             totalNum={totalNum}
@@ -150,11 +137,7 @@ const ModelView = (props) => {
             constraints={constraints}
           ></SankeyPlot>
         </g>
-        <g transform='translate(50, 480)'>
-          <Legend
-            computeColor={computeColor}
-          ></Legend>
-        </g>
+        
         {/* <ClockBlock></ClockBlock> */}
         {/* <BayesianNetwork></BayesianNetwork> */}
         {/* <SankeyPlot></SankeyPlot> */}
