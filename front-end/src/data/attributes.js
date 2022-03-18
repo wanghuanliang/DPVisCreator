@@ -1,42 +1,45 @@
 export const attributeData = {
-  Dimensions: ["sex", "smoker", "region", "children"],
+  Dimensions: ["sex", "children", "smoker", "region"],
   Measures: ["age", "bmi", "charges"],
-  Computation: ["count", "average"],
+  Computations: [],
 };
 
 export const attributeType = ["Dimensions", "Measures", "Computation"];
 
 //  Dimensions-0, Measures-1
 export const attributeCharacter = {
-  sex: {
-    attributeType: "0",
-    value: ["male", "female"],
-  },
-  smoker: {
-    attributeType: "0",
-    value: ["yes", "no"],
-  },
-  region: {
-    attributeType: "0",
-    value: ["southwest", "southeast", "northwest", "northeast"],
-  },
-  children: {
-    attributeType: "0",
-    value: [0, 1, 2, 3, 4, 5],
-  },
   age: {
-    attributeType: "1",
+    attribute_type: "Measures",
     min: 18,
     max: 64,
+    average: 39.20702541106129,
+  },
+  sex: {
+    attribute_type: "Dimensions",
+    values: ["female", "male"],
   },
   bmi: {
-    attributeType: "1",
-    min: 15.96, // 四舍五入？
+    attribute_type: "Measures",
+    min: 15.96,
     max: 53.13,
+    average: 30.663396860986538,
+  },
+  children: {
+    attribute_type: "Dimensions",
+    values: [0, 1, 2, 3, 4, 5],
+  },
+  smoker: {
+    attribute_type: "Dimensions",
+    values: ["no", "yes"],
+  },
+  region: {
+    attribute_type: "Dimensions",
+    values: ["northeast", "northwest", "southeast", "southwest"],
   },
   charges: {
-    attributeType: "1",
-    min: 1121,
-    max: 63770,
+    attribute_type: "Measures",
+    min: 1121.8739,
+    max: 63770.42801,
+    average: 13270.422265141257,
   },
 };

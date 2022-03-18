@@ -32,6 +32,14 @@ const DataView = (props) => {
         setAttributeCharacter(data.attribute_character);
       }
     },
+    defaultFileList: [
+      {
+        uid: '1',
+        name: 'insurance.csv',
+        status: 'done',
+        response: 'Server Error 500', // custom error message to show
+      },
+    ]
   };
 
   return (
@@ -74,6 +82,7 @@ const DataView = (props) => {
           })
         }
       </div>
+      <div style={{display: 'flex', justifyContent: 'center'}}><Button>Confirm</Button></div>
     </div>
   );
 };
