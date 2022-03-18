@@ -41,7 +41,11 @@ const [startColor, endColor] = ['#c4ccdf', '#436b92']
 const computeColor = d3.interpolate(startColor, endColor);
 
 const ModelView = (props) => {
-  const { setWeights, modelData } = props;
+  const {
+    setWeights,
+    modelData,
+    setProtectedData,
+  } = props;
   const {
     total_num: totalNum,
     axis_order: axisOrder,
@@ -69,7 +73,7 @@ const ModelView = (props) => {
     })
     console.log('data', data);
     setWeights(data)
-      .then(res => console.log('res', res))
+      .then(res => setProtectedData(res.data.proportion_data))
       .catch(e => console.log('e', e));
   }
 

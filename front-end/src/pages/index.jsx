@@ -128,6 +128,7 @@ const IndexPage = () => {
               {modelData && <ModelView
                 setWeights={setWeights}
                 modelData={modelData}
+                setProtectedData={setProtectedData}
               ></ModelView>}
             </div>
           </div>
