@@ -1232,7 +1232,16 @@ export const modelData = {
       },
     },
   ],
-  constraints: ["C0", "C2"],
+  constraints: [
+    {
+      id: "C0",
+      type: "cluster",
+    },
+    {
+      id: "C2",
+      type: "order",
+    },
+  ],
   matrix_data: [
     [0.14018993154245965, 0.0],
     [1.0, 0.14018993154245965],
