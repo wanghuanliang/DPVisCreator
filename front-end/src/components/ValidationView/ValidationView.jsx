@@ -3,6 +3,7 @@ import './ValidationView.less';
 import * as d3 from 'd3';
 import { Taggle, LineUp, LineUpStringColumnDesc, LineUpCategoricalColumnDesc, LineUpNumberColumnDesc, LineUpRanking, LineUpSupportColumn, LineUpColumn, LineUpImposeColumn } from 'lineupjsx';
 import { Table, Tag, Radio, Space } from 'antd';
+import LineupTable from './LineupTable';
 
 // const arr = [];
 // const cats = ['c1', 'c2', 'c3'];
@@ -38,7 +39,7 @@ const arr = [
 const ValidationView = (props) => {
 
   return (
-    <LineUp data={arr} />
+    // <LineUp data={arr} />
     // <LineUp data={arr} sidePanel sidePanelCollapsed defaultRanking>
     //   <LineUpStringColumnDesc column="d" label="Label" width={100} />
     //   <LineUpCategoricalColumnDesc column="cat" categories={cats} color="green" />
@@ -51,6 +52,16 @@ const ValidationView = (props) => {
     //     <LineUpImposeColumn label="a+cat" column="a" categeoricalColumn="cat2" />
     //   </LineUpRanking>
     // </LineUp>
+    <div style={{display: 'flex'}}>
+      <div style={{width: '70%'}}>
+        <LineupTable></LineupTable>
+      </div>
+      {/* 保护后的视图放这里 */}
+      <div style={{width: '30%'}}>
+
+      </div>
+    </div>
+    
   )
 }
 

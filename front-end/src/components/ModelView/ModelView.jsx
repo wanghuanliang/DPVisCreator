@@ -12,7 +12,6 @@ import Legend from './Legend';
 import AlluvialPlot from './AlluvialPlot';
 import { debounce } from 'lodash';
 
-const patternData = ["c1", "c2", "c3"]
 const [svgWidth, svgHeight] = [1118, 540];
 const margin = {
   left: 0,
@@ -20,6 +19,24 @@ const margin = {
   right: 0,
   bottom: 0
 }
+// const constraints = [{
+//   id: 'C0',
+//   type: 'cluster',
+// }, {
+//   id: 'C1',
+//   type: 'correlation'
+//   }, {
+//   id: 'C2',
+//   type: 'order'
+// }];
+// 约束模式颜色
+const patternColor = {
+  original: '#dedede',
+  cluster: '#9cb0a2',
+  correlation: '#c39b83',
+  order: '#bbafd1',
+}
+// 约束距离渐变色
 const [startColor, endColor] = ['#c4ccdf', '#436b92']
 const computeColor = d3.interpolate(startColor, endColor);
 
@@ -38,45 +55,10 @@ const ModelView = (props) => {
   const [privacyBudgetValue, setPrivacyBudget] = useState(0.8);
   const initialPatternWeight = useMemo(() => {
     const initial = {};
-    patternData.forEach(id => initial[id] = 0.8);
+    constraints.forEach(constraint => initial[constraint.id] = 0.8);
     return initial;
-  }, [])
+  }, [constraints])
   const [patternWeights, setPatternWeights] = useState(initialPatternWeight); //{'c1': 1, 'c2': 1}
-  // 光标的水平的位置
-  // const [clientX, setClientX] = useState(0)
-  // // 是否在拖动
-  // const [isResizing, setIsResizing] = useState(false);
-  // // 左侧宽度
-  // const [menuWidth, setMenuWidth] = useState(100);
-  // // 开始、移动、结束拖拽事件
-  // const handleStartResize = useCallback((e) => {
-  //   console.log(e);
-  //   setClientX(e.clientX)
-  //   setIsResizing(true)
-  // }, []);
-  // const handleResize = useCallback(debounce(e => {
-  //   if (!isResizing) return;
-  //   const offset = e.clientX - clientX;
-  //   const width = menuWidth + offset;
-  //   setMenuWidth(width);
-  // }, 10), [menuWidth, clientX]);
-  // const handleStopResize = useCallback(() => {
-  //   setIsResizing(false);
-  // })
-  // //监听光标移动
-  // useEffect(() => {
-  //   document.addEventListener('mousemove', handleResize)
-  //   return () => {
-  //     document.removeEventListener('mousemove', handleResize)
-  //   }
-  // }, [handleResize])
-  // //监听鼠标松开
-  // useEffect(() => {
-  //   document.addEventListener('mouseup', handleStopResize)
-  //   return () => {
-  //     document.removeEventListener('mouseup', handleStopResize)
-  //   }
-  // }, [handleStopResize])
   
   const handleRecordClick = () => {
     const data = {}
@@ -114,17 +96,13 @@ const ModelView = (props) => {
             value={privacyBudgetValue}
             onChange={value => setPrivacyBudget(value)}
           ></InputNumber>
-          <div style={{display: 'inline-block', width: 20}}></div>
-          <span>Constraints</span>
-          {/* <div style={{position: 'absolute', left: '0', width: 200}}>
-            <div style={{float: 'left'}}>123</div>
-            <div>456</div>
-            <div style={{float: 'right'}}>789</div>
-          </div> */}
-          <div className="constraints-block" style={{ backgroundColor: '#f2d1cc', width: `80px` }}>Cluster</div>
-          {/* <div className="resizeHandle" onMouseDown={handleStartResize}> 1</div> */}
-          <div className="constraints-block" style={{backgroundColor: '#fae1ca'}}>Correlation</div>
-          <div className="constraints-block" style={{ backgroundColor: '#fae1ec' }}>Order</div>
+          <div style={{ display: 'inline-block', width: 20 }}></div>
+          <div className="constraints-block">
+            <div style={{ backgroundColor: patternColor.original }}>Original</div>
+            <div style={{ backgroundColor: patternColor.cluster }}>Cluster</div>
+            <div style={{ backgroundColor: patternColor.correlation }}>Correlation</div>
+            <div style={{ backgroundColor: patternColor.order }}>Order</div>
+          </div>
           <div style={{display: 'inline-block', width: 20}}></div>
           <Button size='small' onClick={handleRecordClick}>Record</Button>
         </Space>
@@ -159,6 +137,9 @@ const ModelView = (props) => {
           constraints={constraints}
           matrixData={matrixData}
           computeColor={computeColor}
+          patternColor={patternColor}
+          patternWeights={patternWeights}
+          setPatternWeights={setPatternWeights}
         ></Matrix>
         <g transform='translate(400,0)'>
           <SankeyPlot
@@ -179,24 +160,6 @@ const ModelView = (props) => {
         {/* <SankeyPlot></SankeyPlot> */}
         {/* <ParallelPlot></ParallelPlot> */}
       </svg>}
-      {/* {modelData && <div style={{display:'flex'}}>
-        <Matrix
-          matrixData={matrixData}
-        ></Matrix>
-        {/* <AlluvialPlot
-          totalNum={totalNum}
-          axisOrder={axisOrder}
-          proportionData={proportionData}
-          flowData={flowData}
-        ></AlluvialPlot> */}
-        {/* <SankeyPlot
-          totalNum={totalNum}
-          axisOrder={axisOrder}
-          proportionData={proportionData}
-          sankeyData={sankeyData}
-          constraints={constraints}
-        ></SankeyPlot>
-      </div>} */}
     </div>
   );
 };

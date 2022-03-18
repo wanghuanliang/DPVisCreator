@@ -74,6 +74,7 @@ const IndexPage = () => {
     <>
       <Title />
       <div className="system-content">
+        {/* Data View */}
         <div className="block data-view">
           <div className="view-title">
             <DataViewIcon className="view-icon" />
@@ -91,48 +92,55 @@ const IndexPage = () => {
             setFilterData={setFilterData}
           ></DataView>
         </div>
-        <div className="block charts-view">
-          <div className="view-title">
-            <ChartsViewIcon className="view-icon" />
-            Charts View
-            {/* 暂时加个按钮，用于进入model view */}
-            <Button
-              size="small"
-              style={{ float: 'right', top: 2 }}
-              onClick={handleNextClick}
-            >next</Button>
-          </div>
-          <div className="cross-line"></div>
-          <ChartsView
-            original_data={originalData}
-            protected_data={protectedData}
-            attribute_data={attributeData}
-            attribute_character={attributeCharacter}
-            setPattern={setPattern}
-            setAugmentedData={setAugmentedData}
-            setProtectedData={setProtectedData}
-          ></ChartsView>
-        </div>
+        
         <div className="view-box">
-          <div className="block model-view">
-            <div className="view-title">
-              <ModelViewIcon className="view-icon" />
-              Model View
+          <div className="view-inner-box">
+            {/* Charts View */}
+            <div className="block charts-view">
+              <div className="view-title">
+                <ChartsViewIcon className="view-icon" />
+                Charts View
+                {/* 暂时加个按钮，用于进入model view */}
+                <Button
+                  size="small"
+                  style={{ float: 'right', top: 2 }}
+                  onClick={handleNextClick}
+                >next</Button>
+              </div>
+              <div className="cross-line"></div>
+              <ChartsView
+                original_data={originalData}
+                protected_data={protectedData}
+                attribute_data={attributeData}
+                attribute_character={attributeCharacter}
+                setPattern={setPattern}
+                setAugmentedData={setAugmentedData}
+                setProtectedData={setProtectedData}
+              ></ChartsView>
             </div>
-            <div className="cross-line"></div>
-            {modelData && <ModelView
-              setWeights={setWeights}
-              modelData={modelData}
-            ></ModelView>}
+            {/* model view */}
+            <div className="block model-view">
+              <div className="view-title">
+                <ModelViewIcon className="view-icon" />
+                Model View
+              </div>
+              <div className="cross-line"></div>
+              {modelData && <ModelView
+                setWeights={setWeights}
+                modelData={modelData}
+              ></ModelView>}
+            </div>
           </div>
+          
+          {/* validation view */}
           <div className="block validation-view">
             <div className="view-title">
               <ValidationViewIcon className="view-icon" />
               Validation View
             </div>
             <div className="cross-line"></div>
-            {/* <Validation></Validation> */}
-            <LineupTable></LineupTable>
+            <Validation></Validation>
+            {/* <LineupTable></LineupTable> */}
           </div>
         </div>
       </div>

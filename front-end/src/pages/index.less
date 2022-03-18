@@ -46,20 +46,26 @@ body {
     display: flex;
     flex-direction: row;
     // align-items: stretch;
+    width: 1920px;
     height: 1010px;
     padding: 3px;
     .data-view {
       width: 15%;
     }
-    .charts-view {
-      width: 25%;
-    }
     .view-box {
       flex: auto;
       display: flex;
       flex-direction: column;
-      .model-view {
+      width: 85%;
+      .view-inner-box {
         height: 60%;
+        display: flex;
+        .charts-view {
+          width: 30%;
+        }
+        .model-view {
+          width: 70%;
+        }
       }
       .validation-view {
         height: 40%;

@@ -4,24 +4,37 @@ import { Button, InputNumber } from 'antd';
 
 // 临时数据
 const matrixData = [[0.5, 0.2, 1], [0.7, 0.75, 0.5], [0.1, 0.1, 0.25255]];
-const constraints = ['C0', 'C1', 'C2'];
+const constraints = [{
+  id: 'C0',
+  type: 'cluster',
+}, {
+  id: 'C1',
+  type: 'correlation'
+  }, {
+  id: 'C2',
+  type: 'order'
+}];
 // 绘图相关全局变量
 const [width, height] = [400, 400];
 const margin = {
   left: 100,
   top: 100,
 }
-const matrixSize = 300;
-const cellSize = parseInt(matrixSize / matrixData.length);
-const rectPadding = 1.5,
-  rectSize = cellSize - rectPadding * 2;
 
 const Matrix = memo((props) => {
   const {
-    // constraints,
-    // matrixData,
+    constraints,
+    matrixData,
     computeColor,
+    patternColor,
+    patternWeights,
+    setPatternWeights,
   } = props;
+
+  const matrixSize = 300;
+  const cellSize = parseInt(matrixSize / matrixData.length);
+  const rectPadding = 1.5,
+    rectSize = cellSize - rectPadding * 2;
 
   return (
     <svg width={width} height={height}>
@@ -62,7 +75,10 @@ const Matrix = memo((props) => {
         }
         {/* 绘制横向文本 */}
         {
-          constraints.map((constraintId, index) => {
+          constraints.map((constraint, index) => {
+            const constraintId = constraint?.id;
+            const constraintType = constraint?.type;
+            const color = patternColor[constraintType];
             const x = index * cellSize + cellSize / 2;
             const y = -14;
             const fontWidth = 30;
@@ -74,7 +90,7 @@ const Matrix = memo((props) => {
                 width={fontWidth}
                 height={fontHeight}
                 fill='white'
-                stroke='#c39b83'
+                stroke={color}
                 strokeWidth={2}
                 rx='1%'
                 ry='1%'
@@ -84,7 +100,7 @@ const Matrix = memo((props) => {
                 y={y}
                 textAnchor="middle"
                 alignmentBaseline='central'
-                fill='#c39b83'
+                fill={color}
                 fontWeight='bold'
               >{constraintId}</text>
             </g>
@@ -92,7 +108,10 @@ const Matrix = memo((props) => {
         }
         {/* 绘制纵向文本 */}
         {
-          constraints.map((constraintId, index) => {
+          constraints.map((constraint, index) => {
+            const constraintId = constraint?.id;
+            const constraintType = constraint?.type; 
+            const color = patternColor[constraintType];
             const x = -20;
             const y = index * cellSize + cellSize / 2;
             const fontWidth = 30;
@@ -104,7 +123,7 @@ const Matrix = memo((props) => {
                 width={fontWidth}
                 height={fontHeight}
                 fill='white'
-                stroke='#c39b83'
+                stroke={color}
                 strokeWidth={2}
                 rx='1%'
                 ry='1%'
@@ -114,7 +133,7 @@ const Matrix = memo((props) => {
                 y={y}
                 textAnchor="middle"
                 alignmentBaseline='central'
-                fill='#c39b83'
+                fill={color}
                 fontWeight='bold'
               >{constraintId}</text>
               <foreignObject
@@ -129,11 +148,11 @@ const Matrix = memo((props) => {
                   max={1}
                   step={0.1}
                   style={{ width: 60 }}
-                  value={0.8}
-                  // onChange={value => {
-                  //   patternWeights[id] = value;
-                  //   setPatternWeights({...patternWeights})
-                  // }}
+                  value={patternWeights?.[constraintId]}
+                  onChange={value => {
+                    patternWeights[constraintId] = value;
+                    setPatternWeights({...patternWeights})
+                  }}
                 ></InputNumber>
               </foreignObject>
             </g>
