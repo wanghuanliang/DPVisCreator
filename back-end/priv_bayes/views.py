@@ -326,7 +326,7 @@ def getModelData(request):
         idx = idx + 1
 
     sankey_data = []
-    conses = [constraint['id'] for constraint in constraints]
+    conses = [{"id": constraint['id'], "type": constraint['type']} for constraint in constraints]
 
     for axis_id in range(len(axis_order) - 1):
         x = axis_order[axis_id]
