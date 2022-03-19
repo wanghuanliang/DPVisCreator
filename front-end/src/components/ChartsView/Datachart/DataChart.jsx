@@ -18,7 +18,7 @@ const globalColor = [
   "#ea7ccc",
 ];
 const chart_height = 400;
-const thumbnailHeight = 100;
+const thumbnailHeight = 60;
 // 散点图选择之后聚类，生成椭圆 柱状图单独选择柱子 折线图生成的拟合曲线可调整宽度，纵向，背景全部调成灰色
 function getAxisOption(attribute) {
   return "Dimensions" === attributeType[attribute.attributeType]
@@ -137,18 +137,18 @@ export default class DataChart extends Component {
     const canvas = document.getElementById("canvas-" + this.props.name);
     const canvasImage = new Image();
     canvasImage.src = canvas.toDataURL("image/png");
-    canvasImage.width = this.width / 3;
+    canvasImage.width = this.width / 4;
     canvasImage.height = thumbnailHeight;
-    canvasImage.style = "position: absolute";
+    canvasImage.style = "margin:-" + (this.width / 4 + 7) + "px";
     const svgXml = this.svg.html();
     const svgImage = new Image();
     svgImage.setAttribute(
       "src",
       "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgXml)))
     );
-    svgImage.width = this.width / 3;
+    svgImage.width = this.width / 4;
     svgImage.height = thumbnailHeight;
-    svgImage.style = "position: absolute";
+
     return { canvasImage, svgImage };
   }
   componentDidMount() {
