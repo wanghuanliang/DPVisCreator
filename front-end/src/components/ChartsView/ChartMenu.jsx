@@ -1,5 +1,16 @@
 import { Component } from "react";
-import { Button, Col, Form, Input, Row, Select, Statistic, Tag } from "antd";
+import {
+  Button,
+  Col,
+  Descriptions,
+  Form,
+  Input,
+  InputNumber,
+  Row,
+  Select,
+  Statistic,
+  Tag,
+} from "antd";
 import {
   BarsOutlined,
   BgColorsOutlined,
@@ -7,6 +18,7 @@ import {
   FunctionOutlined,
 } from "@ant-design/icons";
 import { chart_type, computation_type } from "./constants";
+import Title from "antd/lib/typography/Title";
 // 布局变成右侧缩略图
 const { Option } = Select;
 const chartLabels = {
@@ -26,8 +38,10 @@ const chartFitnesses = [
 export default class ChartMenu extends Component {
   constructor(props) {
     super(props);
+    this.constraintParams = props.constraintParams;
     this.initConstraint = props.initConstraint;
-    this.insertConstraint = props.insertConstraint;
+    this.saveConstraint = props.saveConstraint;
+    this.removeConstraint = props.removeConstraint;
     this.attributes = Object.keys(props.attributes);
     this.state = {
       columnIndex: -1,
@@ -36,10 +50,12 @@ export default class ChartMenu extends Component {
       colorIndex: -1,
       typeIndex: -1,
       fitIndex: -1,
+      step: NaN,
     };
   }
   componentDidUpdate() {
     this.attributes = Object.keys(this.props.attributes);
+    this.constraintParams = this.props.constraintParams;
   }
   checkState() {
     if (
@@ -55,6 +71,11 @@ export default class ChartMenu extends Component {
   }
   getSettings() {
     return {
+      color:
+        this.state.colorIndex >= 0
+          ? this.attributes[this.state.colorIndex]
+          : null,
+      chart_type: chart_type[this.state.typeIndex],
       x_axis: this.attributes[this.state.columnIndex],
       y_axis:
         this.state.rowTagIndex >= 0
@@ -64,11 +85,7 @@ export default class ChartMenu extends Component {
         this.state.rowComputeIndex >= 0
           ? computation_type[this.state.rowComputeIndex]
           : null,
-      color:
-        this.state.colorIndex >= 0
-          ? this.attributes[this.state.colorIndex]
-          : null,
-      chart_type: chart_type[this.state.typeIndex],
+      x_step: this.state.step,
       fitting:
         this.state.fitIndex >= 0
           ? chartFitnesses[this.state.typeIndex][this.state.fitIndex]
@@ -79,11 +96,17 @@ export default class ChartMenu extends Component {
     let self = this;
     function getSpecificTypeOfAttributes(type) {
       let select = [];
-      self.attributes.forEach((attributeName, index) => {
-        const attribute = self.props.attributes[attributeName];
-        if (type === attribute.attribute_type)
+      if (type === "all") {
+        self.attributes.forEach((attributeName, index) => {
+          const attribute = self.props.attributes[attributeName];
           select.push({ attribute, name: attributeName, index });
-      });
+        });
+      } else
+        self.attributes.forEach((attributeName, index) => {
+          const attribute = self.props.attributes[attributeName];
+          if (type === attribute.attribute_type)
+            select.push({ attribute, name: attributeName, index });
+        });
       return select;
     }
     function getColorSelect() {
@@ -95,7 +118,7 @@ export default class ChartMenu extends Component {
     }
     function getColumnSelect() {
       if (self && chart_type[self.state.typeIndex] === "bar")
-        return getSpecificTypeOfAttributes("Dimensions");
+        return getSpecificTypeOfAttributes("all");
       return getSpecificTypeOfAttributes("Measures");
     }
     function getRowComputeSelect() {
@@ -103,53 +126,93 @@ export default class ChartMenu extends Component {
         return { attribute: computation, index };
       });
     }
-    function getRowSelectElements() {
-      return chart_type[self.state.typeIndex] === "scatter" ? (
-        <Col span={12}>
-          <BarsOutlined />
-          Row
-          <Select
-            placeholder="Select row"
-            onChange={(value) => {
-              self.setState({ rowTagIndex: value }, self.checkState);
-            }}
-          >
-            {getRowTagSelect().map((select) => (
-              <Option value={select.index} key={"row" + select.index}>
-                {select.name}
-              </Option>
-            ))}
-          </Select>
-        </Col>
-      ) : (
-        <Col span={12}>
-          <BarsOutlined />
-          Row
-          <Select
-            placeholder="Select computation"
-            onChange={(value) => {
-              self.setState({ rowComputeIndex: value }, self.checkState);
-            }}
-          >
-            {getRowComputeSelect().map((select) => (
-              <Option value={select.index} key={"computation" + select.index}>
-                {select.attribute}
-              </Option>
-            ))}
-          </Select>
-          <Select
-            placeholder="Select row"
-            onChange={(value) => {
-              self.setState({ rowTagIndex: value }, self.checkState);
-            }}
-          >
-            {getRowTagSelect().map((select) => (
-              <Option value={select.index} key={"row" + select.index}>
-                {select.name}
-              </Option>
-            ))}
-          </Select>
-        </Col>
+    function changeStep(value) {
+      self.setState({ step: value }, self.checkState);
+    }
+    function getXAxisElements() {
+      return (
+        <Row>
+          <Col span={12}>Value</Col>
+          <Col span={12}>
+            <Select
+              size="small"
+              placeholder="x-axis"
+              onChange={(value) => {
+                self.setState(
+                  { columnIndex: value, step: NaN },
+                  self.checkState
+                );
+              }}
+              disabled={self.state.typeIndex < 0 ? true : false}
+            >
+              {getColumnSelect().map((select) => (
+                <Option value={select.index} key={"row" + select.index}>
+                  {select.name}
+                </Option>
+              ))}
+            </Select>
+          </Col>
+          <Col span={12}>Step</Col>
+          <Col span={12}>
+            <InputNumber
+              min={0}
+              onChange={changeStep}
+              size="small"
+              disabled={
+                self.state.columnIndex < 0 ||
+                self.attributes[self.state.columnIndex].attribute_type ===
+                  "Dimensions"
+                  ? true
+                  : false
+              }
+            />
+          </Col>
+        </Row>
+      );
+    }
+    function getYAxisElements() {
+      return (
+        <Row>
+          <Col span={12}>Value</Col>
+          <Col span={12}>
+            <Select
+              size="small"
+              placeholder="y-axis"
+              onChange={(value) => {
+                self.setState({ rowTagIndex: value }, self.checkState);
+              }}
+              disabled={self.state.typeIndex < 0 ? true : false}
+            >
+              {getRowTagSelect().map((select) => (
+                <Option value={select.index} key={"row" + select.index}>
+                  {select.name}
+                </Option>
+              ))}
+            </Select>
+          </Col>
+          <Col span={12}>Computation</Col>
+          <Col span={12}>
+            <Select
+              size="small"
+              placeholder="computation"
+              onChange={(value) => {
+                self.setState({ rowComputeIndex: value }, self.checkState);
+              }}
+              disabled={
+                self.state.typeIndex < 0 ||
+                chart_type[self.state.typeIndex] === "scatter"
+                  ? true
+                  : false
+              }
+            >
+              {getRowComputeSelect().map((select) => (
+                <Option value={select.index} key={"computation" + select.index}>
+                  {select.attribute}
+                </Option>
+              ))}
+            </Select>
+          </Col>
+        </Row>
       );
     }
     function getAvaliableCharts() {
@@ -166,78 +229,120 @@ export default class ChartMenu extends Component {
     }
     return (
       <>
-        <Col span={12}>
-          <BarsOutlined rotate={90} />
-          Column
-          <Select
-            placeholder="Select column"
-            onChange={(value) => {
-              self.setState({ columnIndex: value }, self.checkState);
-            }}
-          >
-            {getColumnSelect().map((select) => (
-              <Option value={select.index} key={"column" + select.index}>
-                {select.name}
-              </Option>
-            ))}
-          </Select>
-        </Col>
-        {getRowSelectElements()}
-        <Col span={12}>
-          <BgColorsOutlined />
-          Color
-          <Select
-            placeholder="Select color"
-            onChange={(value) => {
-              self.setState({ colorIndex: value }, self.checkState);
-            }}
-          >
-            {getColorSelect().map((select) => (
-              <Option value={select.index} key={"color" + select.index}>
-                {select.name}
-              </Option>
-            ))}
-          </Select>
+        <Col span={24}>
+          <Title level={5}>Responsive Descriptions</Title>
         </Col>
         <Col span={12}>
-          <DotChartOutlined />
-          Type
-          <Select
-            placeholder="Select type"
-            onChange={(value) => {
-              let state = { typeIndex: value };
-              if (chart_type[value] === "scatter") state.rowComputeIndex = -1;
-              if (chart_type[value] === "bar") state.colorIndex = -1;
-              self.setState(state, self.checkState);
-            }}
-          >
-            {getAvaliableCharts().map((chart) => (
-              <Option value={chart.index} key={"chart-type-" + chart.index}>
-                {chartLabels[chart.type]}
-              </Option>
-            ))}
-          </Select>
+          <Row>
+            <Col span={8}>
+              <DotChartOutlined />
+              Type
+            </Col>
+            <Col span={16}>
+              <Select
+                size="small"
+                placeholder="Select type"
+                onChange={(value) => {
+                  let state = { typeIndex: value, step: NaN };
+                  if (chart_type[value] === "scatter")
+                    state.rowComputeIndex = -1;
+                  if (chart_type[value] === "bar") state.colorIndex = -1;
+                  self.setState(state, self.checkState);
+                }}
+              >
+                {getAvaliableCharts().map((chart) => (
+                  <Option value={chart.index} key={"chart-type-" + chart.index}>
+                    {chartLabels[chart.type]}
+                  </Option>
+                ))}
+              </Select>
+            </Col>
+            <Col span={8}>
+              <BarsOutlined rotate={90} />
+              X-axis
+            </Col>
+            <Col span={16}>{getXAxisElements()}</Col>
+          </Row>
         </Col>
         <Col span={12}>
-          <FunctionOutlined />
-          Fitting
-          <Select
-            placeholder="Fit by"
-            onChange={(value) => {
-              self.setState({ fitIndex: value }, self.checkState);
-            }}
-          >
-            {getChartFitnesses().map((fit) => (
-              <Option value={fit.index} key={"chart-fit-" + fit.index}>
-                {fit.type}
-              </Option>
-            ))}
-          </Select>
+          <Row>
+            <Col span={8}>
+              <BgColorsOutlined />
+              Color
+            </Col>
+            <Col span={16}>
+              <Select
+                size="small"
+                placeholder="Select color"
+                onChange={(value) => {
+                  self.setState({ colorIndex: value }, self.checkState);
+                }}
+                disabled={
+                  self.state.typeIndex < 0 ||
+                  chart_type[self.state.typeIndex] === "bar"
+                    ? true
+                    : false
+                }
+              >
+                {getColorSelect().map((select) => (
+                  <Option value={select.index} key={"color" + select.index}>
+                    {select.name}
+                  </Option>
+                ))}
+              </Select>
+            </Col>
+            <Col span={8}>
+              <BarsOutlined />
+              Y-axis
+            </Col>
+            <Col span={16}>{getYAxisElements()}</Col>
+          </Row>
+        </Col>
+        <Col span={24}>
+          <Title level={5}>Pattern Configuration</Title>
         </Col>
         <Col span={12}>
-          <Button block onClick={this.insertConstraint}>
-            Create new constraint
-          </Button>
+          <Row>
+            <Col span={24}>
+              Fitting
+              <Select
+                placeholder="Fit by"
+                onChange={(value) => {
+                  self.setState({ fitIndex: value }, self.checkState);
+                }}
+              >
+                {getChartFitnesses().map((fit) => (
+                  <Option value={fit.index} key={"chart-fit-" + fit.index}>
+                    {fit.type}
+                  </Option>
+                ))}
+              </Select>
+            </Col>
+            <Col span={12}>
+              <Button block onClick={this.saveConstraint}>
+                Save
+              </Button>
+            </Col>
+            <Col span={12}>
+              <Button block onClick={this.removeConstraint}>
+                Delete
+              </Button>
+            </Col>
+          </Row>
+        </Col>
+        <Col span={5}>Parameters</Col>
+        <Col span={7}>
+          {this.constraintParams
+            ? Object.keys(this.constraintParams).map((key) => {
+                const str = "" + key + ":" + this.constraintParams[key];
+                return (
+                  <>
+                    {str}
+                    <br />
+                  </>
+                );
+              })
+            : ""}
         </Col>
       </>
     );
