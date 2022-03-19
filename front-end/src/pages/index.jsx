@@ -37,12 +37,18 @@ const IndexPage = () => {
   // model 开关，是否使用临时数据
   const [modelData, setModelData] = useState(tempModelData); // null
   const handleNextClick = () => {
-    const cts = JSON.parse(JSON.stringify(constraints));
+    const jcts = JSON.parse(JSON.stringify(constraints));
+    const cts = [];
     for (let i = 0; i < constraints.length; i++) {
-      delete cts[i].svgImage;
-      delete cts[i].canvasImage;
-      delete cts[i].params.fitting;
-      delete cts[i].params.path;
+      if (jcts[i].selected) {
+        let constraint = jcts[i];
+        delete constraint.selected;
+        delete constraint.svgImage;
+        delete constraint.canvasImage;
+        delete constraint.params.fitting;
+        delete constraint.params.path;
+        cts.push(constraint);
+      }
     }
     getModelData({ constraints: cts })
       .then((res) => setModelData(res.data))

@@ -269,9 +269,9 @@ class ChartsView extends Component {
         <Col span={6}>
           <ConstraintSelect
             constraints={this.state.constraints}
-            removeConstraint={(index) =>
-              this.removeConstraint(this.state.constraints[index])
-            }
+            updateConstraint={(constraint) => {
+              this.updateConstraint(constraint);
+            }}
             selectConstraint={(index) =>
               this.selectConstraint("original", index)
             }

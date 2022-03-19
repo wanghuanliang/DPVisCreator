@@ -112,9 +112,7 @@ export default class DataChart extends Component {
         this.props.attributes[0].attribute_type === "Dimensions"
           ? this.mapper[point[0]]
           : point[0],
-        this.props.attributes[1].attribute_type === "Dimensions"
-          ? point[1]
-          : point[1],
+        point[1],
         point[2],
       ]
     );
@@ -131,7 +129,7 @@ export default class DataChart extends Component {
     return [
       this.props.attributes[0].attribute_type === "Dimensions"
         ? this.mapper[point[0]]
-        : values[0] + this.props.attributes[0].min,
+        : values[0],
       values[1],
     ];
   }
@@ -396,8 +394,14 @@ export default class DataChart extends Component {
       self.updateParams({ mean });
     }
     if (this.checkConstraint()) {
-      const [cx, cy] = self.props.constraint.params.mean;
-      const [rx, ry] = self.props.constraint.params.radius;
+      const [meanx, meany] = self.props.constraint.params.mean;
+      const [cx, cy] = self.convertToPixel([meanx, meany]);
+      let [rx, ry] = self.convertToPixel([meanx + 1, meany - 1]);
+      rx -= cx;
+      ry -= cy;
+      const [radiusx, radiusy] = self.props.constraint.params.radius;
+      rx *= radiusx;
+      ry *= radiusy;
       this.svg
         .append("ellipse")
         .attr("opacity", "0.4")
@@ -433,8 +437,8 @@ export default class DataChart extends Component {
           rx *= 2;
           ry *= 2;
           self.updateParams({
-            mean: [cx, cy],
-            radius: [rx, ry],
+            mean: [meanx, meany],
+            radius: [Math.sqrt(varx) * 2, Math.sqrt(vary) * 2],
           });
           this.svg
             .append("ellipse")
