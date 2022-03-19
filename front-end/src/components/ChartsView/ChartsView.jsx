@@ -7,24 +7,8 @@ import { chart_constraint, constraint_chart } from "./constants";
 class ChartsView extends Component {
   constructor(props) {
     super(props);
-    this.setAugmentedData = props.setAugmentedData;
-    this.setProtectedData = props.setProtectedData;
-    this.setPattern = () => {
-      const constraints = JSON.parse(JSON.stringify(this.state.constraints));
-      for (let i = 0; i < constraints.length; i++) {
-        delete constraints[i].svgImage;
-        delete constraints[i].canvasImage;
-        delete constraints[i].params.fitting;
-        delete constraints[i].params.path;
-      }
-      const self = this;
-      this.props.setPattern({ constraints }).then((body) => {
-        const data = body.data;
-        if (data.status === "success") {
-          self.setAugmentedData(data.augmented_data);
-          self.setProtectedData(data.protected_data);
-        }
-      });
+    this.setConstraints = () => {
+      this.props.setConstraints(this.state.constraints);
     };
     this.constraintId = 0;
     this.state = {
@@ -81,7 +65,6 @@ class ChartsView extends Component {
           range.push(i);
         }
       }
-      console.log(range);
       const cart = []; // 笛卡尔积
       range.forEach((value) => {
         color.values.forEach((colorName) => {
@@ -176,6 +159,11 @@ class ChartsView extends Component {
       dataset.sort((a, b) => a[0] - b[0]);
     // 折线图按x值从小到大
     else if (chartType === "bar") dataset.sort((a, b) => b[1] - a[1]); // 条形图按y值从大到小
+    if (!isNaN(step) && chartType === "line") {
+      constraint.color.values.forEach((value) => {
+        dataset.pop();
+      });
+    }
     if (type === "original") {
       this.setState({
         original_chart_data: dataset,
@@ -195,7 +183,7 @@ class ChartsView extends Component {
     constraints.push({ ...constraint, id: "C" + this.constraintId });
     this.constraintId++;
     this.setState({ constraints });
-    this.setPattern();
+    this.setConstraints();
   }
   updateConstraint(constraint) {
     const constraints = this.state.constraints;
@@ -204,7 +192,7 @@ class ChartsView extends Component {
       constraints[index] = { ...constraints[index], ...constraint };
       this.getData("original", this.state.original_data, constraint);
       this.setState({ constraints });
-      this.setPattern();
+      this.setConstraints();
     } else {
       this.setState({
         original_constraint: constraint,
@@ -233,7 +221,7 @@ class ChartsView extends Component {
     constraints.splice(index, 1);
     this.setState({ constraints });
     console.log({ constraints: this.state.constraints });
-    this.setPattern();
+    this.setConstraints();
   }
   selectConstraint(type, index) {
     if (type === "original") {
