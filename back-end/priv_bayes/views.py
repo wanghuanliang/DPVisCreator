@@ -13,10 +13,9 @@ from priv_bayes.DataSynthesizer.DataDescriber import DataDescriber
 from priv_bayes.DataSynthesizer.DataGenerator import DataGenerator
 from priv_bayes.DataSynthesizer.ModelInspector import ModelInspector
 from priv_bayes.DataSynthesizer.lib.utils import read_json_file, display_bayesian_network
-os.chdir("../")
-DATA_PATH = 'priv_bayes/data/1.csv'
+
+DATA_PATH = 'priv_bayes/data/insurance.csv'  # 添加默认数据 内容
 constraints = None
-ORI_DATA = None
 threshold_value = 10  # 离散型和数值型分界点
 epsilon = 0.3         # 分布叠加的隐私预算
 bayes_epsilon = 10    # 贝叶斯网络的隐私预算
@@ -28,15 +27,16 @@ Dimensions = []
 Measures = []
 INT_TYPE = []
 
+df = pd.read_csv(DATA_PATH)
+ORI_DATA = copy.deepcopy(df)  # 保存原始数据，用于后续数据生成
+
 
 def index(request):
     return HttpResponse("priv_bayes_backend")
 
 
-def getOriginalData(request):   # 获取原始数据
+def solveOriginalData():
     global DATA_PATH, ORI_DATA, Dimensions, Measures, INT_TYPE
-    data = request.FILES['file']
-    DATA_PATH = default_storage.save('priv_bayes/data/1.csv', ContentFile(data.read()))
     df = pd.read_csv(DATA_PATH)
     ORI_DATA = copy.deepcopy(df)  # 保存原始数据，用于后续数据生成
     df['index'] = range(len(df))  # 给每条记录按顺序编号，后续可能会用到
@@ -77,6 +77,15 @@ def getOriginalData(request):   # 获取原始数据
             "attribute_character": attribute_character
         }
     }
+    return ret
+
+
+def getOriginalData(request):   # 获取原始数据
+    global DATA_PATH
+    data = request.FILES['file']
+    DATA_PATH = default_storage.save('priv_bayes/data/1.csv', ContentFile(data.read()))
+    ret = solveOriginalData()
+
     return HttpResponse(json.dumps(ret))
 
 
