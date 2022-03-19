@@ -10,16 +10,21 @@ class ChartsView extends Component {
     this.setAugmentedData = props.setAugmentedData;
     this.setProtectedData = props.setProtectedData;
     this.setPattern = () => {
+      const constraints = JSON.parse(JSON.stringify(this.state.constraints));
+      for (let i = 0; i < constraints.length; i++) {
+        delete constraints[i].svgImage;
+        delete constraints[i].canvasImage;
+        delete constraints[i].params.fitting;
+        delete constraints[i].params.path;
+      }
       const self = this;
-      this.props
-        .setPattern({ constraints: this.state.constraints })
-        .then((body) => {
-          const data = body.data;
-          if (data.status === "success") {
-            self.setAugmentedData(data.augmented_data);
-            self.setProtectedData(data.protected_data);
-          }
-        });
+      this.props.setPattern({ constraints }).then((body) => {
+        const data = body.data;
+        if (data.status === "success") {
+          self.setAugmentedData(data.augmented_data);
+          self.setProtectedData(data.protected_data);
+        }
+      });
     };
     this.constraintId = 0;
     this.state = {
@@ -37,19 +42,15 @@ class ChartsView extends Component {
       x_axis: settings.x_axis,
       y_axis: settings.y_axis,
       color: settings.color,
+      x_step: settings.x_step,
       params: {
         fitting: settings.fitting ? settings.fitting : 2,
       },
     };
     this.getData("original", this.props.original_data, constraint);
-    this.getData(
-      "protected",
-      this.props.protected_data || this.props.original_data,
-      constraint
-    );
   }
   getData(type, type_data, constraint) {
-    const [x, y, computation, color, fitting, chartType] = [
+    const [x, y, computation, color, fitting, chartType, step] = [
       this.props.attribute_character[constraint.x_axis],
       constraint.y_axis
         ? this.props.attribute_character[constraint.y_axis]
@@ -60,15 +61,27 @@ class ChartsView extends Component {
         : { attribute_type: "Dimensions", values: ["default"] },
       null,
       constraint_chart[constraint.type],
+      constraint.x_step,
     ];
     const dataset = [];
     if (computation !== null) {
       const range = [];
-      type_data.forEach((data) => {
-        if (!range.includes(data[constraint.x_axis])) {
-          range.push(data[constraint.x_axis]);
+      if (isNaN(step)) {
+        type_data.forEach((data) => {
+          if (!range.includes(data[constraint.x_axis])) {
+            range.push(data[constraint.x_axis]);
+          }
+        });
+        if (x.type === "Measures")
+          range.push(this.props.attribute_character[constraint.x_axis].max + 1);
+        range.sort((a, b) => a - b);
+      } else {
+        let { min, max } = this.props.attribute_character[constraint.x_axis];
+        for (let i = min; i <= max + step; i += step) {
+          range.push(i);
         }
-      });
+      }
+      console.log(range);
       const cart = []; // 笛卡尔积
       range.forEach((value) => {
         color.values.forEach((colorName) => {
@@ -78,30 +91,83 @@ class ChartsView extends Component {
           });
         });
       });
-      cart.forEach((condition) => {
-        let sum = 0;
-        const arr = type_data.filter(
-          (data) =>
-            data[constraint.x_axis] === condition.value &&
-            (condition.color === "default" ||
-              condition.color === data[constraint.color])
-        );
-        arr.forEach((element) => (sum += element[constraint.y_axis]));
-        dataset.push([
-          condition.value,
-          computation === "count"
-            ? arr.length
-            : sum / (arr.length === 0 ? 1 : arr.length),
-          condition.color,
-          arr.map((element) => element.index),
-        ]);
-      });
+      if (x.type === "Measures") {
+        for (let i = 0; i < cart.length - 1; i++) {
+          let current = cart[i];
+          let next = cart[i + 1];
+          let sum = 0;
+          const arr = type_data.filter(
+            (data) =>
+              data[constraint.x_axis] >= current.value &&
+              data[constraint.x_axis] < next.value &&
+              (current.color === "default" ||
+                current.color === data[constraint.color])
+          );
+          arr.forEach((element) => (sum += element[constraint.y_axis]));
+          dataset.push([
+            current.value,
+            computation === "count"
+              ? arr.length
+              : sum / (arr.length === 0 ? 1 : arr.length),
+            current.color,
+            arr.map((element) => element.index),
+          ]);
+        }
+      } else {
+        for (let i = 0; i < cart.length; i++) {
+          let current = cart[i];
+          let sum = 0;
+          const arr = type_data.filter(
+            (data) =>
+              data[constraint.x_axis] === current.value &&
+              (current.color === "default" ||
+                current.color === data[constraint.color])
+          );
+          arr.forEach((element) => (sum += element[constraint.y_axis]));
+          dataset.push([
+            current.value,
+            computation === "count"
+              ? arr.length
+              : sum / (arr.length === 0 ? 1 : arr.length),
+            current.color,
+            arr.map((element) => element.index),
+          ]);
+        }
+      }
     } else {
       type_data.forEach((data) => {
+        if (isNaN(step)) {
+          dataset.push([
+            data[constraint.x_axis],
+            data[constraint.y_axis],
+            constraint.color ? data[constraint.color] : "default",
+            data.index,
+          ]);
+        } else {
+          dataset.push([
+            x.type === "Measures"
+              ? data[constraint.x_axis] -
+                ((data[constraint.x_axis] -
+                  this.props.attribute_character[constraint.x_axis].min) %
+                  step)
+              : data[constraint.x_axis],
+            data[constraint.y_axis],
+            constraint.color ? data[constraint.color] : "default",
+            data.index,
+          ]);
+        }
+      });
+    }
+    if (type === "protected") {
+      constraint.data.forEach((id) => {
+        const index = this.props.original_data.findIndex(
+          (data) => data.index === id
+        );
+        const data = this.props.original_data[index];
         dataset.push([
           data[constraint.x_axis],
           data[constraint.y_axis],
-          constraint.color ? data[constraint.color] : "default",
+          "selected_original_data",
           data.index,
         ]);
       });
@@ -113,11 +179,13 @@ class ChartsView extends Component {
     if (type === "original") {
       this.setState({
         original_chart_data: dataset,
-        original_constraint: constraint,
+        original_constraint: constraint, // 同步修改
+        protected_constraint: constraint,
       });
     } else if (type === "protected") {
       this.setState({
         protected_chart_data: dataset,
+        original_constraint: constraint,
         protected_constraint: constraint,
       });
     }
@@ -127,7 +195,6 @@ class ChartsView extends Component {
     constraints.push({ ...constraint, id: "C" + this.constraintId });
     this.constraintId++;
     this.setState({ constraints });
-    console.log({ constraints: this.state.constraints });
     this.setPattern();
   }
   updateConstraint(constraint) {
@@ -139,13 +206,26 @@ class ChartsView extends Component {
       this.setState({ constraints });
       this.setPattern();
     } else {
-      this.setState({ original_constraint: constraint });
+      this.setState({
+        original_constraint: constraint,
+        protected_constraint: constraint,
+      });
     }
-    console.log({ constraints: this.state.constraints });
   }
   updateConstraintParams(constraint, params) {
     constraint.params = { ...constraint.params, ...params };
-    this.updateConstraint(constraint);
+    const constraints = this.state.constraints;
+    const index = constraints.findIndex((value) => value.id === constraint.id);
+    if (index >= 0) {
+      constraints[index] = { ...constraints[index], ...constraint };
+      this.getData("original", this.state.original_data, constraint);
+      this.setState({ constraints });
+    } else {
+      this.setState({
+        original_constraint: constraint,
+        protected_constraint: constraint,
+      });
+    }
   }
   removeConstraint(constraint) {
     const constraints = this.state.constraints;
@@ -176,9 +256,15 @@ class ChartsView extends Component {
         <ChartMenu
           attributes={this.props.attribute_character || {}}
           initConstraint={(settings) => this.initConstraint(settings)}
-          insertConstraint={() =>
-            this.insertConstraint(this.state.original_constraint)
+          constraintParams={this.state.original_constraint.params}
+          removeConstraint={() =>
+            this.removeConstraint(this.state.original_constraint)
           }
+          saveConstraint={() => {
+            if (this.state.original_constraint.id)
+              this.updateConstraint(this.state.original_constraint);
+            else this.insertConstraint(this.state.original_constraint);
+          }}
         ></ChartMenu>
         <Col span={18}>
           <ChartDisplay
@@ -200,27 +286,6 @@ class ChartsView extends Component {
             }
             selectConstraint={(index) =>
               this.selectConstraint("original", index)
-            }
-          ></ConstraintSelect>
-        </Col>
-        <Col span={18}>
-          <ChartDisplay
-            name="protected-chart"
-            data={this.state.protected_chart_data}
-            attributes={this.props.attribute_character || {}}
-            constraint={this.state.protected_constraint}
-            updateConstraint={(constraint) => this.updateConstraint(constraint)}
-            updateConstraintParams={(id, params) =>
-              this.updateConstraintParams(id, params)
-            }
-          ></ChartDisplay>
-        </Col>
-        <Col span={6}>
-          <ConstraintSelect
-            constraints={this.state.constraints}
-            removeConstraint={(constraint) => this.removeConstraint(constraint)}
-            selectConstraint={(index) =>
-              this.selectConstraint("protected", index)
             }
           ></ConstraintSelect>
         </Col>
