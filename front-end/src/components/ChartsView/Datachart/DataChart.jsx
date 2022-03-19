@@ -36,6 +36,8 @@ function getAxisOption(attribute) {
         type: "value",
         id: attribute.name,
         name: attribute.name,
+        min: "dataMin",
+        max: "dataMax",
         nameLocation: "center",
         scale: true,
         splitLine: {
@@ -46,6 +48,18 @@ function getAxisOption(attribute) {
 function getXAxisOption(attribute) {
   return {
     type: "category",
+    id: attribute.name,
+    name: attribute.name,
+    nameLocation: "center",
+    scale: true,
+    splitLine: {
+      show: false,
+    },
+  };
+}
+function getYAxisOption(attribute) {
+  return {
+    type: "value",
     id: attribute.name,
     name: attribute.name,
     nameLocation: "center",
@@ -97,8 +111,10 @@ export default class DataChart extends Component {
       [
         this.props.attributes[0].attribute_type === "Dimensions"
           ? this.mapper[point[0]]
-          : point[0] - this.props.attributes[0].min,
-        point[1],
+          : point[0],
+        this.props.attributes[1].attribute_type === "Dimensions"
+          ? point[1]
+          : point[1],
         point[2],
       ]
     );
@@ -245,7 +261,7 @@ export default class DataChart extends Component {
         left: "10%",
         top: "10%",
       },
-      xAxis: getXAxisOption(this.props.attributes[0]),
+      xAxis: getAxisOption(this.props.attributes[0]),
       yAxis: getAxisOption(this.props.attributes[1]),
       series: getSeriesOption(
         "scatter",
@@ -285,7 +301,7 @@ export default class DataChart extends Component {
         throttleType: "debounce",
       },
       calculable: true,
-      xAxis: getXAxisOption(this.props.attributes[0], this.props.data),
+      xAxis: getAxisOption(this.props.attributes[0], this.props.data),
       yAxis: getAxisOption(this.props.attributes[1]),
       series: [
         ...getSeriesOption(
@@ -326,7 +342,7 @@ export default class DataChart extends Component {
       },
       grid,
       xAxis: getXAxisOption(this.props.attributes[0], this.props.data),
-      yAxis: getAxisOption(this.props.attributes[1]),
+      yAxis: getYAxisOption(this.props.attributes[1]),
       series: getSeriesOption("bar", this.props.attributes[2], this.props.data),
     };
     return option;
@@ -380,14 +396,8 @@ export default class DataChart extends Component {
       self.updateParams({ mean });
     }
     if (this.checkConstraint()) {
-      const [meanx, meany] = self.props.constraint.params.mean;
-      const [varx, vary] = self.props.constraint.params.radius;
-      const [cx, cy] = self.convertToPixel([meanx, meany]);
-      let [rx, ry] = self.convertToPixel([meanx + 1, meany - Math.sqrt(vary)]);
-      rx = (rx - cx) * Math.sqrt(varx);
-      ry -= cy;
-      rx *= 4;
-      ry *= 4;
+      const [cx, cy] = self.props.constraint.params.mean;
+      const [rx, ry] = self.props.constraint.params.radius;
       this.svg
         .append("ellipse")
         .attr("opacity", "0.4")
@@ -418,14 +428,14 @@ export default class DataChart extends Component {
           const vary = ecStat.statistics.sampleVariance(ySamples);
           const [cx, cy] = self.convertToPixel([meanx, meany]);
           let [rx, ry] = self.convertToPixel([meanx + 1, meany - 1]);
-          self.updateParams({
-            mean: [meanx, meany],
-            radius: [Math.sqrt(varx), Math.sqrt(vary)],
-          });
           rx = (rx - cx) * Math.sqrt(varx);
-          ry = (cy - ry) * Math.sqrt(vary);
-          rx *= 4;
-          ry *= 4;
+          ry = (ry - cy) * Math.sqrt(vary);
+          rx *= 2;
+          ry *= 2;
+          self.updateParams({
+            mean: [cx, cy],
+            radius: [rx, ry],
+          });
           this.svg
             .append("ellipse")
             .attr("opacity", "0.4")
