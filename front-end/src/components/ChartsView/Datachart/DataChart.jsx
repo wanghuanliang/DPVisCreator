@@ -619,10 +619,8 @@ export default class DataChart extends Component {
     d3.selectAll("#container-" + this.props.name + " > svg > *").remove();
     if (type === "scatter") {
       option = { ...option, ...this.getScatterChartOption() };
-      this.getCluster();
     } else if (type === "line") {
       option = { ...option, ...this.getLineChartOption() };
-      this.getCorrelation();
     } else if (type === "bar") {
       option = { ...option, ...this.getBarChartOption() };
     }
@@ -630,6 +628,12 @@ export default class DataChart extends Component {
     this.chart.clear();
     this.chart.resize({ width: this.width, height: chart_height });
     option && this.chart.setOption(option);
+    if (type === "scatter") {
+      this.getCluster();
+    } else if (type === "line") {
+      this.getCorrelation();
+    } else if (type === "bar") {
+    }
   }
   render() {
     return (
