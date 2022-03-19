@@ -471,6 +471,7 @@ export default class DataChart extends Component {
         const [x, y] = path[i];
         pathData.push({ x, y: parseFloat(y) + width });
       }
+      pathData.push({ x: path[0][0], y: path[0][1] - width });
       const line = d3
         .line()
         .curve(d3.curveCardinal.tension(0.5))
@@ -509,6 +510,7 @@ export default class DataChart extends Component {
         const [x, y] = path[i];
         pathData.push({ x, y: y + width });
       }
+      pathData.push({ x: path[0][0], y: path[0][1] - width });
       const line = d3
         .line()
         .curve(d3.curveCardinal.tension(0.5))
@@ -518,7 +520,9 @@ export default class DataChart extends Component {
         .append("path")
         .datum(pathData)
         .attr("points", path)
-        .attr("fill", "#111111")
+        .attr("fill", "none")
+        .attr("stroke-width", 5)
+        .attr("stroke", "#111111")
         .attr("opacity", 0.5)
         .attr("d", line)
         .style("pointer-events", "auto")
@@ -550,6 +554,7 @@ export default class DataChart extends Component {
             const [x, y] = path[i];
             pathData.push({ x, y: y + 5 });
           }
+          pathData.push({ x: path[0][0], y: path[0][1] - 5 });
           self.updateParams({
             polynomial_params: regression.parameter.reverse(),
             range: [
@@ -625,15 +630,15 @@ export default class DataChart extends Component {
       option = { ...option, ...this.getBarChartOption() };
     }
     this.svg.style("width", this.width);
-    this.chart.clear();
-    this.chart.resize({ width: this.width, height: chart_height });
-    option && this.chart.setOption(option);
     if (type === "scatter") {
       this.getCluster();
     } else if (type === "line") {
       this.getCorrelation();
     } else if (type === "bar") {
     }
+    this.chart.clear();
+    this.chart.resize({ width: this.width, height: chart_height });
+    option && this.chart.setOption(option);
   }
   render() {
     return (
