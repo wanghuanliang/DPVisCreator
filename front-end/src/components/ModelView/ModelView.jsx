@@ -10,6 +10,7 @@ import SankeyPlot from './SankeyPlot';
 import Matrix from './Matrix/Matrix';
 import Legend from './Matrix/Legend';
 import AlluvialPlot from './AlluvialPlot';
+import WeightsTable from './WeightsTable/WeightsTable';
 import { debounce } from 'lodash';
 
 const [svgWidth, svgHeight] = [1118, 540];
@@ -19,16 +20,16 @@ const margin = {
   right: 0,
   bottom: 0
 }
-// const constraints = [{
-//   id: 'C0',
-//   type: 'cluster',
-// }, {
-//   id: 'C1',
-//   type: 'correlation'
-//   }, {
-//   id: 'C2',
-//   type: 'order'
-// }];
+const constraints = [{
+  id: 'C0',
+  type: 'cluster',
+}, {
+  id: 'C1',
+  type: 'correlation'
+  }, {
+  id: 'C2',
+  type: 'order'
+}];
 // 约束模式颜色
 const patternColor = {
   original: '#dedede',
@@ -60,11 +61,11 @@ const ModelView = (props) => {
   const initialPatternWeight = useMemo(() => {
     const initial = {};
     constraints.forEach(constraint => initial[constraint.id] = 0.8);
+    initial.others = 0.8
     return initial;
   }, [constraints])
   const [patternWeights, setPatternWeights] = useState(initialPatternWeight); //{'c1': 1, 'c2': 1}
-  
-  const handleRecordClick = () => {
+  const handleUpdateClick = () => {
     const data = {}
     data.bayes_budget = privacyBudgetValue;
     data.weights = [];
@@ -73,7 +74,7 @@ const ModelView = (props) => {
     })
     console.log('data', data);
     setWeights(data)
-      .then(res => setProtectedData(res.data.proportion_data))
+      .then()
       .catch(e => console.log('e', e));
   }
 
@@ -108,7 +109,7 @@ const ModelView = (props) => {
             <div style={{ backgroundColor: patternColor.order }}>Order</div>
           </div>
           <div style={{display: 'inline-block', width: 20}}></div>
-          <Button size='small' onClick={handleRecordClick}>Record</Button>
+          <Button size='small'>Record</Button>
         </Space>
       </div>
     )
@@ -132,6 +133,18 @@ const ModelView = (props) => {
             computeColor={computeColor}
           ></Legend>
         </g> */}
+        <foreignObject
+          x={10}
+          y={50}
+          width={350}
+          height={300}
+        >
+          <WeightsTable
+            patternWeights={patternWeights}
+            setPatternWeights={setPatternWeights}
+            handleUpdateClick={handleUpdateClick}
+          ></WeightsTable>
+        </foreignObject>
         <g transform='translate(400,0)'>
           <SankeyPlot
             totalNum={totalNum}
