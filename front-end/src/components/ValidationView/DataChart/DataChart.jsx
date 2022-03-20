@@ -1,10 +1,8 @@
 import * as echarts from "echarts";
 import { Component } from "react";
 import { attributeType } from "../../../data/attributes";
-import * as ecStat from "echarts-stat";
 import * as d3 from "d3";
-import { createEllipseController } from "../Constraints/controller";
-import { chart_constraint } from "../constants";
+import { chart_constraint } from "../../ChartsView/constants";
 import { isArray, mean } from "lodash";
 const globalColor = [
   "#5470c6",
@@ -18,7 +16,6 @@ const globalColor = [
   "#ea7ccc",
 ];
 const chart_height = 400;
-const thumbnailHeight = 60;
 // 散点图选择之后聚类，生成椭圆 柱状图单独选择柱子 折线图生成的拟合曲线可调整宽度，纵向，背景全部调成灰色
 function getAxisOption(attribute) {
   return "Dimensions" === attributeType[attribute.attributeType]
@@ -96,11 +93,6 @@ export default class DataChart extends Component {
     this.selectedSeriesData = {};
     this.selectBar = {};
   }
-  updateParams(params) {
-    this.params = { ...this.params, ...params };
-    const constraint = { ...this.props.constraint, ...this.convertToImages() };
-    this.props.updateConstraintParams(constraint, this.params);
-  }
   convertToPixel(point) {
     return this.chart.convertToPixel(
       {
@@ -135,33 +127,6 @@ export default class DataChart extends Component {
       values[1],
     ];
   }
-  convertToImages() {
-    function reEncode(data) {
-      return decodeURIComponent(
-        encodeURIComponent(data).replace(/%([0-9A-F]{2})/g, (match, p1) => {
-          const c = String.fromCharCode(`0x${p1}`);
-          return c === "%" ? "%25" : c;
-        })
-      );
-    }
-    const canvas = document.getElementById("canvas-" + this.props.name);
-    const canvasImage = new Image();
-    canvasImage.src = canvas.toDataURL("image/png");
-    canvasImage.width = this.width / 4;
-    canvasImage.height = thumbnailHeight;
-    canvasImage.style = "margin:-" + (this.width / 4 + 7) + "px";
-    const serializer = new XMLSerializer();
-    const svgSource = serializer.serializeToString(this.svg.node());
-    const svgImage = new Image();
-    svgImage.setAttribute(
-      "src",
-      "data:image/svg+xml;base64," + btoa(reEncode(svgSource))
-    );
-    svgImage.width = this.width / 4;
-    svgImage.height = thumbnailHeight;
-
-    return { canvasImage, svgImage };
-  }
   componentDidMount() {
     let self = this;
     const chartDom = document.getElementById("canvas-" + this.props.name);
@@ -175,40 +140,6 @@ export default class DataChart extends Component {
       .style("left", 12)
       .style("top", 0)
       .style("pointer-events", "none");
-    this.chart.on("brushSelected", (params) => {
-      const seriesData = {};
-      params.batch[0]?.selected.forEach((series) => {
-        const name = series.seriesName;
-        const data = self.props.data.filter((data) => data[2] === name);
-        const selectedData = [];
-        series.dataIndex.forEach((index) => {
-          selectedData.push(data[index]);
-        });
-        seriesData[name] =
-          selectedData.length > 0 ? selectedData : seriesData[name];
-      });
-      this.selectedSeriesData = seriesData;
-    });
-    this.chart.on("brushEnd", (params) => {
-      this.clearSvg();
-      const type = this.props.type;
-      this.props.onSelected(this.selectedSeriesData);
-      if (type === "scatter") this.getCluster();
-      else if (type === "line") this.getCorrelation();
-    });
-    this.chart.on("click", (params) => {
-      if (this.props.type === "bar" && this.props.name === "original-chart") {
-        if (this.selectBar[params.data[0]])
-          delete this.selectBar[params.data[0]];
-        else
-          this.selectBar[params.data[0]] = self.props.data.filter(
-            (d) => d[0] == params.data[0]
-          )[0];
-        d3.selectAll("#container-" + this.props.name + " > svg > *").remove();
-        this.props.onSelected({ default: Object.values(self.selectBar) });
-        this.getOrder();
-      }
-    });
     const divDom = document.getElementById("container-" + this.props.name);
     this.width = divDom.offsetWidth;
     this.generateData();
@@ -391,21 +322,6 @@ export default class DataChart extends Component {
   }
   getCluster() {
     const self = this;
-    function dragEllipseStart(d) {
-      const event = d3.event;
-      d3.select(this).attr("cx", event.x);
-      d3.select(this).attr("cy", event.y);
-    }
-    function dragEllipseDragging(d) {
-      const event = d3.event;
-      d3.select(this).attr("cx", event.x);
-      d3.select(this).attr("cy", event.y);
-    }
-    function dragEllipseEnd(d) {
-      const event = d3.event;
-      const mean = self.convertFromPixel([event.x, event.y]);
-      self.updateParams({ mean });
-    }
     if (this.checkConstraint()) {
       const [meanx, meany] = self.props.constraint.params.mean;
       const [cx, cy] = self.convertToPixel([meanx, meany]);
@@ -424,98 +340,11 @@ export default class DataChart extends Component {
         .attr("cx", cx)
         .attr("cy", cy)
         .attr("rx", rx)
-        .attr("ry", ry)
-        .style("pointer-events", "auto")
-        .call(
-          d3
-            .drag()
-            .on("start", dragEllipseStart)
-            .on("drag", dragEllipseDragging)
-            .on("end", dragEllipseEnd)
-        );
-    } else {
-      this.props.attributes[2].values.forEach((name) => {
-        const data = self.selectedSeriesData[name];
-        if (data) {
-          const xSamples = data.map((d) => d[0]);
-          const ySamples = data.map((d) => d[1]);
-          const meanx = ecStat.statistics.mean(xSamples);
-          const varx = ecStat.statistics.sampleVariance(xSamples);
-          const meany = ecStat.statistics.mean(ySamples);
-          const vary = ecStat.statistics.sampleVariance(ySamples);
-          const [cx, cy] = self.convertToPixel([meanx, meany]);
-          let [rx, ry] = self.convertToPixel([meanx + 1, meany - 1]);
-          rx = (rx - cx) * Math.sqrt(varx);
-          ry = (ry - cy) * Math.sqrt(vary);
-          rx *= 2;
-          ry *= 2;
-          this.svg
-            .append("ellipse")
-            .attr("opacity", "0.4")
-            .attr("fill", "none")
-            .attr("stroke", "#111111")
-            .attr("stroke-width", 5)
-            .attr("cx", cx)
-            .attr("cy", cy)
-            .attr("rx", rx)
-            .attr("ry", ry)
-            .style("pointer-events", "auto")
-            .call(
-              d3
-                .drag()
-                .on("start", dragEllipseStart)
-                .on("drag", dragEllipseDragging)
-                .on("end", dragEllipseEnd)
-            );
-          self.updateParams({
-            mean: [meanx, meany],
-            radius: [Math.sqrt(varx) * 2, Math.sqrt(vary) * 2],
-          });
-        }
-      });
+        .attr("ry", ry);
     }
   }
   getCorrelation() {
     const self = this;
-    function dragLineStart(d) {
-      const event = d3.event;
-      d3.select(this).attr("cy", event.y);
-    }
-    function dragLineDragging(d) {
-      const event = d3.event;
-      const width = Math.abs(parseFloat(d3.select(this).attr("cy")) - event.y);
-      const values = d3.select(this).attr("points").split(",");
-      const path = [];
-      for (let i = 0; i < values.length / 2; i++) {
-        path.push([values[i * 2], values[i * 2 + 1]]);
-      }
-      const pathData = [];
-      for (let i = 0; i < path.length; i++) {
-        const [x, y] = path[i];
-        pathData.push({ x, y: parseFloat(y) - width });
-      }
-      for (let i = path.length - 1; i >= 0; i--) {
-        const [x, y] = path[i];
-        pathData.push({ x, y: parseFloat(y) + width });
-      }
-      pathData.push({ x: path[0][0], y: path[0][1] - width });
-      const line = d3
-        .line()
-        .curve(d3.curveCardinal.tension(0.5))
-        .x((d) => d.x)
-        .y((d) => d.y);
-      d3.select(this).datum(pathData).attr("d", line);
-    }
-    function dragLineEnd(d) {
-      const event = d3.event;
-      const padding = Math.abs(
-        self.convertFromPixel([
-          event.x,
-          parseFloat(d3.select(this).attr("cy")),
-        ])[1] - self.convertFromPixel([event.x, event.y])[1]
-      );
-      self.updateParams({ padding });
-    }
     if (this.checkConstraint()) {
       const pathData = [];
       const path = self.props.constraint.params.path;
@@ -551,80 +380,7 @@ export default class DataChart extends Component {
         .attr("stroke-width", 5)
         .attr("stroke", "#111111")
         .attr("opacity", 0.5)
-        .attr("d", line)
-        .style("pointer-events", "auto")
-        .call(
-          d3
-            .drag()
-            .on("start", dragLineStart)
-            .on("drag", dragLineDragging)
-            .on("end", dragLineEnd)
-        );
-    } else {
-      this.props.attributes[2].values.forEach((name, index) => {
-        const data = self.selectedSeriesData[name];
-        if (data) {
-          const padding = 1;
-          const pathData = [];
-          const regression = ecStat.regression(
-            "polynomial",
-            data.map((d) => [d[0], d[1]]),
-            this.params.fitting
-          );
-          const d0 = self.convertToPixel([
-            regression.points[0][0],
-            regression.points[0][1] + padding,
-          ])[1];
-          const d1 = self.convertToPixel([
-            regression.points[0][0],
-            regression.points[0][1],
-          ])[1];
-          const width = Math.abs(d0 - d1);
-          const path = regression.points.map((point) =>
-            this.convertToPixel(point)
-          );
-          for (let i = 0; i < path.length; i++) {
-            const [x, y] = path[i];
-            pathData.push({ x, y: y - width });
-          }
-          for (let i = path.length - 1; i >= 0; i--) {
-            const [x, y] = path[i];
-            pathData.push({ x, y: y + width });
-          }
-          pathData.push({ x: path[0][0], y: path[0][1] - width });
-          const line = d3
-            .line()
-            .curve(d3.curveCardinal.tension(0.5))
-            .x((d) => d.x)
-            .y((d) => d.y);
-          this.svg
-            .append("path")
-            .datum(pathData)
-            .attr("points", path)
-            .attr("fill", "none")
-            .attr("stroke-width", 5)
-            .attr("stroke", "#111111")
-            .attr("opacity", 0.5)
-            .attr("d", line)
-            .style("pointer-events", "auto")
-            .call(
-              d3
-                .drag()
-                .on("start", dragLineStart)
-                .on("drag", dragLineDragging)
-                .on("end", dragLineEnd)
-            );
-          self.updateParams({
-            polynomial_params: regression.parameter.reverse(),
-            range: [
-              regression.points[0][0],
-              regression.points[regression.points.length - 1][0],
-            ],
-            path,
-            padding,
-          });
-        }
-      });
+        .attr("d", line);
     }
   }
   getOrder() {
@@ -649,24 +405,6 @@ export default class DataChart extends Component {
             .attr("height", chart_height * 0.85 - y)
             .style("fill", "#111111")
             .attr("opacity", 0.5);
-        });
-      }
-    } else {
-      const data = Object.values(self.selectBar);
-      if (data) {
-        data.forEach((point) => {
-          const [x, y] = self.convertToPixel(point);
-          const width = (self.width * 0.8) / Object.keys(self.mapper).length;
-          self.svg
-            .append("rect")
-            .attr("x", x - width / 2)
-            .attr("y", y)
-            .attr("value", point[0])
-            .attr("width", width)
-            .attr("height", chart_height * 0.85 - y)
-            .style("fill", "#111111")
-            .attr("opacity", 0.5);
-          self.updateParams({ values: Object.keys(self.selectBar) });
         });
       }
     }
