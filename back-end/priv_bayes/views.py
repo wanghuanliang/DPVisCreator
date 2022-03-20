@@ -217,8 +217,8 @@ def getModelData(request):
         idx = idx + 1
 
     sankey_data = []
-    conses_ret = [{"id": constraint['id'], "type": constraint['type'], "pos": matrix_data[index].tolist()
-                   , "r": weights[index]} for index, constraint in enumerate(constraints)]
+    conses_ret = [{"id": constraint['id'], "type": constraint['type'], "pos": matrix_data[idx].tolist()
+                   , "r": weights[idx]} for idx, constraint in enumerate(constraints)]
     conses = [constraint['id'] for constraint in constraints]
     for axis_id in range(len(axis_order) - 1):
         x = axis_order[axis_id]
@@ -280,8 +280,8 @@ def setWeights(request):
     weights = np.array(weights) / sum(weights)
     bayes_epsilon = json.loads(request.body).get('bayes_budget')
     matrix_data = get_mds_result()
-    conses_ret = [{"id": constraint['id'], "type": constraint['type'], "pos": matrix_data[index].tolist()
-                      , "r": weights[index]} for index, constraint in enumerate(constraints)]
+    conses_ret = [{"id": constraint['id'], "type": constraint['type'], "pos": matrix_data[idx].tolist(),
+                   "r": weights[idx]} for idx, constraint in enumerate(constraints)]
     ret = {
         "status": "success",
         "constraints": conses_ret
@@ -291,4 +291,5 @@ def setWeights(request):
 
 
 def getMetrics(request):
+    
     return HttpResponse(request.GET.get('title'))
