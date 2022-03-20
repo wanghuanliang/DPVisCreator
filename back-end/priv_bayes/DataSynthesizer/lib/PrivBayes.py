@@ -103,7 +103,7 @@ def calculate_k(num_attributes, num_tuples, target_usefulness=4, epsilon=0.1):
 
 
 def worker(paras):
-    child, V, num_parents, split, dataset = paras
+    child, V, num_parents, split, dataset, weights = paras
     parents_pair_list = []
     mutual_info_list = []
 
@@ -113,13 +113,13 @@ def worker(paras):
             parents.append(V[split])
             parents_pair_list.append((child, parents))
             # TODO consider to change the computation of MI by combined integers instead of strings.
-            mi = mutual_information(dataset[child], dataset[parents])
+            mi = mutual_information(dataset[child], dataset[parents], weights)
             mutual_info_list.append(mi)
 
     return parents_pair_list, mutual_info_list
 
 
-def greedy_bayes(dataset: DataFrame, k: int, epsilon: float):
+def greedy_bayes(dataset: DataFrame, k: int, epsilon: float, weights: {}):
     """Construct a Bayesian Network (BN) using greedy algorithm.
 
     Parameters
@@ -150,7 +150,7 @@ def greedy_bayes(dataset: DataFrame, k: int, epsilon: float):
         mutual_info_list = []
 
         num_parents = min(len(V), k)
-        tasks = [(child, V, num_parents, split, dataset) for child, split in
+        tasks = [(child, V, num_parents, split, dataset, weights) for child, split in
                  product(rest_attributes, range(len(V) - num_parents + 1))]
         with Pool() as pool:
             res_list = pool.map(worker, tasks)

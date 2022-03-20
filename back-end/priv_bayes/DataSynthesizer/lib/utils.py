@@ -3,8 +3,11 @@ import random
 from string import ascii_lowercase
 
 import numpy as np
+from math import log
 from pandas import Series, DataFrame
-from sklearn.metrics import mutual_info_score, normalized_mutual_info_score
+from scipy import sparse as sp
+from priv_bayes.utils import contingency_matrix
+from sklearn.metrics import normalized_mutual_info_score
 
 
 def set_random_seed(seed=0):
@@ -12,7 +15,61 @@ def set_random_seed(seed=0):
     np.random.seed(seed)
 
 
-def mutual_information(labels_x: Series, labels_y: DataFrame):
+def mutual_info_score(labels_true, labels_pred, axes, weights):
+    labels_true = labels_true.values
+    labels_pred = labels_pred.values
+    contingency, classes, class_idx, clusters, cluster_idx = contingency_matrix(labels_true, labels_pred, sparse=True)
+    nzx, nzy, nz_val = sp.find(contingency)
+
+    contingency_sum = contingency.sum()
+    pi = np.ravel(contingency.sum(axis=1))
+    pj = np.ravel(contingency.sum(axis=0))
+
+    flag = True  # 添加权重的开关
+    if flag:
+        nz_val = np.float64(nz_val)
+        how_much = 0
+        ans = 0
+        for id in weights:   # 考虑分布式权重
+            how_much += 1
+            # print(how_much)
+            x_bin = labels_true[id]
+            x_bin = class_idx[labels_true.tolist().index(x_bin)]
+            y_bin = labels_pred[id]
+            y_bin = cluster_idx[labels_pred.tolist().index(y_bin)]
+            target = None
+            for i in range(len(nzx)):
+                if nzx[i] == x_bin and nzy[i] == y_bin:
+                    target = i
+                    break
+
+            all_weights = [weights[id].get(axis) or 1 for axis in axes]
+            avg_weight = sum(all_weights) / len(all_weights)
+            ans += (avg_weight - 1)
+            # print(target)
+            nz_val[target] += (avg_weight - 1)
+        # print("nz_val之和:", np.sum(nz_val))
+        # print("sum:", ans)
+        nz_val = nz_val / np.sum(nz_val) * 1338
+
+    log_contingency_nm = np.log(nz_val)
+
+    contingency_nm = nz_val / contingency_sum
+    # Don't need to calculate the full outer product, just for non-zeroes
+    outer = pi.take(nzx).astype(np.int64, copy=False) * pj.take(nzy).astype(
+        np.int64, copy=False
+    )
+    log_outer = -np.log(outer) + log(pi.sum()) + log(pj.sum())
+    mi = (
+        contingency_nm * (log_contingency_nm - log(contingency_sum))
+        + contingency_nm * log_outer
+    )
+    mi = np.where(np.abs(mi) < np.finfo(mi.dtype).eps, 0.0, mi)
+    return np.clip(mi.sum(), 0.0, None)
+
+
+
+def mutual_information(labels_x: Series, labels_y: DataFrame, weights: {}):
     """Mutual information of distributions in format of Series or DataFrame.
 
     Parameters
@@ -20,12 +77,15 @@ def mutual_information(labels_x: Series, labels_y: DataFrame):
     labels_x : Series
     labels_y : DataFrame
     """
+    # 根据x、y的列名，得到一张新表，为每个样本的权重值
+    axes = [labels_x.name] + labels_y.columns.values.tolist()
     if labels_y.shape[1] == 1:
         labels_y = labels_y.iloc[:, 0]
     else:
         labels_y = labels_y.apply(lambda x: ' '.join(x.values), axis=1)
 
-    return mutual_info_score(labels_x, labels_y)
+
+    return mutual_info_score(labels_x, labels_y, axes, weights=weights)
 
 
 def pairwise_attributes_mutual_information(dataset):
