@@ -8,6 +8,7 @@ from priv_bayes.kl import get_w_distance
 from django.http import HttpResponse
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
+from sdv.metrics.tabular import KSTest, CSTest
 # 隐私保护相关包
 
 from priv_bayes.DataSynthesizer.DataDescriber import DataDescriber
@@ -276,12 +277,12 @@ def getModelData(request):
 def setWeights(request):
     global bayes_epsilon, weights
     weights = json.loads(request.body).get('weights')
-    weights = [w["weight"] for w in weights]
-    weights = np.array(weights) / sum(weights)
+    c_weights = [w["weight"] for w in weights]
+    c_weights = np.array(c_weights) / sum(c_weights)
     bayes_epsilon = json.loads(request.body).get('bayes_budget')
     matrix_data = get_mds_result()
     conses_ret = [{"id": constraint['id'], "type": constraint['type'], "pos": matrix_data[idx].tolist(),
-                   "r": weights[idx]} for idx, constraint in enumerate(constraints)]
+                   "r": c_weights[idx]} for idx, constraint in enumerate(constraints)]
     ret = {
         "status": "success",
         "constraints": conses_ret
@@ -291,5 +292,88 @@ def setWeights(request):
 
 
 def getMetrics(request):
-    
-    return HttpResponse(request.GET.get('title'))
+    global weights, constraints
+    # 构建一个weights数组
+    weight_df = copy.deepcopy(ORI_DATA)
+    weight_df[weight_df.columns] = 1
+    ssum = sum(np.array([w["weight"] for w in weights]))
+    # 建立一张axis到id的索引表
+    axis2id = {}
+    for idx, val in enumerate(weight_df.columns):
+        axis2id[val] = idx
+    arr = weight_df.values
+    for w in weights:
+        if w["id"] == "others":
+            continue
+        cons = [c for c in constraints if c["id"] == w["id"]][0]
+        x_id = axis2id.get(cons["x_axis"])
+        y_id = axis2id.get(cons["y_axis"])
+        cur_ids = cons["data"]
+        for id in cur_ids:
+            if x_id is not None:
+                arr[id][x_id] = max(arr[id][x_id], w["weight"] / ssum * 200)
+            if y_id is not None:
+                arr[id][y_id] = max(arr[id][y_id], w["weight"] / ssum * 200)
+        for axis in axis2id:
+            weight_df[axis] = arr[:, axis2id[axis]]
+    cur_scheme_weights = {}
+    dtdt = json.loads(weight_df.to_json(orient="records"))
+    for idx, dt in enumerate(dtdt):
+        cur_scheme_weights[idx] = dt
+    description_file = "priv_bayes/out/dscrpt.json"
+    synthetic_data = "priv_bayes/out/syndata.csv"
+
+    describer = DataDescriber(category_threshold=20)
+    describer.describe_dataset_in_correlated_attribute_mode(dataset_file=DATA_PATH,
+                                                            epsilon=10,
+                                                            k=2,
+                                                            attribute_to_is_categorical={},
+                                                            attribute_to_is_candidate_key={},
+                                                            weights=cur_scheme_weights)
+
+    describer.save_dataset_description_to_file(description_file)
+
+    display_bayesian_network(describer.bayesian_network)
+
+    generator = DataGenerator()
+    generator.generate_dataset_in_correlated_attribute_mode(len(ORI_DATA), description_file)
+    generator.save_synthetic_data(synthetic_data)
+    synthetic_df = pd.read_csv(synthetic_data)
+
+    patterns = []
+    for cons in constraints:
+        selected_data = None
+        if cons["type"] == "cluster":
+            m_x = cons['params']['mean'][0]
+            m_y = cons['params']['mean'][1]
+            p_a = cons['params']['radius'][0]
+            p_b = cons['params']['radius'][1]
+            dt_x = synthetic_df[cons["x_axis"]]
+            dt_y = synthetic_df[cons["y_axis"]]
+            selected_data = synthetic_df[(dt_x - m_x) ** 2 / p_a ** 2 + (dt_y - m_y) ** 2 / p_b ** 2 <= 1].index.tolist()
+        if cons["type"] == "correlation":
+            cond1 = synthetic_df[cons['x_axis']] <= cons['params']['range'][1]
+            cond2 = synthetic_df[cons['x_axis']] >= cons['params']['range'][0]
+            selected_data = synthetic_df[cond1 & cond2].index.tolist()
+        if cons["type"] == "order":
+            selected_data = synthetic_df[synthetic_df[cons['x_axis']] in cons["params"]["values"]]
+        patterns.append({
+            "id": cons["id"],
+            "data": selected_data
+        })
+    ret = {
+        "status": "success",
+        "scheme": {
+            "metrics": {
+                "statistical_metrics": {
+                    "KSTest": KSTest.compute(ORI_DATA, synthetic_df),
+                    "CSTest": CSTest.compute(ORI_DATA, synthetic_df)
+                }
+            },
+            "protected_data": json.loads(synthetic_df.to_json(orient="records")),
+            "pattern": patterns
+        }
+    }
+
+
+    return HttpResponse(json.dumps(ret))
