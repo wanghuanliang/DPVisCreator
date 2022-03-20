@@ -1,11 +1,12 @@
 import React, {useMemo} from 'react';
 import { Table, Button, InputNumber } from 'antd';
 import BorderText from '../../common/BorderText';
+import './WeightsTable.less'
 
-const patternWeights = [
+const tableData = [
   {
       "key": "C0",
-      "id": "others",
+      "id": "C0",
       "type": "cluster",
       "weights": 0.8
   },
@@ -21,12 +22,12 @@ const patternWeights = [
     "type": "order",
     "weights": 0.8
   },
-  // {
-  //   "key": "C5",
-  //   "id": "C5",
-  //   "type": "order",
-  //   "weights": 0.8
-  // },
+  {
+    "key": "C5",
+    "id": "C5",
+    "type": "order",
+    "weights": 0.8
+  },
   // {
   //     "key": "Others",
   //     "id": "Others",
@@ -40,6 +41,7 @@ const WeightsTable = (props) => {
     patternWeights,
     setPatternWeights,
     handleUpdateClick,
+    patternType,
   } = props;
   
   // 表格数据
@@ -59,11 +61,11 @@ const WeightsTable = (props) => {
     {
       title: 'Importance constraints',
       dataIndex: 'id',
-      // width: 180,
+      width: 200,
       render: (id, record) => {
         return <BorderText
           text={id}
-          type='order' //后面写一个函数获取类型
+          type={patternType[id]} //后面写一个函数获取类型
         ></BorderText>
       }
     },
@@ -88,18 +90,22 @@ const WeightsTable = (props) => {
   ]
 
   return <>
-    <div style={{height: 200}}>
+    <div style={{marginBottom: 10}}>
       <Table
         size='small'
         columns={columns}
         dataSource={tableData}
-        scroll='true'
+        // scroll='true'
         pagination={false}
-        // scroll={{y: 500}}
+        scroll={{y: 123}}
       ></Table>
     </div>
-    <div style={{ display: 'flex', justifyContent: 'center' }}>
-      <Button size='small' onClick={handleUpdateClick}>Update</Button>
+    <div style={{ position: 'relative' }}>
+      <Button
+        size='small'
+        onClick={handleUpdateClick}
+        style={{ position: 'absolute', left: 208, width: 60, textAlign: 'center' }}
+      >Update</Button>
     </div>
   </>
 }

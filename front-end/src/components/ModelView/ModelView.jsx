@@ -11,9 +11,10 @@ import Matrix from './Matrix/Matrix';
 import Legend from './Matrix/Legend';
 import AlluvialPlot from './AlluvialPlot';
 import WeightsTable from './WeightsTable/WeightsTable';
+import Projection from './Projection/Projection';
 import { debounce } from 'lodash';
 
-const [svgWidth, svgHeight] = [1118, 540];
+const [svgWidth, svgHeight] = [1118, 550];
 const margin = {
   left: 0,
   top: 50,
@@ -58,11 +59,15 @@ const ModelView = (props) => {
   } = modelData;
 
   const [privacyBudgetValue, setPrivacyBudget] = useState(0.8);
-  const initialPatternWeight = useMemo(() => {
-    const initial = {};
-    constraints.forEach(constraint => initial[constraint.id] = 0.8);
+  const [initialPatternWeight, patternType] = useMemo(() => {
+    const initial = {}, patternType = {};
+    constraints.forEach(constraint => {
+      initial[constraint.id] = 0.8
+      patternType[constraint.id] = constraint.type;  
+  });
     initial.others = 0.8
-    return initial;
+    patternType.others = 'others';
+    return [initial, patternType];
   }, [constraints])
   const [patternWeights, setPatternWeights] = useState(initialPatternWeight); //{'c1': 1, 'c2': 1}
   const handleUpdateClick = () => {
@@ -72,10 +77,14 @@ const ModelView = (props) => {
     Object.entries(patternWeights).forEach(([key, value]) => {
       data.weights.push({ id: key, weight: value });
     })
-    console.log('data', data);
+    console.log('updateClick', data);
     setWeights(data)
       .then()
       .catch(e => console.log('e', e));
+  }
+
+  const handleRecordClick = () => {
+    console.log("Record click")
   }
 
   // 渲染上部控制面板
@@ -134,17 +143,21 @@ const ModelView = (props) => {
           ></Legend>
         </g> */}
         <foreignObject
-          x={10}
-          y={50}
+          x={30}
+          y={10}
           width={350}
-          height={300}
+          height={200}
         >
           <WeightsTable
             patternWeights={patternWeights}
             setPatternWeights={setPatternWeights}
             handleUpdateClick={handleUpdateClick}
+            patternType={patternType}
           ></WeightsTable>
         </foreignObject>
+        <g transform='translate(0, 200)'>
+          <Projection></Projection>
+        </g>
         <g transform='translate(400,0)'>
           <SankeyPlot
             totalNum={totalNum}
