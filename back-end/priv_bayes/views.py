@@ -3,7 +3,8 @@ import json
 import copy
 import pandas as pd
 import numpy as np
-from priv_bayes.kl import KLdivergence
+from sklearn.manifold import MDS
+from priv_bayes.kl import get_w_distance
 from django.http import HttpResponse
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
@@ -29,7 +30,6 @@ INT_TYPE = []
 
 df = pd.read_csv(DATA_PATH)
 ORI_DATA = copy.deepcopy(df)  # 保存原始数据，用于后续数据生成
-
 
 def index(request):
     return HttpResponse("priv_bayes_backend")
@@ -79,6 +79,7 @@ def solveOriginalData():
     }
     return ret
 
+solveOriginalData()
 
 def getOriginalData(request):   # 获取原始数据
     global DATA_PATH
@@ -97,144 +98,42 @@ def cnt_poly(x, params):  # 根据x和多项式系数params计算返回值
     return ans
 
 
-def getConstrainedResponse(request, flag=False):
-    global constraints, ORI_DATA, Dimensions, Measures, INT_TYPE, weights
-    if flag:  # setConstraints过来的，需要更新constraints
-        constraints = json.loads(request.body).get('constraints')
-    if not os.path.exists('priv_bayes/out'):  # 创建输出文件夹
-        os.mkdir('priv_bayes/out')
+def get_mds_result():
+    kl_df = copy.deepcopy(ORI_DATA)
+    kl_df['index'] = range(len(kl_df))
+    for dim in Dimensions:
+        if ORI_DATA[dim].dtype == object:  # string类型，重新编码
+            vals = np.unique(ORI_DATA[dim]).tolist()
+            value_to_bin_idx = {value: idx for idx, value in enumerate(vals)}
+            kl_df[dim] = kl_df[dim].map(lambda x: value_to_bin_idx[x], na_action='ignore')
+    num_of_constraints = len(constraints)
+    matrix_data = np.zeros((num_of_constraints, num_of_constraints))
 
-    # 随机生成10000个数据点服务后续采样
-    describer = DataDescriber(category_threshold=threshold_value)
-    description_file = "priv_bayes/out/original_data.json"  # 贝叶斯网络描述文件
-    synthetic_data = "priv_bayes/out/synthetic_data.csv"    #
-    # ORI_DATA = pd.read_csv(DATA_PATH)  # 接口测试开启，正式使用关闭
-    describer.describe_dataset_in_correlated_attribute_mode(dataset_file=DATA_PATH,
-                                                            epsilon=0,
-                                                            k=degree_of_bayesian_network)
-    describer.save_dataset_description_to_file(description_file)
-    generator = DataGenerator()
-    generator.generate_dataset_in_correlated_attribute_mode(10000, description_file)
-    generator.save_synthetic_data(synthetic_data)
-    synthetic_df = pd.read_csv(synthetic_data)  # 内含10w数据，用于后续采样生成增强数据点
-    aug_df = pd.DataFrame()
-    augmented_data = []
-    if constraints is None:
-        return HttpResponse("no constraints")
-    for constraint in constraints:
-        if weights is None:
-            cur_epsilon = epsilon
-        else:
-            try:  # 若没有对应权重，则采用默认epsilon
-                selected = [weight for weight in weights if weight['id'] == constraint['id']][0]
-                cur_epsilon = selected['weight']
-            except:
-                cur_epsilon = epsilon
-        cur_df = pd.DataFrame()
-        cur_aug_data = {
-            "id": constraint['id'],
-            "data": None,
-        }
-        x_axis = constraint['x_axis']
-        y_axis = constraint['y_axis']
-        params = constraint['params']
-        type = constraint['type']
-        if type == "cluster":  # 聚类 => 叠加一个正态分布
-            mean = params['mean']  # 均值
-            radius = params['radius']  # 方差
-            mean = np.array(mean)
-            cov = np.array([[radius[0], 0], [0, radius[1]]])
-            f_xy = np.random.multivariate_normal(mean, cov, int(dot_basenum * cur_epsilon))
-            for item in f_xy:
-                try:
-                    filtered_data = synthetic_df[
-                        (synthetic_df[x_axis] < item[0] * (1 + perturbation)) &
-                        (synthetic_df[x_axis] > item[0] * (1 - perturbation)) &
-                        (synthetic_df[y_axis] > item[1] * (1 - perturbation)) &
-                        (synthetic_df[y_axis] > item[1] * (1 - perturbation))
-                        ].sample(1).to_json(orient="records")
-                    filtered_data = json.loads(filtered_data)  # 得到的是一个数组
-                    if x_axis in INT_TYPE:
-                        item[0] = int(item[0])
-                    if y_axis in INT_TYPE:
-                        item[1] = int(item[1])
-                    filtered_data[0][x_axis] = item[0]
-                    filtered_data[0][y_axis] = item[1]
-                    cur_df = cur_df.append(filtered_data)
-                except:
-                    pass
-        if type == "correlation":  # 相关关系 => 叠加一个多项式函数
-            polynomial_params = params['polynomial_params']  # 多项式系数
-            padding = params['padding']  # 宽度
-            cur_range = params['range']  # 横轴范围
-            x = np.random.uniform(cur_range[0], cur_range[1], int(epsilon * dot_basenum))
-            y = np.array([cnt_poly(it, polynomial_params) for it in x])
-            for i in range(len(x)):
-                try:
-                    filtered_data = synthetic_df[
-                        (synthetic_df[x_axis] < x[i] * (1 + perturbation)) &
-                        (synthetic_df[x_axis] > x[i] * (1 - perturbation)) &
-                        (synthetic_df[y_axis] > y[i] * (1 - perturbation)) &
-                        (synthetic_df[y_axis] > y[i] * (1 - perturbation))
-                        ].sample(1).to_json(orient="records")
-                    filtered_data = json.loads(filtered_data)  # 得到的是一个数组
-                    if x_axis in INT_TYPE:
-                        x[i] = int(x[i])
-                    if y_axis in INT_TYPE:
-                        y[i] = int(y[i])
-                    filtered_data[0][x_axis] = x[i]
-                    filtered_data[0][y_axis] = y[i]
-                    cur_df = cur_df.append(filtered_data)
-                except:
-                    pass
-            pass
-        if type == "order":  # 顺序
-            values = params['values']  # 保持order的数据，根据比例扩展数据
-            dot_num = int(dot_basenum * cur_epsilon)  # 实际增加的点数
-            if ORI_DATA[x_axis].dtype != object:  # 如果不是object类型，则其是数值型
-                values = [float(id) for id in values]
-            ls = [len(ORI_DATA[ORI_DATA[x_axis] == id]) for id in values]
-            wghts = np.array(ls) / sum(ls)
-            cur_df = pd.DataFrame()
-            for id in range(len(values)):
-                val = values[id]
-                filtered_data = synthetic_df[
-                    synthetic_df[x_axis] == val
-                    ].sample(int(wghts[id] * dot_num)).to_json(orient="records")
-                filtered_data = json.loads(filtered_data)  # 得到的是一个数组
-                cur_df = cur_df.append(filtered_data)
-            pass
-        print(len(cur_df))
-        cur_aug_data['data'] = json.loads(cur_df.to_json(orient="records"))
-        augmented_data.append(cur_aug_data)
-        aug_df = aug_df.append(cur_aug_data['data'])
-    # 使用aug_df做一轮隐私保护数据生成
-    AUG_PATH = 'priv_bayes/data/augmented_data.csv'
-    aug_df = aug_df.append(ORI_DATA)
-    aug_df.to_csv(AUG_PATH, index=False)
-    augmented_description_file = "priv_bayes/out/augmented_data.json"
-    augmented_synthetic_data = "priv_bayes/out/augmented_synthetic_data.csv"
-    describer.describe_dataset_in_correlated_attribute_mode(dataset_file=AUG_PATH,
-                                                            epsilon=bayes_epsilon,
-                                                            k=degree_of_bayesian_network)
-    describer.save_dataset_description_to_file(augmented_description_file)
-    generator.generate_dataset_in_correlated_attribute_mode(len(ORI_DATA), augmented_description_file)
-    generator.save_synthetic_data(augmented_synthetic_data)
-    augmented_synthetic_df = pd.read_csv(augmented_synthetic_data)  # 内含10w数据，用于后续采样生成增强数据点
-    ret = {
-        "status": "success",
-        "augmented_data": augmented_data,
-        "protected_data": json.loads(augmented_synthetic_df.to_json(orient="records")),
-    }
-    return ret
+    for i in range(num_of_constraints):
+        for j in range(i + 1, num_of_constraints):
+            if i == j:
+                continue
+            data_c1 = constraints[i]['data']  # 第一个constraints对应的数据编号
+            data_c2 = constraints[j]['data']  # 第二个constraints对应的数据编号
+            df_c1 = kl_df.loc[kl_df['index'].isin(data_c1)]  # 第一个constraints对应数据
+            df_c2 = kl_df.loc[kl_df['index'].isin(data_c2)]  # 第二个constraints对应数据
+            del df_c1['index']
+            del df_c2['index']
+            matrix_data[i][j] = matrix_data[j][i] = get_w_distance(df_c1.values, df_c2.values)
 
+    embedding = MDS(n_components=2, dissimilarity='precomputed')
+    D2_MDS_data = embedding.fit_transform(matrix_data)
+    D2_MDS_data = (D2_MDS_data - np.min(D2_MDS_data)) / (np.max(D2_MDS_data) - np.min(D2_MDS_data)) * 80 + 10
+    return D2_MDS_data
 
 def getModelData(request):
-    global constraints
+    global constraints, Dimensions, Measures
     cur_df = copy.deepcopy(ORI_DATA)
-    kl_df = copy.deepcopy(ORI_DATA)
     DEFAULT_CATEGORIES = 3
-    slice_methods = json.loads(request.body).get('slice_methods')
+    constraints = json.loads(request.body).get('constraints')  # 每个点的权重百分比
+    weights = np.ones((len(constraints))) / len(constraints) * 10
+    # slice_methods = json.loads(request.body).get('slice_methods')
+    slice_methods = {}  # 暂无slice_methods
     axis_order = []
     # 补全所有需要处理的坐标轴
     for constraint in constraints:
@@ -259,26 +158,9 @@ def getModelData(request):
         cut_points[-1] += 1e-10  # 最后一个分位点加一个微小的偏移量
         new_df[axis] = pd.cut(ORI_DATA[axis], cut_points, right=False)
     cur_df['index'] = range(len(cur_df))
-    kl_df['index'] = range(len(kl_df))
-    for dim in Dimensions:
-        if ORI_DATA[dim].dtype == object:  # string类型，重新编码
-            vals = np.unique(ORI_DATA[dim]).tolist()
-            value_to_bin_idx = {value: idx for idx, value in enumerate(vals)}
-            kl_df[dim] = kl_df[dim].map(lambda x: value_to_bin_idx[x], na_action='ignore')
     cur_df['constraint'] = "empty"
-    num_of_constraints = len(constraints)
-    matrix_data = np.zeros((num_of_constraints, num_of_constraints))
-    for i in range(num_of_constraints):
-        for j in range(num_of_constraints):
-            if i == j:
-                continue
-            data_c1 = constraints[i]['data']
-            data_c2 = constraints[j]['data']
-            data_c1_diff = list(set(data_c1).difference(set(data_c2)))
-            data_c2_diff = list(set(data_c2).difference(set(data_c1)))
-            df_c1 = kl_df.loc[kl_df['index'].isin(data_c1_diff)]
-            df_c2 = kl_df.loc[kl_df['index'].isin(data_c2_diff)]
-            matrix_data[i][j] = KLdivergence(df_c1.values.tolist(), df_c2.values.tolist())
+
+    matrix_data = get_mds_result()
 
     for constraint in constraints:
         cur_df.loc[cur_df['index'].isin(constraint['data']), 'constraint'] = constraint['id']
@@ -335,8 +217,9 @@ def getModelData(request):
         idx = idx + 1
 
     sankey_data = []
-    conses = [{"id": constraint['id'], "type": constraint['type']} for constraint in constraints]
-
+    conses_ret = [{"id": constraint['id'], "type": constraint['type'], "pos": matrix_data[index].tolist()
+                   , "r": weights[index]} for index, constraint in enumerate(constraints)]
+    conses = [constraint['id'] for constraint in constraints]
     for axis_id in range(len(axis_order) - 1):
         x = axis_order[axis_id]
         y = axis_order[axis_id + 1]
@@ -382,30 +265,28 @@ def getModelData(request):
             "total_num": len(ORI_DATA),
             "axis_order": axis_order,
             "proportion_data": proportion_data,
-            "flow_data": flow_data,
-            "constraints": conses,
-            "matrix_data": ((matrix_data - np.min(matrix_data)) / (np.max(matrix_data) - np.min(matrix_data))).tolist(),
+            "constraints": conses_ret,
             "sankey_data": sankey_data
         }
     }
     return HttpResponse(json.dumps(ret))
 
 
-def getSankeyData(request):
-
-    pass
-
-
-def setPattern(request):
-    ret = getConstrainedResponse(request, True)
-    return HttpResponse(json.dumps(ret))
-
 
 def setWeights(request):
     global bayes_epsilon, weights
     weights = json.loads(request.body).get('weights')
+    weights = [w["weight"] for w in weights]
+    weights = np.array(weights) / sum(weights)
     bayes_epsilon = json.loads(request.body).get('bayes_budget')
-    ret = getConstrainedResponse(request)
+    matrix_data = get_mds_result()
+    conses_ret = [{"id": constraint['id'], "type": constraint['type'], "pos": matrix_data[index].tolist()
+                      , "r": weights[index]} for index, constraint in enumerate(constraints)]
+    ret = {
+        "status": "success",
+        "constraints": conses_ret
+    }
+
     return HttpResponse(json.dumps(ret))
 
 
