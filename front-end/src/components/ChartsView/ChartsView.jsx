@@ -11,10 +11,9 @@ class ChartsView extends Component {
       this.props.setConstraints(this.state.constraints);
     };
     this.constraintId = 0;
+    this.original_constraint = {};
     this.state = {
       constraints: [],
-      original_constraint: {},
-      protected_constraint: {},
       original_chart_data: [],
       protected_chart_data: [],
     };
@@ -164,17 +163,14 @@ class ChartsView extends Component {
         dataset.pop();
       });
     }
+    this.original_constraint = constraint;
     if (type === "original") {
       this.setState({
         original_chart_data: dataset,
-        original_constraint: constraint, // 同步修改
-        protected_constraint: constraint,
       });
     } else if (type === "protected") {
       this.setState({
         protected_chart_data: dataset,
-        original_constraint: constraint,
-        protected_constraint: constraint,
       });
     }
   }
@@ -190,14 +186,11 @@ class ChartsView extends Component {
     const index = constraints.findIndex((value) => value.id === constraint.id);
     if (index >= 0) {
       constraints[index] = { ...constraints[index], ...constraint };
-      this.getData("original", this.state.original_data, constraint);
+      this.getData("original", this.props.original_data, constraint);
       this.setState({ constraints });
       this.setConstraints();
     } else {
-      this.setState({
-        original_constraint: constraint,
-        protected_constraint: constraint,
-      });
+      this.original_constraint = constraint;
     }
   }
   updateConstraintParams(constraint, params) {
@@ -206,13 +199,10 @@ class ChartsView extends Component {
     const index = constraints.findIndex((value) => value.id === constraint.id);
     if (index >= 0) {
       constraints[index] = { ...constraints[index], ...constraint };
-      this.getData("original", this.state.original_data, constraint);
+      this.getData("original", this.props.original_data, constraint);
       this.setState({ constraints });
     } else {
-      this.setState({
-        original_constraint: constraint,
-        protected_constraint: constraint,
-      });
+      this.original_constraint = constraint;
     }
   }
   removeConstraint(constraint) {
@@ -230,12 +220,6 @@ class ChartsView extends Component {
         this.props.original_data,
         this.state.constraints[index]
       );
-    } else if (type === "protected") {
-      this.getData(
-        type,
-        this.props.protected_data || this.props.original_data,
-        this.state.constraints[index]
-      );
     }
   }
   render() {
@@ -244,14 +228,14 @@ class ChartsView extends Component {
         <ChartMenu
           attributes={this.props.attribute_character || {}}
           initConstraint={(settings) => this.initConstraint(settings)}
-          constraintParams={this.state.original_constraint.params}
+          constraintParams={this.original_constraint.params}
           removeConstraint={() =>
-            this.removeConstraint(this.state.original_constraint)
+            this.removeConstraint(this.original_constraint)
           }
           saveConstraint={() => {
-            if (this.state.original_constraint.id)
-              this.updateConstraint(this.state.original_constraint);
-            else this.insertConstraint(this.state.original_constraint);
+            if (this.original_constraint.id)
+              this.updateConstraint(this.original_constraint);
+            else this.insertConstraint(this.original_constraint);
           }}
         ></ChartMenu>
         <Col span={18}>
@@ -259,7 +243,7 @@ class ChartsView extends Component {
             name="original-chart"
             data={this.state.original_chart_data}
             attributes={this.props.attribute_character || {}}
-            constraint={this.state.original_constraint}
+            constraint={this.original_constraint}
             updateConstraint={(constraint) => this.updateConstraint(constraint)}
             updateConstraintParams={(id, params) =>
               this.updateConstraintParams(id, params)

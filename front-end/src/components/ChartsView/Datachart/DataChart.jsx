@@ -109,13 +109,15 @@ export default class DataChart extends Component {
         seriesName: point[2],
       },
       [
-        this.props.attributes[0].attribute_type === "Dimensions"
-          ? this.mapper[point[0]]
-          : point[0],
+        this.props.type === "bar" ? this.mapper[point[0]] : point[0],
         point[1],
         point[2],
       ]
     );
+  }
+  clearSvg() {
+    // 清空
+    d3.selectAll("#container-" + this.props.name + " > svg > *").remove();
   }
   convertFromPixel(point) {
     const values = this.chart.convertFromPixel(
@@ -134,17 +136,26 @@ export default class DataChart extends Component {
     ];
   }
   convertToImages() {
+    function reEncode(data) {
+      return decodeURIComponent(
+        encodeURIComponent(data).replace(/%([0-9A-F]{2})/g, (match, p1) => {
+          const c = String.fromCharCode(`0x${p1}`);
+          return c === "%" ? "%25" : c;
+        })
+      );
+    }
     const canvas = document.getElementById("canvas-" + this.props.name);
     const canvasImage = new Image();
     canvasImage.src = canvas.toDataURL("image/png");
     canvasImage.width = this.width / 4;
     canvasImage.height = thumbnailHeight;
     canvasImage.style = "margin:-" + (this.width / 4 + 7) + "px";
-    const svgXml = this.svg.html();
+    const serializer = new XMLSerializer();
+    const svgSource = serializer.serializeToString(this.svg.node());
     const svgImage = new Image();
     svgImage.setAttribute(
       "src",
-      "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgXml)))
+      "data:image/svg+xml;base64," + btoa(reEncode(svgSource))
     );
     svgImage.width = this.width / 4;
     svgImage.height = thumbnailHeight;
@@ -179,8 +190,11 @@ export default class DataChart extends Component {
       this.selectedSeriesData = seriesData;
     });
     this.chart.on("brushEnd", (params) => {
+      this.clearSvg();
+      const type = this.props.type;
       this.props.onSelected(this.selectedSeriesData);
-      this.generateData();
+      if (type === "scatter") this.getCluster();
+      else if (type === "line") this.getCorrelation();
     });
     this.chart.on("click", (params) => {
       if (this.props.type === "bar" && this.props.name === "original-chart") {
@@ -191,7 +205,6 @@ export default class DataChart extends Component {
             (d) => d[0] == params.data[0]
           )[0];
         d3.selectAll("#container-" + this.props.name + " > svg > *").remove();
-        self.updateParams({ values: Object.keys(self.selectBar) });
         this.props.onSelected({ default: Object.values(self.selectBar) });
         this.getOrder();
       }
@@ -213,20 +226,20 @@ export default class DataChart extends Component {
   componentDidUpdate() {
     let mapper = {};
     this.params = this.props.constraint.params;
-    if (this.props.attributes[0]?.attribute_type === "Dimensions") {
-      // 解决枚举类型为数字后，被echarts解析为数值索引的问题
-      let index = 0;
-      this.props.data.forEach((d) => {
-        if (!mapper[d[0]]) {
-          mapper[d[0]] = index;
-          index++;
-        }
-      });
-    }
+    // 解决枚举类型为数字后，被echarts解析为数值索引的问题
+    this.props.data.forEach((d, index) => {
+      if (!mapper[d[0]]) {
+        mapper[d[0]] = index;
+      }
+    });
     this.mapper = mapper;
     const divDom = document.getElementById("container-" + this.props.name);
     this.width = divDom.offsetWidth;
     this.generateData();
+    const type = this.props.type;
+    if (type === "scatter") this.getCluster();
+    else if (type === "line") this.getCorrelation();
+    else if (type === "bar") this.getOrder();
   }
   getScatterChartOption() {
     const option = {
@@ -436,10 +449,6 @@ export default class DataChart extends Component {
           ry = (ry - cy) * Math.sqrt(vary);
           rx *= 2;
           ry *= 2;
-          self.updateParams({
-            mean: [meanx, meany],
-            radius: [Math.sqrt(varx) * 2, Math.sqrt(vary) * 2],
-          });
           this.svg
             .append("ellipse")
             .attr("opacity", "0.4")
@@ -458,6 +467,10 @@ export default class DataChart extends Component {
                 .on("drag", dragEllipseDragging)
                 .on("end", dragEllipseEnd)
             );
+          self.updateParams({
+            mean: [meanx, meany],
+            radius: [Math.sqrt(varx) * 2, Math.sqrt(vary) * 2],
+          });
         }
       });
     }
@@ -569,15 +582,6 @@ export default class DataChart extends Component {
             pathData.push({ x, y: y + 5 });
           }
           pathData.push({ x: path[0][0], y: path[0][1] - 5 });
-          self.updateParams({
-            polynomial_params: regression.parameter.reverse(),
-            range: [
-              regression.points[0][0],
-              regression.points[regression.points.length - 1][0],
-            ],
-            path,
-            padding: 1,
-          });
           const line = d3
             .line()
             .curve(d3.curveCardinal.tension(0.5))
@@ -598,6 +602,15 @@ export default class DataChart extends Component {
                 .on("drag", dragLineDragging)
                 .on("end", dragLineEnd)
             );
+          self.updateParams({
+            polynomial_params: regression.parameter.reverse(),
+            range: [
+              regression.points[0][0],
+              regression.points[regression.points.length - 1][0],
+            ],
+            path,
+            padding: 1,
+          });
         }
       });
     }
@@ -610,23 +623,40 @@ export default class DataChart extends Component {
         const data = self.props.data.filter((d) => d[0] == value)[0];
         self.selectBar[value] = data;
       });
-    }
-    const data = Object.values(self.selectBar);
-    if (data) {
-      data.forEach((point) => {
-        const [x, y] = self.convertToPixel(point);
-        const width =
-          (self.width * 0.8) / self.props.attributes[0].values.length;
-        self.svg
-          .append("rect")
-          .attr("x", x - width / 2)
-          .attr("y", y)
-          .attr("value", point[0])
-          .attr("width", width)
-          .attr("height", chart_height * 0.85 - y)
-          .style("fill", "#111111")
-          .attr("opacity", 0.5);
-      });
+      const data = Object.values(self.selectBar);
+      if (data) {
+        data.forEach((point) => {
+          const [x, y] = self.convertToPixel(point);
+          const width = (self.width * 0.8) / Object.keys(self.mapper).length;
+          self.svg
+            .append("rect")
+            .attr("x", x - width / 2)
+            .attr("y", y)
+            .attr("value", point[0])
+            .attr("width", width)
+            .attr("height", chart_height * 0.85 - y)
+            .style("fill", "#111111")
+            .attr("opacity", 0.5);
+        });
+      }
+    } else {
+      const data = Object.values(self.selectBar);
+      if (data) {
+        data.forEach((point) => {
+          const [x, y] = self.convertToPixel(point);
+          const width = (self.width * 0.8) / Object.keys(self.mapper).length;
+          self.svg
+            .append("rect")
+            .attr("x", x - width / 2)
+            .attr("y", y)
+            .attr("value", point[0])
+            .attr("width", width)
+            .attr("height", chart_height * 0.85 - y)
+            .style("fill", "#111111")
+            .attr("opacity", 0.5);
+          self.updateParams({ values: Object.keys(self.selectBar) });
+        });
+      }
     }
   }
   generateData() {
@@ -634,8 +664,7 @@ export default class DataChart extends Component {
     let option = {
       color: globalColor,
     };
-    // 清空
-    d3.selectAll("#container-" + this.props.name + " > svg > *").remove();
+    this.clearSvg();
     if (type === "scatter") {
       option = { ...option, ...this.getScatterChartOption() };
     } else if (type === "line") {
@@ -644,12 +673,6 @@ export default class DataChart extends Component {
       option = { ...option, ...this.getBarChartOption() };
     }
     this.svg.style("width", this.width);
-    if (type === "scatter") {
-      this.getCluster();
-    } else if (type === "line") {
-      this.getCorrelation();
-    } else if (type === "bar") {
-    }
     this.chart.clear();
     this.chart.resize({ width: this.width, height: chart_height });
     option && this.chart.setOption(option);
