@@ -17,6 +17,13 @@ from priv_bayes.DataSynthesizer.lib.utils import display_bayesian_network
 tmp_data_storage = {}
 
 
+def check_session_id(session_id):
+    global tmp_data_storage
+    if session_id is None or tmp_data_storage.get(session_id) is None:
+        return False
+    return True
+
+
 def index(request):
     return HttpResponse("priv_bayes_backend")
 
@@ -71,6 +78,11 @@ def getOriginalData(request):  # 获取原始数据
     global tmp_data_storage
     data = request.FILES['file']
     session_id = json.loads(request.body).get('session_id')
+    if not check_session_id(session_id):
+        return HttpResponse(json.dumps({
+            "status": "failed",
+            "err_msg": "disconnected with the server"
+        }))
     DATA_PATH = default_storage.save('priv_bayes/data/1.csv', ContentFile(data.read()))
     df = pd.read_csv(DATA_PATH)
     tmp_data_storage[session_id]['DATA_PATH'] = DATA_PATH
@@ -114,6 +126,11 @@ def initialize(request):
 def destroyed(request):
     global tmp_data_storage
     session_id = json.loads(request.body).get('session_id')
+    if not check_session_id(session_id):
+        return HttpResponse(json.dumps({
+            "status": "failed",
+            "err_msg": "disconnected with the server"
+        }))
     del tmp_data_storage[session_id]
 
 
@@ -155,7 +172,11 @@ def get_mds_result(session_id):
 def getModelData(request):
     global tmp_data_storage
     session_id = json.loads(request.body).get('session_id')
-    Dimensions = tmp_data_storage[session_id]['Dimensions']
+    if not check_session_id(session_id):
+        return HttpResponse(json.dumps({
+            "status": "failed",
+            "err_msg": "disconnected with the server"
+        }))
     Measures = tmp_data_storage[session_id]['Measures']
 
     ORI_DATA = tmp_data_storage[session_id]['ORI_DATA']
@@ -305,6 +326,11 @@ def getModelData(request):
 def setWeights(request):
     global tmp_data_storage
     session_id = json.loads(request.body).get('session_id')
+    if not check_session_id(session_id):
+        return HttpResponse(json.dumps({
+            "status": "failed",
+            "err_msg": "disconnected with the server"
+        }))
     constraints = tmp_data_storage[session_id]['constraints']
     weights = tmp_data_storage[session_id]['weights'] = json.loads(request.body).get('weights')
     c_weights = [w["weight"] for w in weights]
@@ -325,6 +351,11 @@ def setWeights(request):
 def getMetrics(request):
     global tmp_data_storage
     session_id = json.loads(request.body).get('session_id')
+    if not check_session_id(session_id):
+        return HttpResponse(json.dumps({
+            "status": "failed",
+            "err_msg": "disconnected with the server"
+        }))
     DATA_PATH = tmp_data_storage[session_id]['DATA_PATH']
     ORI_DATA = tmp_data_storage[session_id]['ORI_DATA']
     constraints = tmp_data_storage[session_id]['constraints']
