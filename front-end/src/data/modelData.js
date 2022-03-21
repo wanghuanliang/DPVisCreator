@@ -1237,11 +1237,13 @@ export const modelData = {
       id: "C0",
       type: "cluster",
       pos: [20, 60],
+      r: 5,
     },
     {
       id: "C2",
       type: "order",
       pos: [10, 70],
+      r: 7,
     },
   ],
   matrix_data: [
