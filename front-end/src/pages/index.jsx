@@ -17,8 +17,8 @@ import {
   attributeCharacter as initialAttributeCharacter,
 } from "../data/attributes"; // 原始数据属性、数据属性特镇
 import { modelData as tempModelData } from "../data/modelData";
-import { setWeights, setPattern, getModelData } from "../services/api";
-import { Button } from "antd";
+import { servicesInit, servicesDestroy, setWeights, setPattern, getModelData } from "../services/api";
+import { Button, message } from "antd";
 
 const IndexPage = () => {
   // 不使用redux，直接在此处定义全局数据，通过props传递
@@ -66,21 +66,18 @@ const IndexPage = () => {
   //     .catch(e => console.log(e));
   // }, [augmentedData])
 
-  //接口测试
+  // service init destroy
   useEffect(() => {
-    // const data = {
-    //   "weights": [
-    //     {
-    //       "id": "C1",           // 约束编号：e.g. C1 constraint
-    //       "weight": 0.3, 	      // 每个约束的budget，后端设置点的budget，采点
-    //     },
-    //   ],
-    //   "bayes_budget": 1.5,
-    // }
-    // setWeights(data)
-    //   .then(res => console.log(res))
-    //   .catch(e => console.log(e));
+    servicesInit()
+      .then(res => message.success('后端连接成功'))
+      .catch(e => message.error('后端连接失败'));
+  }, []);
+  window.addEventListener('beforeunload', async (event) => {
+    await servicesDestroy()
+      .then()
+      .catch();
   });
+
   //打印数据查看变化
   console.log("originalData", originalData);
   console.log("attributeData", attributeData);

@@ -20,7 +20,6 @@ const Projection = (props) => {
     constraints,
     patternColor,
   } = props;
-  console.log('lalala', constraints);
 
   const xAxisRef = useRef(null);
   const xScale = d3.scaleLinear()
