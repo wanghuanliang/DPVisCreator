@@ -17,7 +17,12 @@ import {
   attributeCharacter as initialAttributeCharacter,
 } from "../data/attributes"; // 原始数据属性、数据属性特镇
 import { modelData as tempModelData } from "../data/modelData";
-import { servicesInit, servicesDestroy, setWeights, setPattern, getModelData } from "../services/api";
+import {
+  servicesInit,
+  servicesDestroy,
+  setWeights,
+  getModelData,
+} from "../services/api";
 import { Button, message } from "antd";
 
 const IndexPage = () => {
@@ -37,7 +42,7 @@ const IndexPage = () => {
   // model 开关，是否使用临时数据
   const [modelData, setModelData] = useState(tempModelData); // null
   // 指标
-  const [schemes, setSchemes] = useState(null);
+  const [schemes, setSchemes] = useState([]); // 初始化为数组，否则会出现iterable问题
 
   const handleNextClick = () => {
     const jcts = JSON.parse(JSON.stringify(constraints));
@@ -54,7 +59,7 @@ const IndexPage = () => {
       }
     }
     getModelData({ constraints: cts })
-      .then((res) => {     
+      .then((res) => {
         setModelData(res.data.data);
       })
       .catch((e) => {
@@ -72,13 +77,11 @@ const IndexPage = () => {
   // service init destroy
   useEffect(() => {
     servicesInit()
-      .then(res => message.success('后端连接成功'))
-      .catch(e => message.error('后端连接失败'));
+      .then((res) => message.success("后端连接成功"))
+      .catch((e) => message.error("后端连接失败"));
   }, []);
-  window.addEventListener('beforeunload', async (event) => {
-    await servicesDestroy()
-      .then()
-      .catch();
+  window.addEventListener("beforeunload", async (event) => {
+    await servicesDestroy().then().catch();
   });
 
   //打印数据查看变化

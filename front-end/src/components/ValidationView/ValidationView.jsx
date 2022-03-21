@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./ValidationView.less";
 import * as d3 from "d3";
 import { Table, Tag, Radio, Space } from "antd";
@@ -26,6 +26,17 @@ const arr = [
   },
 ];
 const ValidationView = (props) => {
+  const scheme =
+    props.schemes.length > 0
+      ? props.schemes[0]
+      : { metrics: {}, pattern: [], protected_data: [] };
+  // const [scheme, setScheme] = useState(temp_scheme);
+  const patternConstraints = scheme.pattern?.map((patternConstraint) => {
+    const search = props.constraints.filter(
+      (globalConstraint) => patternConstraint.id === globalConstraint.id
+    )?.[0];
+    return { ...search, data: patternConstraint.data };
+  });
   return (
     <div style={{ display: "flex", margin: 10 }}>
       <div style={{ width: "60%" }}>
@@ -34,10 +45,10 @@ const ValidationView = (props) => {
       {/* 保护后的视图放这里 */}
       <div style={{ width: "40%" }}>
         <ProtectedDataDisplay
-          attributeCharacter={props.attributeCharacter}
+          attribute_character={props.attributeCharacter}
           originalData={props.originalData}
-          protectedData={[]}
-          constraints={props.constraints || []}
+          protectedData={scheme.protected_data}
+          constraints={patternConstraints || []}
         ></ProtectedDataDisplay>
       </div>
     </div>

@@ -17,7 +17,7 @@ const globalColor = [
   "#9a60b4",
   "#ea7ccc",
 ];
-const chart_height = 400;
+const chart_height = 350;
 const thumbnailHeight = 60;
 // 散点图选择之后聚类，生成椭圆 柱状图单独选择柱子 折线图生成的拟合曲线可调整宽度，纵向，背景全部调成灰色
 function getAxisOption(attribute) {
@@ -84,7 +84,7 @@ function getSeriesOption(type, attribute, data, pointSize) {
 
 const grid = {
   top: "12%",
-  left: "10%",
+  left: "15%",
   right: "10%",
 };
 export default class DataChart extends Component {

@@ -1,27 +1,31 @@
 import { Component } from "react";
-import * as d3 from "d3";
-import { Button, Radio, Space } from "antd";
-import {
-  BookFilled,
-  BookOutlined,
-  EditOutlined,
-  RestOutlined,
-} from "@ant-design/icons";
+import { Button, Col, Radio, Space } from "antd";
 import BorderText from "../../common/BorderText";
 import Title from "antd/lib/typography/Title";
+import "./ConstraintSelect.less";
 export default class ConstraintSelect extends Component {
   render() {
+    const self = this;
     return (
-      <Space direction="vertical">
-        <Title level={5}>Pattern</Title>
-        {this.props.constraints.map((constraint, index) => (
-          <BorderText
-            type={constraint.type}
-            text={constraint.id}
-            key={"schema-constraint-" + constraint.id}
-          ></BorderText>
-        ))}
-      </Space>
+      <Col span={24} className="validation-constraint-select">
+        <div className="validation-constraint-select-title">Pattern</div>
+        <div className="validation-constraint-select-content">
+          {this.props.constraints.map((constraint, index) => (
+            <Button
+              key={"scheme-constraint-" + constraint.id}
+              onClick={() => {
+                self.props.selectConstraint(constraint);
+              }}
+              icon={
+                <BorderText
+                  type={constraint.type}
+                  text={constraint.id}
+                ></BorderText>
+              }
+            ></Button>
+          ))}
+        </div>
+      </Col>
     );
   }
 }
