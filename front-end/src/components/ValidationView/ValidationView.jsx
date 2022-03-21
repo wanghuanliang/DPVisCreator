@@ -27,7 +27,7 @@ const arr = [
 ];
 const ValidationView = (props) => {
   return (
-    <div style={{ display: "flex" }}>
+    <div style={{ display: "flex", margin: 10 }}>
       <div style={{ width: "60%" }}>
         <LineupTable></LineupTable>
       </div>

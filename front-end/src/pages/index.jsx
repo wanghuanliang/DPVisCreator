@@ -36,6 +36,9 @@ const IndexPage = () => {
   const [protectedData, setProtectedData] = useState(null);
   // model 开关，是否使用临时数据
   const [modelData, setModelData] = useState(tempModelData); // null
+  // 指标
+  const [schemes, setSchemes] = useState(null);
+
   const handleNextClick = () => {
     const jcts = JSON.parse(JSON.stringify(constraints));
     const cts = [];
@@ -145,6 +148,8 @@ const IndexPage = () => {
                   setWeights={setWeights}
                   modelData={modelData}
                   setProtectedData={setProtectedData}
+                  schemes={schemes}
+                  setSchemes={setSchemes}
                 ></ModelView>
               )}
             </div>
@@ -161,6 +166,8 @@ const IndexPage = () => {
               attributeCharacter={attributeCharacter}
               originalData={originalData}
               constraints={constraints}
+              schemes={schemes}
+              setSchemes={setSchemes}
             ></Validation>
             {/* <LineupTable></LineupTable> */}
           </div>
