@@ -333,7 +333,7 @@ def setWeights(request):
         }))
     constraints = tmp_data_storage[session_id]['constraints']
     weights = tmp_data_storage[session_id]['weights'] = json.loads(request.body).get('weights')
-    c_weights = [w["weight"] for w in weights]
+    c_weights = [w["weight"] for w in weights if w["id"] != "others"]
     c_weights = np.array(c_weights) / sum(c_weights)
     c_weights = c_weights / min(c_weights) * 5   # 最小的圆半径为5，其它按照比例来
     tmp_data_storage[session_id]['bayes_epsilon'] = json.loads(request.body).get('bayes_budget')
