@@ -222,6 +222,7 @@ export default class DataChart extends Component {
       this.selectBar = {};
       this.selectedSeriesData = {};
     }
+    return prevProps;
   }
   componentDidUpdate() {
     let mapper = {};

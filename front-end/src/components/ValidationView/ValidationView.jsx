@@ -48,13 +48,6 @@ const arr = [
   },
 ];
 const ValidationView = (props) => {
-  const protectedData = props.originalData.map((data) => {
-    for (let attributeName in props.attributeCharacter) {
-      if (props.attributeCharacter[attributeName].attribute_type === "Measures")
-        data[attributeName] += 1;
-    }
-    return data;
-  });
   return (
     // <LineUp data={arr} />
     // <LineUp data={arr} sidePanel sidePanelCollapsed defaultRanking>
@@ -78,7 +71,7 @@ const ValidationView = (props) => {
         <ProtectedDataDisplay
           attributeCharacter={props.attributeCharacter}
           originalData={props.originalData}
-          protectedData={protectedData}
+          protectedData={[]}
           constraints={props.constraints || []}
         ></ProtectedDataDisplay>
       </div>

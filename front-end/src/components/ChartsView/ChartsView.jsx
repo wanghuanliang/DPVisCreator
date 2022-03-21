@@ -4,6 +4,7 @@ import ChartMenu from "./ChartMenu";
 import ChartDisplay from "./ChartDisplay";
 import ConstraintSelect from "./Datachart/ConstraintSelect";
 import { chart_constraint, constraint_chart } from "./constants";
+import "./ChartsView.less";
 class ChartsView extends Component {
   constructor(props) {
     super(props);
@@ -55,7 +56,7 @@ class ChartsView extends Component {
             range.push(data[constraint.x_axis]);
           }
         });
-        if (x.type === "Measures")
+        if (x.attribute_type === "Measures")
           range.push(this.props.attribute_character[constraint.x_axis].max + 1);
         range.sort((a, b) => a - b);
       } else {
@@ -73,7 +74,7 @@ class ChartsView extends Component {
           });
         });
       });
-      if (x.type === "Measures") {
+      if (x.attribute_type === "Measures") {
         for (let i = 0; i < cart.length - 1; i++) {
           let current = cart[i];
           let next = cart[i + 1];
@@ -127,7 +128,7 @@ class ChartsView extends Component {
           ]);
         } else {
           dataset.push([
-            x.type === "Measures"
+            x.attribute_type === "Measures"
               ? data[constraint.x_axis] -
                 ((data[constraint.x_axis] -
                   this.props.attribute_character[constraint.x_axis].min) %
@@ -159,7 +160,7 @@ class ChartsView extends Component {
     // 折线图按x值从小到大
     else if (chartType === "bar") dataset.sort((a, b) => b[1] - a[1]); // 条形图按y值从大到小
     if (!isNaN(step) && chartType === "line") {
-      constraint.color.values.forEach((value) => {
+      color.values.forEach((value) => {
         dataset.pop();
       });
     }

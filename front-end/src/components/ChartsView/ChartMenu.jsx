@@ -111,7 +111,8 @@ export default class ChartMenu extends Component {
     }
     function getColorSelect() {
       if (self && chart_type[self.state.typeIndex] === "bar") return [];
-      return getSpecificTypeOfAttributes("Dimensions");
+      const attributes = getSpecificTypeOfAttributes("Dimensions");
+      return attributes;
     }
     function getRowTagSelect() {
       return getSpecificTypeOfAttributes("Measures");
@@ -132,7 +133,9 @@ export default class ChartMenu extends Component {
     function getXAxisElements() {
       return (
         <Row>
-          <Col span={12}>Value</Col>
+          <Col span={12} className="menu-item-content-menu-label">
+            Value
+          </Col>
           <Col span={12}>
             <Select
               size="small"
@@ -152,7 +155,9 @@ export default class ChartMenu extends Component {
               ))}
             </Select>
           </Col>
-          <Col span={12}>Step</Col>
+          <Col span={12} className="menu-item-content-menu-label">
+            Step
+          </Col>
           <Col span={12}>
             <InputNumber
               min={0}
@@ -173,7 +178,9 @@ export default class ChartMenu extends Component {
     function getYAxisElements() {
       return (
         <Row>
-          <Col span={12}>Value</Col>
+          <Col span={12} className="menu-item-content-menu-label">
+            Value
+          </Col>
           <Col span={12}>
             <Select
               size="small"
@@ -190,7 +197,9 @@ export default class ChartMenu extends Component {
               ))}
             </Select>
           </Col>
-          <Col span={12}>Computation</Col>
+          <Col span={12} className="menu-item-content-menu-label">
+            Computation
+          </Col>
           <Col span={12}>
             <Select
               size="small"
@@ -234,11 +243,13 @@ export default class ChartMenu extends Component {
         </Col>
         <Col span={12}>
           <Row>
-            <Col span={8}>
-              <DotChartOutlined />
-              Type
+            <Col span={8} className="menu-item-label">
+              <div className="menu-item-label-1">
+                <DotChartOutlined />
+                Type
+              </div>
             </Col>
-            <Col span={16}>
+            <Col span={16} className="menu-item-content">
               <Select
                 size="small"
                 placeholder="Select type"
@@ -257,20 +268,26 @@ export default class ChartMenu extends Component {
                 ))}
               </Select>
             </Col>
-            <Col span={8}>
-              <BarsOutlined rotate={90} />
-              X-axis
+            <Col span={8} className="menu-item-label">
+              <div className="menu-item-label-2">
+                <BarsOutlined rotate={90} />
+                X-axis
+              </div>
             </Col>
-            <Col span={16}>{getXAxisElements()}</Col>
+            <Col span={16} className="menu-item-content">
+              {getXAxisElements()}
+            </Col>
           </Row>
         </Col>
         <Col span={12}>
           <Row>
-            <Col span={8}>
-              <BgColorsOutlined />
-              Color
+            <Col span={8} className="menu-item-label">
+              <div className="menu-item-label-1">
+                <BgColorsOutlined />
+                Color
+              </div>
             </Col>
-            <Col span={16}>
+            <Col span={16} className="menu-item-content">
               <Select
                 size="small"
                 placeholder="Select color"
@@ -291,11 +308,15 @@ export default class ChartMenu extends Component {
                 ))}
               </Select>
             </Col>
-            <Col span={8}>
-              <BarsOutlined />
-              Y-axis
+            <Col span={8} className="menu-item-label">
+              <div className="menu-item-label-2">
+                <BarsOutlined />
+                Y-axis
+              </div>
             </Col>
-            <Col span={16}>{getYAxisElements()}</Col>
+            <Col span={16} className="menu-item-content">
+              {getYAxisElements()}
+            </Col>
           </Row>
         </Col>
         <Col span={24}>
@@ -303,9 +324,12 @@ export default class ChartMenu extends Component {
         </Col>
         <Col span={12}>
           <Row>
-            <Col span={24}>
-              Fitting
+            <Col span={8} className="menu-item-label">
+              <div className="config-item-label">Fitting</div>
+            </Col>
+            <Col span={16} className="menu-item-content">
               <Select
+                size="small"
                 placeholder="Fit by"
                 onChange={(value) => {
                   self.setState({ fitIndex: value }, self.checkState);
@@ -318,28 +342,34 @@ export default class ChartMenu extends Component {
                 ))}
               </Select>
             </Col>
+
             <Col span={12}>
-              <Button block onClick={this.saveConstraint}>
+              <Button size="small" block onClick={this.saveConstraint}>
                 Save
               </Button>
             </Col>
             <Col span={12}>
-              <Button block onClick={this.removeConstraint}>
+              <Button size="small" block onClick={this.removeConstraint}>
                 Delete
               </Button>
             </Col>
           </Row>
         </Col>
-        <Col span={5}>Parameters</Col>
-        <Col span={7}>
+        <Col span={5} className="menu-item-label config-item-label-parameters">
+          Parameters
+        </Col>
+        <Col
+          span={6}
+          className="menu-item-content config-item-content-parameters"
+        >
           {this.constraintParams
             ? Object.keys(this.constraintParams).map((key) => {
                 const str = "" + key + ":" + this.constraintParams[key];
                 return (
-                  <>
+                  <div key={"config-parameters-" + key}>
                     {str}
                     <br />
-                  </>
+                  </div>
                 );
               })
             : ""}
