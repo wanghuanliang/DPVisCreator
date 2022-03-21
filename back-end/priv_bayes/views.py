@@ -132,7 +132,7 @@ def destroyed(request):
             "err_msg": "disconnected with the server"
         }))
     del tmp_data_storage[session_id]
-
+    return HttpResponse(json.dumps({"status": "success"}))
 
 def get_mds_result(session_id):
     constraints = tmp_data_storage[session_id]['constraints']
@@ -163,7 +163,7 @@ def get_mds_result(session_id):
             del df_c2['index']
             matrix_data[i][j] = matrix_data[j][i] = get_w_distance(df_c1.values, df_c2.values)
 
-    embedding = MDS(n_components=2, dissimilarity='precomputed')
+    embedding = MDS(n_components=2, dissimilarity='precomputed', random_state=9)
     D2_MDS_data = embedding.fit_transform(matrix_data)
     D2_MDS_data = (D2_MDS_data - np.min(D2_MDS_data)) / (np.max(D2_MDS_data) - np.min(D2_MDS_data)) * 80 + 10
     return D2_MDS_data
