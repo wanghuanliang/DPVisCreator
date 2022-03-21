@@ -156,7 +156,10 @@ const ModelView = (props) => {
           ></WeightsTable>
         </foreignObject>
         <g transform='translate(0, 200)'>
-          <Projection></Projection>
+          <Projection
+            constraints={constraints}
+            patternColor={patternColor}
+          ></Projection>
         </g>
         <g transform='translate(400,0)'>
           <SankeyPlot
