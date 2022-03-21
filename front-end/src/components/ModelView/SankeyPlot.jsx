@@ -24,8 +24,13 @@ const SankeyPlot = (props) => {
     axisOrder,
     proportionData,
     sankeyData,
-    // constraints,
+    constraints,
+    patternColor,
+    patternType,
+    selectedId,
   } = props;
+
+  console.log('123', selectedId);
 
   // xScale
   const xScale = useMemo(() => {
@@ -163,19 +168,19 @@ const SankeyPlot = (props) => {
         {/* 约束桑基 */}
         {
           Object.keys(constraintsSankeyPos).map((constraintId, i) => {
-            let colorArray = ['#d0c7df', '#e0cdc1'];
-            let color = colorArray[i];
-            // if (i === 1) return;
+            // let colorArray = ['#d0c7df', '#e0cdc1'];
+            // let color = colorArray[i];
             return <g key={constraintId}>
               {
                 constraintsSankeyPos[constraintId].map((d, i) => {
+                  console.log();
                   // let color = "#000";
                   return <path
                     key={i}
                     d={d}
-                    fill={color}
-                    fillOpacity={0.6}
-                    stroke="#333"
+                    fill={patternColor[patternType[constraintId]]}
+                    fillOpacity={selectedId.indexOf(constraintId) === -1 ? 0 : 0.6}
+                    // stroke="#333"
                     strokeOpacity={0.3}
                   ></path>
                 })

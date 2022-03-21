@@ -12,7 +12,7 @@ import Legend from './Matrix/Legend';
 import AlluvialPlot from './AlluvialPlot';
 import WeightsTable from './WeightsTable/WeightsTable';
 import Projection from './Projection/Projection';
-import { debounce } from 'lodash';
+import { getMetrics } from '../../services/api';
 
 const [svgWidth, svgHeight] = [1118, 550];
 const margin = {
@@ -38,9 +38,6 @@ const patternColor = {
   correlation: '#c39b83',
   order: '#bbafd1',
 }
-// 约束距离渐变色
-const [startColor, endColor] = ['#c4ccdf', '#436b92']
-const computeColor = d3.interpolate(startColor, endColor);
 
 const ModelView = (props) => {
   const {
@@ -52,24 +49,35 @@ const ModelView = (props) => {
     total_num: totalNum,
     axis_order: axisOrder,
     proportion_data: proportionData,
-    flow_data: flowData,
+    // flow_data: flowData,
     constraints,
-    matrix_data: matrixData,
+    // matrix_data: matrixData,
     sankey_data: sankeyData,
   } = modelData;
 
-  const [privacyBudgetValue, setPrivacyBudget] = useState(0.8);
+  const [privacyBudgetValue, setPrivacyBudget] = useState(0.8); // 整体隐私预算
+  const [patternWeights, setPatternWeights] = useState(null); // 权重{'c1': 1, 'c2': 1}
+  const [constraintsPos, setConstraintsPos] = useState(null); // 约束坐标
+  const [selectedId, setSelectedId] = useState([]); // 选中点亮的约束
+  
+  // modelData修改，更新patternWeights、constraintsPos, 清空selectedId
   const [initialPatternWeight, patternType] = useMemo(() => {
     const initial = {}, patternType = {};
     constraints.forEach(constraint => {
       initial[constraint.id] = 0.8
-      patternType[constraint.id] = constraint.type;  
-  });
+      patternType[constraint.id] = constraint.type;
+    });
     initial.others = 0.8
     patternType.others = 'others';
     return [initial, patternType];
-  }, [constraints])
-  const [patternWeights, setPatternWeights] = useState(initialPatternWeight); //{'c1': 1, 'c2': 1}
+  }, [constraints]);
+  useEffect(() => {
+    setPatternWeights(initialPatternWeight);
+    setConstraintsPos(constraints);
+    setSelectedId([]);
+  }, [constraints, initialPatternWeight]);
+  
+  // 点击update，更新constraintsPos
   const handleUpdateClick = () => {
     const data = {}
     data.bayes_budget = privacyBudgetValue;
@@ -79,12 +87,15 @@ const ModelView = (props) => {
     })
     console.log('updateClick', data);
     setWeights(data)
-      .then()
+      .then(res => setConstraintsPos(res.data.constraints))
       .catch(e => console.log('e', e));
   }
 
+  // 点击record，发送请求
   const handleRecordClick = () => {
-    console.log("Record click")
+    getMetrics()
+      .then(res => console.log('res', res.data.scheme))
+      .catch(e => console.log(e));
   }
 
   // 渲染上部控制面板
@@ -118,7 +129,7 @@ const ModelView = (props) => {
             <div style={{ backgroundColor: patternColor.order }}>Order</div>
           </div>
           <div style={{display: 'inline-block', width: 20}}></div>
-          <Button size='small'>Record</Button>
+          <Button size='small' onClick={handleRecordClick}>Record</Button>
         </Space>
       </div>
     )
@@ -129,37 +140,26 @@ const ModelView = (props) => {
       {renderModelControlPanel()}
       {/* 一个大的svg放置小svg */}
       {modelData && <svg width={svgWidth} height={svgHeight}>
-        {/* <Matrix
-          constraints={constraints}
-          matrixData={matrixData}
-          computeColor={computeColor}
-          patternColor={patternColor}
-          patternWeights={patternWeights}
-          setPatternWeights={setPatternWeights}
-        ></Matrix>
-        <g transform='translate(50, 480)'>
-          <Legend
-            computeColor={computeColor}
-          ></Legend>
-        </g> */}
         <foreignObject
           x={30}
           y={10}
           width={350}
           height={200}
         >
-          <WeightsTable
+          {patternWeights && <WeightsTable
             patternWeights={patternWeights}
             setPatternWeights={setPatternWeights}
             handleUpdateClick={handleUpdateClick}
             patternType={patternType}
-          ></WeightsTable>
+          ></WeightsTable>}
         </foreignObject>
         <g transform='translate(0, 200)'>
-          <Projection
-            constraints={constraints}
+          {constraintsPos && <Projection
+            constraints={constraintsPos}
             patternColor={patternColor}
-          ></Projection>
+            selectedId={selectedId}
+            setSelectedId={setSelectedId}
+          ></Projection>}
         </g>
         <g transform='translate(400,0)'>
           <SankeyPlot
@@ -168,6 +168,9 @@ const ModelView = (props) => {
             proportionData={proportionData}
             sankeyData={sankeyData}
             constraints={constraints}
+            patternColor={patternColor}
+            patternType={patternType}
+            selectedId={selectedId}
           ></SankeyPlot>
         </g>
         

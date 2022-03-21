@@ -1,31 +1,9 @@
 import React, { useEffect, useRef } from "react";
 import "./ValidationView.less";
 import * as d3 from "d3";
-import {
-  Taggle,
-  LineUp,
-  LineUpStringColumnDesc,
-  LineUpCategoricalColumnDesc,
-  LineUpNumberColumnDesc,
-  LineUpRanking,
-  LineUpSupportColumn,
-  LineUpColumn,
-  LineUpImposeColumn,
-} from "lineupjsx";
 import { Table, Tag, Radio, Space } from "antd";
 import LineupTable from "./LineupTable";
 import ProtectedDataDisplay from "./ProtectedDataDisplay";
-
-// const arr = [];
-// const cats = ['c1', 'c2', 'c3'];
-// for (let i = 0; i < 10; ++i) {
-//   arr.push({
-//     a: Math.random() * 10,
-//     d: 'Row ' + i,
-//     cat: cats[Math.floor(Math.random() * 3)],
-//     cat2: cats[Math.floor(Math.random() * 3)],
-//   });
-// };
 
 const arr = [
   {
@@ -56,19 +34,6 @@ const ValidationView = (props) => {
     return data;
   });
   return (
-    // <LineUp data={arr} />
-    // <LineUp data={arr} sidePanel sidePanelCollapsed defaultRanking>
-    //   <LineUpStringColumnDesc column="d" label="Label" width={100} />
-    //   <LineUpCategoricalColumnDesc column="cat" categories={cats} color="green" />
-    //   <LineUpCategoricalColumnDesc column="cat2" categories={cats} color="blue" />
-    //   <LineUpNumberColumnDesc column="a" domain={[0, 10]} color="blue" />
-
-    //   <LineUpRanking groupBy="cat" sortBy="a:desc">
-    //     <LineUpSupportColumn type="*" />
-    //     <LineUpColumn column="*" />
-    //     <LineUpImposeColumn label="a+cat" column="a" categeoricalColumn="cat2" />
-    //   </LineUpRanking>
-    // </LineUp>
     <div style={{ display: "flex" }}>
       <div style={{ width: "60%" }}>
         <LineupTable></LineupTable>
