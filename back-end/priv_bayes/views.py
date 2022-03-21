@@ -350,7 +350,7 @@ def setWeights(request):
 
 def getMetrics(request):
     global tmp_data_storage
-    session_id = json.loads(request.body).get('session_id')
+    session_id = request.GET.get('session_id')
     if not check_session_id(session_id):
         return HttpResponse(json.dumps({
             "status": "failed",
