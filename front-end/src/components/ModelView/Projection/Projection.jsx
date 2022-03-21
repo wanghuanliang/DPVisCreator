@@ -19,6 +19,8 @@ const Projection = (props) => {
   const {
     constraints,
     patternColor,
+    selectedId,
+    setSelectedId,
   } = props;
 
   const xAxisRef = useRef(null);
@@ -89,6 +91,7 @@ const Projection = (props) => {
           constraints.map(constraint => {
             const x = constraint.pos[0],
               y = constraint.pos[1];
+            const id = constraint.id;
             const type = constraint.type;
             return <g key={constraint.id}>
               <circle
@@ -96,6 +99,9 @@ const Projection = (props) => {
                 cy={yScale(y)}
                 r={rScale(constraint.r)}
                 fill={patternColor[type]}
+                stroke='#f0943d'
+                strokeWidth={2}
+                strokeOpacity={selectedId.indexOf(id) === -1 ? 0 : 1}
               ></circle>
               <text
                 x={xScale(x)}
@@ -104,6 +110,25 @@ const Projection = (props) => {
                 alignmentBaseline='central'
                 fill='#333'
               >{constraint.id}</text>
+              {/* 点击区域 */}
+              <circle
+                cx={xScale(x)}
+                cy={yScale(y)}
+                r={rScale(constraint.r)}
+                fill={patternColor[type]}
+                opacity={0}
+                onClick={() => {
+                  const index = selectedId.indexOf(id);
+                  if (index === -1) {
+                    selectedId.push(id);
+                    setSelectedId([...selectedId]);
+                  } else {
+                    selectedId.splice(index, 1);
+                    setSelectedId([...selectedId]);
+                  }
+                }}
+                style={{cursor: 'pointer'}}
+              ></circle>
             </g>
           })  
         }
