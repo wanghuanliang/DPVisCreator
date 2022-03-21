@@ -77,7 +77,7 @@ def solveOriginalData(session_id):
 def getOriginalData(request):  # 获取原始数据
     global tmp_data_storage
     data = request.FILES['file']
-    session_id = json.loads(request.body).get('session_id')
+    session_id = request.POST.get("session_id")
     if not check_session_id(session_id):
         return HttpResponse(json.dumps({
             "status": "failed",
