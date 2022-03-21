@@ -51,7 +51,9 @@ const IndexPage = () => {
       }
     }
     getModelData({ constraints: cts })
-      .then((res) => setModelData(res.data))
+      .then((res) => {     
+        setModelData(res.data.data);
+      })
       .catch((e) => {
         console.log(e);
         setModelData(null);

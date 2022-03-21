@@ -111,7 +111,8 @@ const SankeyPlot = (props) => {
       // 遍历每一个间隔内的约束桑基
       constraints.forEach(constraint => {
         const constraintId = constraint.id;
-        obj.constraints[constraintId].forEach(sankey => {
+        // modelData.constraints内可能缺失桑基？（好像不可能）
+        (obj.constraints?.[constraintId] || []).forEach(sankey => {
           // 计算每个点坐标
           const sankeyHeight = sankey.num / totalNum * lineTotalHeight; // 一条sankey高度
           // const x1 = x1;
@@ -138,7 +139,7 @@ const SankeyPlot = (props) => {
     })
 
     return [backgroundSankeyPos, constraintsSankeyPos];
-  }, [sankeyData, proportionData, currentStartPos, totalNum, xScale, constraints])
+  }, [sankeyData, proportionData, currentStartPos, totalNum, xScale])
 
   return (
     <svg width={svgWidth} height={svgHeight}>
@@ -214,7 +215,6 @@ const SankeyPlot = (props) => {
             </g>
           })
         }
-        
       </g>
     </svg>
   )
