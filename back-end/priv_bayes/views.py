@@ -7,7 +7,7 @@ from priv_bayes.kl import get_w_distance
 from django.http import HttpResponse
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-# from sdv.metrics.tabular import KSTest, CSTest
+from sdv.metrics.tabular import KSTest, CSTest
 # 隐私保护相关包
 
 from priv_bayes.DataSynthesizer.DataDescriber import DataDescriber
@@ -436,10 +436,10 @@ def getMetrics(request):
         "scheme": {
             "metrics": {
                 "statistical_metrics": {
-                    "KSTest": 0.85,
-                    "CSTest": 0.85,
-                    # "KSTest": KSTest.compute(ORI_DATA, synthetic_df),
-                    # "CSTest": CSTest.compute(ORI_DATA, synthetic_df)
+                    # "KSTest": 0.85,
+                    # "CSTest": 0.85,
+                    "KSTest": KSTest.compute(ORI_DATA, synthetic_df),
+                    "CSTest": CSTest.compute(ORI_DATA, synthetic_df)
                 }
             },
             "protected_data": json.loads(synthetic_df.to_json(orient="records")),
