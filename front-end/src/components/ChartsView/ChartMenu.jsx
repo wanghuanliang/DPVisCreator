@@ -364,7 +364,37 @@ export default class ChartMenu extends Component {
         >
           {this.constraintParams
             ? Object.keys(this.constraintParams).map((key) => {
-                const str = "" + key + ":" + this.constraintParams[key];
+                const label = "" + key + ":";
+                let param = this.constraintParams[key];
+                if (key === "mean") {
+                  param =
+                    "cx:" +
+                    parseFloat(param[0]).toFixed(2) +
+                    " cy:" +
+                    parseFloat(param[1]).toFixed(2);
+                } else if (key === "radius") {
+                  param =
+                    "rx:" +
+                    parseFloat(param[0]).toFixed(2) +
+                    " ry:" +
+                    parseFloat(param[1]).toFixed(2);
+                } else if (key === "polynomial_params") {
+                  let temp = "y = ";
+                  for (let i = param.length - 1; i > 0; i--) {
+                    const index = param.length - 1 - i;
+                    temp +=
+                      " " +
+                      parseFloat(param[index]).toFixed(2) +
+                      "*x^" +
+                      i +
+                      " +";
+                  }
+                  temp += parseFloat(param[param.length - 1]).toFixed(2);
+                  param = temp;
+                } else if (key === "range") {
+                  param = "min:" + param[0] + " max:" + param[1];
+                }
+                const str = label + param;
                 return (
                   <div key={"config-parameters-" + key}>
                     {str}

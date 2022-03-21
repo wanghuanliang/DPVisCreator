@@ -153,6 +153,7 @@ export default class DataChart extends Component {
       this.selectBar = {};
       this.selectedSeriesData = {};
     }
+    return null;
   }
   componentDidUpdate() {
     let mapper = {};

@@ -17,11 +17,9 @@ export default class ChartDisplay extends Component {
   onSelected(selected_data) {
     const constraint = this.props.constraint;
     const indexes = [];
-    Object.values(selected_data).forEach((seriesData) => {
-      seriesData.forEach((data) => {
-        if (this.props.constraint.type === "cluster") indexes.push(data[3]);
-        else indexes.push(...data[3]);
-      });
+    selected_data.forEach((data) => {
+      if (this.props.constraint.type === "cluster") indexes.push(data[3]);
+      else indexes.push(...data[3]);
     });
     constraint.data = indexes;
     this.updateConstraint(constraint);

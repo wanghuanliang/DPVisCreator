@@ -12,9 +12,9 @@ class ChartsView extends Component {
       this.props.setConstraints(this.state.constraints);
     };
     this.constraintId = 0;
-    this.original_constraint = {};
     this.state = {
       constraints: [],
+      original_constraint: {},
       original_chart_data: [],
       protected_chart_data: [],
     };
@@ -75,9 +75,10 @@ class ChartsView extends Component {
         });
       });
       if (x.attribute_type === "Measures") {
-        for (let i = 0; i < cart.length - 1; i++) {
+        const colors = color.values.length;
+        for (let i = 0; i < cart.length - colors; i++) {
           let current = cart[i];
-          let next = cart[i + 1];
+          let next = cart[i + colors];
           let sum = 0;
           const arr = type_data.filter(
             (data) =>
@@ -86,6 +87,7 @@ class ChartsView extends Component {
               (current.color === "default" ||
                 current.color === data[constraint.color])
           );
+          if (arr.length === 0) continue;
           arr.forEach((element) => (sum += element[constraint.y_axis]));
           dataset.push([
             current.value,
@@ -141,37 +143,14 @@ class ChartsView extends Component {
         }
       });
     }
-    if (type === "protected") {
-      constraint.data.forEach((id) => {
-        const index = this.props.original_data.findIndex(
-          (data) => data.index === id
-        );
-        const data = this.props.original_data[index];
-        dataset.push([
-          data[constraint.x_axis],
-          data[constraint.y_axis],
-          "selected_original_data",
-          data.index,
-        ]);
-      });
-    }
     if (chartType === "line" || chartType === "scatter")
       dataset.sort((a, b) => a[0] - b[0]);
     // 折线图按x值从小到大
     else if (chartType === "bar") dataset.sort((a, b) => b[1] - a[1]); // 条形图按y值从大到小
-    if (!isNaN(step) && chartType === "line") {
-      color.values.forEach((value) => {
-        dataset.pop();
-      });
-    }
-    this.original_constraint = constraint;
     if (type === "original") {
       this.setState({
+        original_constraint: constraint,
         original_chart_data: dataset,
-      });
-    } else if (type === "protected") {
-      this.setState({
-        protected_chart_data: dataset,
       });
     }
   }
@@ -191,7 +170,7 @@ class ChartsView extends Component {
       this.setState({ constraints });
       this.setConstraints();
     } else {
-      this.original_constraint = constraint;
+      this.setState({ original_constraint: constraint });
     }
   }
   updateConstraintParams(constraint, params) {
@@ -203,7 +182,7 @@ class ChartsView extends Component {
       this.getData("original", this.props.original_data, constraint);
       this.setState({ constraints });
     } else {
-      this.original_constraint = constraint;
+      this.setState({ original_constraint: constraint });
     }
   }
   removeConstraint(constraint) {
@@ -229,14 +208,14 @@ class ChartsView extends Component {
         <ChartMenu
           attributes={this.props.attribute_character || {}}
           initConstraint={(settings) => this.initConstraint(settings)}
-          constraintParams={this.original_constraint.params}
+          constraintParams={this.state.original_constraint.params}
           removeConstraint={() =>
-            this.removeConstraint(this.original_constraint)
+            this.removeConstraint(this.state.original_constraint)
           }
           saveConstraint={() => {
-            if (this.original_constraint.id)
-              this.updateConstraint(this.original_constraint);
-            else this.insertConstraint(this.original_constraint);
+            if (this.state.original_constraint.id)
+              this.updateConstraint(this.state.original_constraint);
+            else this.insertConstraint(this.state.original_constraint);
           }}
         ></ChartMenu>
         <Col span={18}>
@@ -244,7 +223,7 @@ class ChartsView extends Component {
             name="original-chart"
             data={this.state.original_chart_data}
             attributes={this.props.attribute_character || {}}
-            constraint={this.original_constraint}
+            constraint={this.state.original_constraint}
             updateConstraint={(constraint) => this.updateConstraint(constraint)}
             updateConstraintParams={(id, params) =>
               this.updateConstraintParams(id, params)

@@ -15,7 +15,11 @@ export default class ConstraintSelect extends Component {
       <Space direction="vertical">
         <Title level={5}>Pattern</Title>
         {this.props.constraints.map((constraint, index) => (
-          <BorderText type={constraint.type} text={constraint.id}></BorderText>
+          <BorderText
+            type={constraint.type}
+            text={constraint.id}
+            key={"schema-constraint-" + constraint.id}
+          ></BorderText>
         ))}
       </Space>
     );
