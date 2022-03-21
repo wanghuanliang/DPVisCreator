@@ -2,4 +2,9 @@ Django==4.0
 numpy==1.21.4
 pandas==1.3.5
 django-cors-headers==3.11.0
-DataSynthesizer==0.1.10
+scipy~=1.7.3
+sklearn~=0.0
+scikit-learn~=1.0.2
+python-dateutil~=2.8.2
+matplotlib~=3.5.1
+seaborn~=0.11.2

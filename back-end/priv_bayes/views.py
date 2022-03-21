@@ -1,4 +1,3 @@
-import os
 import json
 import copy
 import pandas as pd
@@ -13,33 +12,20 @@ from django.core.files.base import ContentFile
 
 from priv_bayes.DataSynthesizer.DataDescriber import DataDescriber
 from priv_bayes.DataSynthesizer.DataGenerator import DataGenerator
-from priv_bayes.DataSynthesizer.ModelInspector import ModelInspector
-from priv_bayes.DataSynthesizer.lib.utils import read_json_file, display_bayesian_network
+from priv_bayes.DataSynthesizer.lib.utils import display_bayesian_network
 
-DATA_PATH = 'priv_bayes/data/insurance.csv'  # 添加默认数据 内容
-constraints = None
-threshold_value = 10  # 离散型和数值型分界点
-epsilon = 0.3         # 分布叠加的隐私预算
-bayes_epsilon = 10    # 贝叶斯网络的隐私预算
-dot_basenum = 1000    # 增强分布时加点的基础数量
-degree_of_bayesian_network = 2  # 贝叶斯每个节点父亲最多个数
-perturbation = 0.10   # 根据约束采样属性值的扰动范围
-weights = None
-Dimensions = []
-Measures = []
-INT_TYPE = []
+tmp_data_storage = {}
 
-df = pd.read_csv(DATA_PATH)
-ORI_DATA = copy.deepcopy(df)  # 保存原始数据，用于后续数据生成
 
 def index(request):
     return HttpResponse("priv_bayes_backend")
 
 
-def solveOriginalData():
-    global DATA_PATH, ORI_DATA, Dimensions, Measures, INT_TYPE
-    df = pd.read_csv(DATA_PATH)
-    ORI_DATA = copy.deepcopy(df)  # 保存原始数据，用于后续数据生成
+def solveOriginalData(session_id):
+    global tmp_data_storage
+    ORI_DATA = tmp_data_storage[session_id]['ORI_DATA']
+    threshold_value = tmp_data_storage[session_id]['threshold_value']
+    df = copy.deepcopy(ORI_DATA)
     df['index'] = range(len(df))  # 给每条记录按顺序编号，后续可能会用到
     original_data = json.loads(df.to_json(orient="records"))
     attribute_character = {}
@@ -47,9 +33,9 @@ def solveOriginalData():
         if col == 'index':
             continue
         if df[col].dtype == int or df[col].dtype == np.int64:  # 记录整型数据
-            INT_TYPE.append(col)
+            tmp_data_storage[session_id]['INT_TYPE'].append(col)
         if len(df[col].value_counts()) > threshold_value:  # 数值型
-            Measures.append(col)
+            tmp_data_storage[session_id]['Measures'].append(col)
             minn = min(df[col])
             maxx = max(df[col])
             mean = np.mean(df[col])
@@ -60,7 +46,7 @@ def solveOriginalData():
                 "average": mean,
             }
         else:
-            Dimensions.append(col)  # 离散型
+            tmp_data_storage[session_id]['Dimensions'].append(col)  # 离散型
             attribute_character[col] = {
                 "attribute_type": "Dimensions",
                 "values": np.unique(df[col]).tolist(),
@@ -71,8 +57,8 @@ def solveOriginalData():
             "original_data": original_data,
             "statistics": {},
             "attribute_data": {
-                "Dimensions": Dimensions,
-                "Measures": Measures,
+                "Dimensions": tmp_data_storage[session_id]['Dimensions'],
+                "Measures": tmp_data_storage[session_id]['Measures'],
                 "Computations": []
             },
             "attribute_character": attribute_character
@@ -80,13 +66,16 @@ def solveOriginalData():
     }
     return ret
 
-solveOriginalData()
 
-def getOriginalData(request):   # 获取原始数据
-    global DATA_PATH
+def getOriginalData(request):  # 获取原始数据
+    global tmp_data_storage
     data = request.FILES['file']
+    session_id = json.loads(request.body).get('session_id')
     DATA_PATH = default_storage.save('priv_bayes/data/1.csv', ContentFile(data.read()))
-    ret = solveOriginalData()
+    df = pd.read_csv(DATA_PATH)
+    tmp_data_storage[session_id]['DATA_PATH'] = DATA_PATH
+    tmp_data_storage[session_id]['ORI_DATA'] = df
+    ret = solveOriginalData(session_id)
 
     return HttpResponse(json.dumps(ret))
 
@@ -99,7 +88,40 @@ def cnt_poly(x, params):  # 根据x和多项式系数params计算返回值
     return ans
 
 
-def get_mds_result():
+def initialize(request):
+    global tmp_data_storage
+    session_id = json.loads(request.body).get('session_id')
+    tmp_data_storage[session_id] = {
+        "DATA_PATH": 'priv_bayes/data/insurance.csv',
+        "constraints": None,
+        "threshold_value": 10,  # 离散型和数值型分界点
+        "bayes_epsilon": 10,  # 贝叶斯网络的隐私预算
+        "weights": None,
+        "Dimensions": [],
+        "Measures": [],
+        "INT_TYPE": [],
+        "ORI_DATA": None
+    }
+    df = pd.read_csv(tmp_data_storage[session_id]['DATA_PATH'])
+    tmp_data_storage[session_id]['ORI_DATA'] = df  # 保存原始数据，用于后续数据生成
+    solveOriginalData(session_id)
+    ret = {
+        "status": "success",
+    }
+    return HttpResponse(json.dumps(ret))
+
+
+def destroyed(request):
+    global tmp_data_storage
+    session_id = json.loads(request.body).get('session_id')
+    del tmp_data_storage[session_id]
+
+
+def get_mds_result(session_id):
+    constraints = tmp_data_storage[session_id]['constraints']
+    ORI_DATA = tmp_data_storage[session_id]['ORI_DATA']
+    Dimensions = tmp_data_storage[session_id]['Dimensions']
+
     num_of_constraints = len(constraints)
     if num_of_constraints == 1:
         return np.array([[50, 50]])
@@ -129,12 +151,18 @@ def get_mds_result():
     D2_MDS_data = (D2_MDS_data - np.min(D2_MDS_data)) / (np.max(D2_MDS_data) - np.min(D2_MDS_data)) * 80 + 10
     return D2_MDS_data
 
+
 def getModelData(request):
-    global constraints, Dimensions, Measures
+    global tmp_data_storage
+    session_id = json.loads(request.body).get('session_id')
+    Dimensions = tmp_data_storage[session_id]['Dimensions']
+    Measures = tmp_data_storage[session_id]['Measures']
+
+    ORI_DATA = tmp_data_storage[session_id]['ORI_DATA']
     cur_df = copy.deepcopy(ORI_DATA)
     DEFAULT_CATEGORIES = 3
-    constraints = json.loads(request.body).get('constraints')  # 每个点的权重百分比
-    weights = np.ones((len(constraints))) / len(constraints) * 10
+    constraints = tmp_data_storage[session_id]['constraints'] = json.loads(request.body).get('constraints')  # 每个点的权重百分比
+    weights = tmp_data_storage[session_id]['weights'] = np.ones((len(constraints))) / len(constraints) * 10
     # slice_methods = json.loads(request.body).get('slice_methods')
     slice_methods = {}  # 暂无slice_methods
     axis_order = []
@@ -148,7 +176,7 @@ def getModelData(request):
     # 对每个坐标轴，如果是Measures类型数据，则做一个分位数分段
     new_df = pd.DataFrame()
     for axis in axis_order:
-        if axis not in Measures:    # 不是数值型的数据，不需要离散化
+        if axis not in Measures:  # 不是数值型的数据，不需要离散化
             new_df[axis] = ORI_DATA[axis]
             continue
         # 根据K-Means和elbow_method去选择合适的切分份数
@@ -163,7 +191,7 @@ def getModelData(request):
     cur_df['index'] = range(len(cur_df))
     cur_df['constraint'] = "empty"
 
-    matrix_data = get_mds_result()
+    matrix_data = get_mds_result(session_id)
 
     for constraint in constraints:
         cur_df.loc[cur_df['index'].isin(constraint['data']), 'constraint'] = constraint['id']
@@ -220,7 +248,7 @@ def getModelData(request):
 
     sankey_data = []
     conses_ret = [{"id": constraint['id'], "type": constraint['type'], "pos": matrix_data[idx].tolist()
-                   , "r": weights[idx]} for idx, constraint in enumerate(constraints)]
+                      , "r": weights[idx]} for idx, constraint in enumerate(constraints)]
     conses = [constraint['id'] for constraint in constraints]
     for axis_id in range(len(axis_order) - 1):
         x = axis_order[axis_id]
@@ -274,14 +302,16 @@ def getModelData(request):
     return HttpResponse(json.dumps(ret))
 
 
-
 def setWeights(request):
-    global bayes_epsilon, weights
-    weights = json.loads(request.body).get('weights')
+    global tmp_data_storage
+    session_id = json.loads(request.body).get('session_id')
+    constraints = tmp_data_storage[session_id]['constraints']
+    weights = tmp_data_storage[session_id]['weights'] = json.loads(request.body).get('weights')
     c_weights = [w["weight"] for w in weights]
     c_weights = np.array(c_weights) / sum(c_weights)
-    bayes_epsilon = json.loads(request.body).get('bayes_budget')
-    matrix_data = get_mds_result()
+    c_weights = c_weights / min(c_weights) * 5   # 最小的圆半径为5，其它按照比例来
+    tmp_data_storage[session_id]['bayes_epsilon'] = json.loads(request.body).get('bayes_budget')
+    matrix_data = get_mds_result(session_id)
     conses_ret = [{"id": constraint['id'], "type": constraint['type'], "pos": matrix_data[idx].tolist(),
                    "r": c_weights[idx]} for idx, constraint in enumerate(constraints)]
     ret = {
@@ -293,7 +323,14 @@ def setWeights(request):
 
 
 def getMetrics(request):
-    global weights, constraints
+    global tmp_data_storage
+    session_id = json.loads(request.body).get('session_id')
+    DATA_PATH = tmp_data_storage[session_id]['DATA_PATH']
+    ORI_DATA = tmp_data_storage[session_id]['ORI_DATA']
+    constraints = tmp_data_storage[session_id]['constraints']
+    weights = tmp_data_storage[session_id]['weights']
+    threshold_value = tmp_data_storage[session_id]['threshold_value']
+    bayes_epsilon = tmp_data_storage[session_id]['bayes_epsilon']
     # 构建一个weights数组
     weight_df = copy.deepcopy(ORI_DATA)
     weight_df[weight_df.columns] = 1
@@ -324,9 +361,9 @@ def getMetrics(request):
     description_file = "priv_bayes/out/dscrpt.json"
     synthetic_data = "priv_bayes/out/syndata.csv"
 
-    describer = DataDescriber(category_threshold=20)
+    describer = DataDescriber(category_threshold=threshold_value)
     describer.describe_dataset_in_correlated_attribute_mode(dataset_file=DATA_PATH,
-                                                            epsilon=10,
+                                                            epsilon=bayes_epsilon,
                                                             k=2,
                                                             attribute_to_is_categorical={},
                                                             attribute_to_is_candidate_key={},
@@ -351,7 +388,8 @@ def getMetrics(request):
             p_b = cons['params']['radius'][1]
             dt_x = synthetic_df[cons["x_axis"]]
             dt_y = synthetic_df[cons["y_axis"]]
-            selected_data = synthetic_df[(dt_x - m_x) ** 2 / p_a ** 2 + (dt_y - m_y) ** 2 / p_b ** 2 <= 1].index.tolist()
+            selected_data = synthetic_df[
+                (dt_x - m_x) ** 2 / p_a ** 2 + (dt_y - m_y) ** 2 / p_b ** 2 <= 1].index.tolist()
         if cons["type"] == "correlation":
             cond1 = synthetic_df[cons['x_axis']] <= cons['params']['range'][1]
             cond2 = synthetic_df[cons['x_axis']] >= cons['params']['range'][0]
@@ -377,6 +415,5 @@ def getMetrics(request):
             "pattern": patterns
         }
     }
-
 
     return HttpResponse(json.dumps(ret))
