@@ -1,36 +1,16 @@
 import React, { Component } from "react";
-import { Col, Row } from "antd";
-import ChartMenu from "./ChartMenu";
+import { Col, Row, Space } from "antd";
 import ChartDisplay from "./ChartDisplay";
-import ConstraintSelect from "./Datachart/ConstraintSelect";
-import { chart_constraint, constraint_chart } from "./constants";
-class ChartsView extends Component {
+import ConstraintSelect from "./DataChart/ConstraintSelect";
+import { chart_constraint, constraint_chart } from "../ChartsView/constants";
+import ParameterDisplay from "./DataChart/ParameterDisplay";
+export default class ProtectedDataDisplay extends Component {
   constructor(props) {
     super(props);
-    this.setConstraints = () => {
-      this.props.setConstraints(this.state.constraints);
-    };
-    this.constraintId = 0;
-    this.original_constraint = {};
+    this.constraint = {};
     this.state = {
-      constraints: [],
-      original_chart_data: [],
-      protected_chart_data: [],
+      data: [],
     };
-  }
-  initConstraint(settings) {
-    const constraint = {
-      type: chart_constraint[settings.chart_type],
-      computation: settings.computation,
-      x_axis: settings.x_axis,
-      y_axis: settings.y_axis,
-      color: settings.color,
-      x_step: settings.x_step,
-      params: {
-        fitting: settings.fitting ? settings.fitting : 2,
-      },
-    };
-    this.getData("original", this.props.original_data, constraint);
   }
   getData(type, type_data, constraint) {
     const [x, y, computation, color, fitting, chartType, step] = [
@@ -163,107 +143,44 @@ class ChartsView extends Component {
         dataset.pop();
       });
     }
-    this.original_constraint = constraint;
-    if (type === "original") {
-      this.setState({
-        original_chart_data: dataset,
-      });
-    } else if (type === "protected") {
-      this.setState({
-        protected_chart_data: dataset,
-      });
-    }
-  }
-  insertConstraint(constraint) {
-    const constraints = this.state.constraints;
-    constraints.push({ ...constraint, id: "C" + this.constraintId });
-    this.constraintId++;
-    this.setState({ constraints });
-    this.setConstraints();
-  }
-  updateConstraint(constraint) {
-    const constraints = this.state.constraints;
-    const index = constraints.findIndex((value) => value.id === constraint.id);
-    if (index >= 0) {
-      constraints[index] = { ...constraints[index], ...constraint };
-      this.getData("original", this.props.original_data, constraint);
-      this.setState({ constraints });
-      this.setConstraints();
-    } else {
-      this.original_constraint = constraint;
-    }
-  }
-  updateConstraintParams(constraint, params) {
-    constraint.params = { ...constraint.params, ...params };
-    const constraints = this.state.constraints;
-    const index = constraints.findIndex((value) => value.id === constraint.id);
-    if (index >= 0) {
-      constraints[index] = { ...constraints[index], ...constraint };
-      this.getData("original", this.props.original_data, constraint);
-      this.setState({ constraints });
-    } else {
-      this.original_constraint = constraint;
-    }
-  }
-  removeConstraint(constraint) {
-    const constraints = this.state.constraints;
-    const index = constraints.findIndex((value) => value.id === constraint.id);
-    constraints.splice(index, 1);
-    this.setState({ constraints });
-    console.log({ constraints: this.state.constraints });
-    this.setConstraints();
+    this.constraint = constraint;
+    this.setState({ data: dataset });
   }
   selectConstraint(type, index) {
     if (type === "original") {
       this.getData(
         type,
         this.props.original_data,
-        this.state.constraints[index]
+        this.props.constraints[index]
       );
     }
   }
   render() {
+    const self = this;
     return (
       <Row gutter={24}>
-        <ChartMenu
-          attributes={this.props.attribute_character || {}}
-          initConstraint={(settings) => this.initConstraint(settings)}
-          constraintParams={this.original_constraint.params}
-          removeConstraint={() =>
-            this.removeConstraint(this.original_constraint)
-          }
-          saveConstraint={() => {
-            if (this.original_constraint.id)
-              this.updateConstraint(this.original_constraint);
-            else this.insertConstraint(this.original_constraint);
-          }}
-        ></ChartMenu>
+        <Col span={6}>
+          <Space>
+            <ConstraintSelect
+              constraints={this.props.constraints}
+              selectConstraint={(constraint) => {
+                self.constraint = constraint;
+              }}
+            ></ConstraintSelect>
+            <ParameterDisplay
+              params={self.constraint.params || {}}
+            ></ParameterDisplay>
+          </Space>
+        </Col>
         <Col span={18}>
           <ChartDisplay
-            name="original-chart"
-            data={this.state.original_chart_data}
-            attributes={this.props.attribute_character || {}}
-            constraint={this.original_constraint}
-            updateConstraint={(constraint) => this.updateConstraint(constraint)}
-            updateConstraintParams={(id, params) =>
-              this.updateConstraintParams(id, params)
-            }
+            name="protected-chart"
+            data={this.state.data}
+            attributes={this.props.attributeCharacter || {}}
+            constraint={this.constraint}
           ></ChartDisplay>
-        </Col>
-        <Col span={6}>
-          <ConstraintSelect
-            constraints={this.state.constraints}
-            updateConstraint={(constraint) => {
-              this.updateConstraint(constraint);
-            }}
-            selectConstraint={(index) =>
-              this.selectConstraint("original", index)
-            }
-          ></ConstraintSelect>
         </Col>
       </Row>
     );
   }
 }
-
-export default ChartsView;

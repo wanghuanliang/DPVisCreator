@@ -160,7 +160,11 @@ const IndexPage = () => {
               Validation View
             </div>
             <div className="cross-line"></div>
-            <Validation></Validation>
+            <Validation
+              attributeCharacter={attributeCharacter}
+              originalData={originalData}
+              constraints={constraints}
+            ></Validation>
             {/* <LineupTable></LineupTable> */}
           </div>
         </div>
