@@ -44,6 +44,8 @@ const ModelView = (props) => {
     setWeights,
     modelData,
     setProtectedData,
+    schemes,
+    setSchemes,
   } = props;
   const {
     total_num: totalNum,
@@ -55,7 +57,7 @@ const ModelView = (props) => {
     sankey_data: sankeyData,
   } = modelData;
 
-  const [privacyBudgetValue, setPrivacyBudget] = useState(0.8); // 整体隐私预算
+  const [privacyBudgetValue, setPrivacyBudget] = useState(10); // 整体隐私预算,0-20,默认10
   const [patternWeights, setPatternWeights] = useState(null); // 权重{'c1': 1, 'c2': 1}
   const [constraintsPos, setConstraintsPos] = useState(null); // 约束坐标
   const [selectedId, setSelectedId] = useState([]); // 选中点亮的约束
@@ -94,7 +96,9 @@ const ModelView = (props) => {
   // 点击record，发送请求
   const handleRecordClick = () => {
     getMetrics()
-      .then(res => console.log('res', res.data.scheme))
+      .then(res => {
+        setSchemes([...schemes, res.data.schemes]);
+      })
       .catch(e => console.log(e));
   }
 
@@ -106,7 +110,7 @@ const ModelView = (props) => {
           <span>Privacy Budget</span>
           <Slider
             min={0}
-            max={1}
+            max={20}
             step={0.1}
             style={{ width: 100 }}
             value={privacyBudgetValue}
@@ -115,7 +119,7 @@ const ModelView = (props) => {
           <InputNumber
             size='small'
             min={0}
-            max={1}
+            max={20}
             step={0.1}
             style={{ width: 60 }}
             value={privacyBudgetValue}
