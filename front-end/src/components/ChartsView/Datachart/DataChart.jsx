@@ -200,9 +200,10 @@ export default class DataChart extends Component {
     });
     this.chart.on("brushEnd", (params) => {
       const type = this.props.type;
+      const data = JSON.parse(JSON.stringify(this.selectedSeriesData));
       if (type === "scatter") this.initCluster();
       else if (type === "line") this.initCorrelation();
-      this.props.onSelected(this.selectedSeriesData);
+      this.props.onSelected(data);
       this.generateData();
     });
     this.chart.on("click", (params) => {
