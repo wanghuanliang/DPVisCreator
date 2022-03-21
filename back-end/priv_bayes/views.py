@@ -183,7 +183,8 @@ def getModelData(request):
     cur_df = copy.deepcopy(ORI_DATA)
     DEFAULT_CATEGORIES = 3
     constraints = tmp_data_storage[session_id]['constraints'] = json.loads(request.body).get('constraints')  # 每个点的权重百分比
-    weights = tmp_data_storage[session_id]['weights'] = np.ones((len(constraints))) / len(constraints) * 10
+    tmp_data_storage[session_id]['weights'] = [{"id": constraint['id'], "weight": 1 / len(constraints)} for constraint in constraints]
+    weights = np.ones((len(constraints))) / len(constraints) * 10
     # slice_methods = json.loads(request.body).get('slice_methods')
     slice_methods = {}  # 暂无slice_methods
     axis_order = []
@@ -325,7 +326,7 @@ def getModelData(request):
 
 def setWeights(request):
     global tmp_data_storage
-    session_id = json.loads(request.body).get('session_id')
+    session_id = request.GET.get('session_id')
     if not check_session_id(session_id):
         return HttpResponse(json.dumps({
             "status": "failed",
