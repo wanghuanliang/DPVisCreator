@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./ValidationView.less";
 import * as d3 from "d3";
 import { Table, Tag, Radio, Space, Select } from "antd";
@@ -9,15 +9,16 @@ import "./ValidationView.less";
 const { Option } = Select;
 
 const ValidationView = (props) => {
+
   const {
     attributeCharacter,
     originalData,
     constraints,
     schemes,
   } = props;
-  console.log(schemes);
+  console.log('props', props);
 
-  const [selectedSchemeId, setSelectedSchemeId] = useState();
+  const [selectedSchemeId, setSelectedSchemeId] = useState(0);
 
   const [selectedMetrics, setSelectedMetrics] = useState({
     statistical: ['KSTest'],
@@ -69,6 +70,17 @@ const ValidationView = (props) => {
     </div>
   }
 
+  const scheme = schemes[selectedSchemeId];
+  const patternConstraints = scheme.pattern?.map((patternConstraint) => {
+    const search = props.constraints.filter(
+      (globalConstraint) => patternConstraint.id === globalConstraint.id
+    )?.[0];
+    return {
+      ...search,
+      protectedData: patternConstraint.data,
+    };
+  });
+
   return (
     <div style={{position: 'relative'}}>
       {renderSolutionControlPanel()}
@@ -86,8 +98,8 @@ const ValidationView = (props) => {
           <ProtectedDataDisplay
             attributeCharacter={attributeCharacter}
             originalData={originalData}
-            protectedData={[]}
-            constraints={constraints || []}
+            protectedData={scheme.protected_data}
+            constraints={patternConstraints || []}
           ></ProtectedDataDisplay>
         </div>
       </div>

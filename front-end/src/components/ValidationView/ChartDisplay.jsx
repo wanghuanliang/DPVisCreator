@@ -26,7 +26,8 @@ export default class ChartDisplay extends Component {
         type={constraint_chart[this.props.constraint.type]}
         attributes={attributes}
         data={this.props.data}
-        original_data={this.props.original_data}
+        oldData={this.props.oldData}
+        originalData={this.props.originalData}
         constraint={this.props.constraint}
       ></DataChart>
     );

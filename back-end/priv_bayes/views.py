@@ -7,7 +7,7 @@ from priv_bayes.kl import get_w_distance
 from django.http import HttpResponse
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-# from sdv.metrics.tabular import KSTest, CSTest
+from sdv.metrics.tabular import KSTest, CSTest
 # 隐私保护相关包
 
 from priv_bayes.DataSynthesizer.DataDescriber import DataDescriber
@@ -77,7 +77,7 @@ def solveOriginalData(session_id):
 def getOriginalData(request):  # 获取原始数据
     global tmp_data_storage
     data = request.FILES['file']
-    session_id = json.loads(request.body).get('session_id')
+    session_id = request.POST.get("session_id")
     if not check_session_id(session_id):
         return HttpResponse(json.dumps({
             "status": "failed",
@@ -132,7 +132,7 @@ def destroyed(request):
             "err_msg": "disconnected with the server"
         }))
     del tmp_data_storage[session_id]
-
+    return HttpResponse(json.dumps({"status": "success"}))
 
 def get_mds_result(session_id):
     constraints = tmp_data_storage[session_id]['constraints']
@@ -163,7 +163,7 @@ def get_mds_result(session_id):
             del df_c2['index']
             matrix_data[i][j] = matrix_data[j][i] = get_w_distance(df_c1.values, df_c2.values)
 
-    embedding = MDS(n_components=2, dissimilarity='precomputed')
+    embedding = MDS(n_components=2, dissimilarity='precomputed', random_state=9)
     D2_MDS_data = embedding.fit_transform(matrix_data)
     D2_MDS_data = (D2_MDS_data - np.min(D2_MDS_data)) / (np.max(D2_MDS_data) - np.min(D2_MDS_data)) * 80 + 10
     return D2_MDS_data
@@ -183,7 +183,8 @@ def getModelData(request):
     cur_df = copy.deepcopy(ORI_DATA)
     DEFAULT_CATEGORIES = 3
     constraints = tmp_data_storage[session_id]['constraints'] = json.loads(request.body).get('constraints')  # 每个点的权重百分比
-    weights = tmp_data_storage[session_id]['weights'] = np.ones((len(constraints))) / len(constraints) * 10
+    tmp_data_storage[session_id]['weights'] = [{"id": constraint['id'], "weight": 1 / len(constraints)} for constraint in constraints]
+    weights = np.ones((len(constraints))) * 5
     # slice_methods = json.loads(request.body).get('slice_methods')
     slice_methods = {}  # 暂无slice_methods
     axis_order = []
@@ -325,7 +326,7 @@ def getModelData(request):
 
 def setWeights(request):
     global tmp_data_storage
-    session_id = json.loads(request.body).get('session_id')
+    session_id = json.loads(request.body).get("session_id")
     if not check_session_id(session_id):
         return HttpResponse(json.dumps({
             "status": "failed",
@@ -333,9 +334,11 @@ def setWeights(request):
         }))
     constraints = tmp_data_storage[session_id]['constraints']
     weights = tmp_data_storage[session_id]['weights'] = json.loads(request.body).get('weights')
-    c_weights = [w["weight"] for w in weights]
-    c_weights = np.array(c_weights) / sum(c_weights)
-    c_weights = c_weights / min(c_weights) * 5   # 最小的圆半径为5，其它按照比例来
+    c_weights = [w["weight"] for w in weights if w["id"] != "others"]
+    if np.max(c_weights) != np.min(c_weights):
+        c_weights = (c_weights - np.min(c_weights)) / (np.max(c_weights) - np.min(c_weights)) * 5 + 5
+    else:
+        c_weights = np.ones(len(c_weights)) * 5
     tmp_data_storage[session_id]['bayes_epsilon'] = json.loads(request.body).get('bayes_budget')
     matrix_data = get_mds_result(session_id)
     conses_ret = [{"id": constraint['id'], "type": constraint['type'], "pos": matrix_data[idx].tolist(),
@@ -350,7 +353,7 @@ def setWeights(request):
 
 def getMetrics(request):
     global tmp_data_storage
-    session_id = json.loads(request.body).get('session_id')
+    session_id = request.GET.get('session_id')
     if not check_session_id(session_id):
         return HttpResponse(json.dumps({
             "status": "failed",
@@ -426,7 +429,7 @@ def getMetrics(request):
             cond2 = synthetic_df[cons['x_axis']] >= cons['params']['range'][0]
             selected_data = synthetic_df[cond1 & cond2].index.tolist()
         if cons["type"] == "order":
-            selected_data = synthetic_df[synthetic_df[cons['x_axis']] in cons["params"]["values"]]
+            selected_data = synthetic_df[synthetic_df[cons['x_axis']].isin(cons["params"]["values"])].index.tolist()
         patterns.append({
             "id": cons["id"],
             "data": selected_data
@@ -436,10 +439,10 @@ def getMetrics(request):
         "scheme": {
             "metrics": {
                 "statistical_metrics": {
-                    "KSTest": 0.85,
-                    "CSTest": 0.85,
-                    # "KSTest": KSTest.compute(ORI_DATA, synthetic_df),
-                    # "CSTest": CSTest.compute(ORI_DATA, synthetic_df)
+                    # "KSTest": 0.85,
+                    # "CSTest": 0.85,
+                    "KSTest": KSTest.compute(ORI_DATA, synthetic_df),
+                    "CSTest": CSTest.compute(ORI_DATA, synthetic_df)
                 }
             },
             "protected_data": json.loads(synthetic_df.to_json(orient="records")),

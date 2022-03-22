@@ -7,12 +7,13 @@ import ParameterDisplay from "./DataChart/ParameterDisplay";
 export default class ProtectedDataDisplay extends Component {
   constructor(props) {
     super(props);
-    this.constraint = {};
+    this.original_chart_data = [];
+    this.protected_chart_data = [];
     this.state = {
-      data: [],
+      constraint: {},
     };
   }
-  getData(type, type_data, constraint) {
+  getData(type_data, constraint) {
     const [x, y, computation, color, fitting, chartType, step] = [
       this.props.attribute_character[constraint.x_axis],
       constraint.y_axis
@@ -35,7 +36,7 @@ export default class ProtectedDataDisplay extends Component {
             range.push(data[constraint.x_axis]);
           }
         });
-        if (x.type === "Measures")
+        if (x.attribute_type === "Measures")
           range.push(this.props.attribute_character[constraint.x_axis].max + 1);
         range.sort((a, b) => a - b);
       } else {
@@ -53,10 +54,11 @@ export default class ProtectedDataDisplay extends Component {
           });
         });
       });
-      if (x.type === "Measures") {
-        for (let i = 0; i < cart.length - 1; i++) {
+      if (x.attribute_type === "Measures") {
+        const colors = color.values.length;
+        for (let i = 0; i < cart.length - colors; i++) {
           let current = cart[i];
-          let next = cart[i + 1];
+          let next = cart[i + colors];
           let sum = 0;
           const arr = type_data.filter(
             (data) =>
@@ -65,6 +67,7 @@ export default class ProtectedDataDisplay extends Component {
               (current.color === "default" ||
                 current.color === data[constraint.color])
           );
+          if (arr.length === 0) continue;
           arr.forEach((element) => (sum += element[constraint.y_axis]));
           dataset.push([
             current.value,
@@ -107,7 +110,7 @@ export default class ProtectedDataDisplay extends Component {
           ]);
         } else {
           dataset.push([
-            x.type === "Measures"
+            x.attribute_type === "Measures"
               ? data[constraint.x_axis] -
                 ((data[constraint.x_axis] -
                   this.props.attribute_character[constraint.x_axis].min) %
@@ -120,64 +123,60 @@ export default class ProtectedDataDisplay extends Component {
         }
       });
     }
-    if (type === "protected") {
-      constraint.data.forEach((id) => {
-        const index = this.props.original_data.findIndex(
-          (data) => data.index === id
-        );
-        const data = this.props.original_data[index];
-        dataset.push([
-          data[constraint.x_axis],
-          data[constraint.y_axis],
-          "selected_original_data",
-          data.index,
-        ]);
-      });
-    }
     if (chartType === "line" || chartType === "scatter")
       dataset.sort((a, b) => a[0] - b[0]);
     // 折线图按x值从小到大
     else if (chartType === "bar") dataset.sort((a, b) => b[1] - a[1]); // 条形图按y值从大到小
-    if (!isNaN(step) && chartType === "line") {
-      constraint.color.values.forEach((value) => {
-        dataset.pop();
-      });
-    }
-    this.constraint = constraint;
-    this.setState({ data: dataset });
-  }
-  selectConstraint(type, index) {
-    if (type === "original") {
-      this.getData(
-        type,
-        this.props.original_data,
-        this.props.constraints[index]
-      );
-    }
+    return dataset;
   }
   render() {
     const self = this;
+    const constraint = this.state.constraint;
+    const originalData = [];
+    this.props.originalData.forEach((data) => {
+      originalData[data.index] = data;
+    });
+    const selectedOriginalData =
+      constraint.data?.map((id) => originalData[id]) || [];
+    const original_chart_data = constraint.x_axis
+      ? this.getData(selectedOriginalData, constraint)
+      : [];
+    const protected_chart_data = constraint.x_axis
+      ? this.getData(this.props.protectedData, constraint)
+      : [];
+    const original_data = constraint.x_axis
+      ? this.getData(this.props.originalData, constraint)
+      : [];
     return (
       <Row gutter={24}>
         <Col span={6}>
-          <Space>
+          <Row>
             <ConstraintSelect
               constraints={this.props.constraints}
               selectConstraint={(constraint) => {
-                self.constraint = constraint;
+                self.setState({ constraint });
               }}
             ></ConstraintSelect>
             <ParameterDisplay
-              params={self.constraint.params || {}}
+              params={{
+                Original: this.state.constraint.data
+                  ? this.state.constraint.data.length
+                  : 0,
+                Protected: this.state.constraint.protectedData
+                  ? this.state.constraint.protectedData.length
+                  : 0,
+              }}
             ></ParameterDisplay>
-          </Space>
+          </Row>
         </Col>
         <Col span={18}>
           <ChartDisplay
             name="protected-chart"
-            data={this.state.data}
-            attributes={this.props.attributeCharacter || {}}
-            constraint={this.constraint}
+            oldData={original_chart_data}
+            data={protected_chart_data}
+            originalData={original_data}
+            attributes={this.props.attribute_character || {}}
+            constraint={constraint}
           ></ChartDisplay>
         </Col>
       </Row>
