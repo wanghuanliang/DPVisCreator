@@ -1,12 +1,11 @@
 import * as echarts from "echarts";
 import { Component } from "react";
-import { attributeType } from "../../../data/attributes";
 import * as ecStat from "echarts-stat";
 import * as d3 from "d3";
 import { chart_constraint } from "../../ChartsView/constants";
 import { isArray, mean } from "lodash";
 const globalColor = [
-  "#111111",
+  "#d9d9d9",
   "#74cbed",
   "#f6bd17",
   "#5470c6",
@@ -31,7 +30,7 @@ const axisOption = {
   },
 };
 function getAxisOption(attribute) {
-  return "Dimensions" === attributeType[attribute.attributeType]
+  return "Dimensions" === attribute.attribute_type
     ? {
         type: "category",
         id: attribute.name,
@@ -175,7 +174,10 @@ export default class DataChart extends Component {
     else if (type === "bar") this.getOrder();
   }
   getLegendOption() {
-    const data = ["original_data", ...this.props.attributes[2].values];
+    const data = [
+      "original_data",
+      ...this.props.attributes[2].values.map((value) => value.toString()),
+    ]; // echarts数字0123……无法正常显示，需转成字符
     return {
       data,
       left: "7%",
@@ -277,7 +279,7 @@ export default class DataChart extends Component {
     const option = {
       color: [
         "#74cbed",
-        "#111111",
+        "#d9d9d9",
         "#f6bd17",
         "#5470c6",
         "#91cc75",

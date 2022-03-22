@@ -41,7 +41,6 @@ export default class ChartMenu extends Component {
     this.initConstraint = props.initConstraint;
     this.saveConstraint = props.saveConstraint;
     this.removeConstraint = props.removeConstraint;
-    this.attributes = Object.keys(props.attributes);
     this.state = {
       columnIndex: -1,
       rowTagIndex: -1,
@@ -51,9 +50,6 @@ export default class ChartMenu extends Component {
       fitIndex: -1,
       step: NaN,
     };
-  }
-  componentDidUpdate() {
-    this.attributes = Object.keys(this.props.attributes);
   }
   checkState() {
     if (
@@ -68,17 +64,14 @@ export default class ChartMenu extends Component {
     }
   }
   getSettings() {
+    const attributes = Object.keys(this.props.attributes);
     return {
       color:
-        this.state.colorIndex >= 0
-          ? this.attributes[this.state.colorIndex]
-          : null,
+        this.state.colorIndex >= 0 ? attributes[this.state.colorIndex] : null,
       chart_type: chart_type[this.state.typeIndex],
-      x_axis: this.attributes[this.state.columnIndex],
+      x_axis: attributes[this.state.columnIndex],
       y_axis:
-        this.state.rowTagIndex >= 0
-          ? this.attributes[this.state.rowTagIndex]
-          : null,
+        this.state.rowTagIndex >= 0 ? attributes[this.state.rowTagIndex] : null,
       computation:
         this.state.rowComputeIndex >= 0
           ? computation_type[this.state.rowComputeIndex]
@@ -92,15 +85,16 @@ export default class ChartMenu extends Component {
   }
   render() {
     let self = this;
+    const attributes = Object.keys(this.props.attributes);
     function getSpecificTypeOfAttributes(type) {
       let select = [];
       if (type === "all") {
-        self.attributes.forEach((attributeName, index) => {
+        attributes.forEach((attributeName, index) => {
           const attribute = self.props.attributes[attributeName];
           select.push({ attribute, name: attributeName, index });
         });
       } else
-        self.attributes.forEach((attributeName, index) => {
+        attributes.forEach((attributeName, index) => {
           const attribute = self.props.attributes[attributeName];
           if (type === attribute.attribute_type)
             select.push({ attribute, name: attributeName, index });
@@ -163,7 +157,7 @@ export default class ChartMenu extends Component {
               size="small"
               disabled={
                 self.state.columnIndex < 0 ||
-                self.attributes[self.state.columnIndex].attribute_type ===
+                attributes[self.state.columnIndex].attribute_type ===
                   "Dimensions"
                   ? true
                   : false

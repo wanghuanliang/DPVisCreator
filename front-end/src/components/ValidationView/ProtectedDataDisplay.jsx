@@ -13,6 +13,12 @@ export default class ProtectedDataDisplay extends Component {
       constraint: {},
     };
   }
+  getSnapshotBeforeUpdate(prevProps, prevState) {
+    if (prevProps.defaultConstraint !== this.props.defaultConstraint) {
+      this.setState({ constraint: this.props.defaultConstraint });
+    }
+    return null;
+  }
   getData(type_data, constraint) {
     const [x, y, computation, color, fitting, chartType, step] = [
       this.props.attribute_character[constraint.x_axis],
