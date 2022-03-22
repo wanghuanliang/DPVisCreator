@@ -85,8 +85,8 @@ const ValidationView = (props) => {
   return (
     <div style={{ position: "relative" }}>
       {renderSolutionControlPanel()}
-      <div style={{ display: "flex", margin: 10 }}>
-        <div style={{ width: "60%", paddingRight: 10 }}>
+      <div style={{ display: "flex" }}>
+        <div style={{ width: "60%", margin: 10 }}>
           <LineupTable
             schemes={schemes}
             selectedSchemeId={selectedSchemeId}
