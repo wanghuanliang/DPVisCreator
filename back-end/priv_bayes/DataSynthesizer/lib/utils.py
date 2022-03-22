@@ -27,6 +27,7 @@ def mutual_info_score(labels_true, labels_pred, axes, weights):
 
     flag = True  # 添加权重的开关
     if flag:
+        ori_sum = np.sum(nz_val)
         nz_val = np.float64(nz_val)
         ans = 0
         for id in weights:  # 考虑分布式权重
@@ -47,7 +48,7 @@ def mutual_info_score(labels_true, labels_pred, axes, weights):
             nz_val[target] += (avg_weight - 1)
         # print("nz_val之和:", np.sum(nz_val))
         # print("sum:", ans)
-        nz_val = nz_val / np.sum(nz_val) * 1338
+        nz_val = nz_val / np.sum(nz_val) * ori_sum
 
     log_contingency_nm = np.log(nz_val)
 

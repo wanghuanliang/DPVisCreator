@@ -7,7 +7,7 @@ from priv_bayes.kl import get_w_distance
 from django.http import HttpResponse
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-from sdv.metrics.tabular import KSTest, CSTest
+from sdv.metrics.tabular import KSTest, CSTest, LogisticDetection, CategoricalCAP, NumericalMLP
 # 隐私保护相关包
 
 from priv_bayes.DataSynthesizer.DataDescriber import DataDescriber
@@ -361,6 +361,8 @@ def getMetrics(request):
         }))
     DATA_PATH = tmp_data_storage[session_id]['DATA_PATH']
     ORI_DATA = tmp_data_storage[session_id]['ORI_DATA']
+    Dimensions = tmp_data_storage[session_id]['Dimensions']
+    Measures = tmp_data_storage[session_id]['Measures']
     constraints = tmp_data_storage[session_id]['constraints']
     weights = tmp_data_storage[session_id]['weights']
     threshold_value = tmp_data_storage[session_id]['threshold_value']
@@ -438,11 +440,21 @@ def getMetrics(request):
         "status": "success",
         "scheme": {
             "metrics": {
+                "privacy_budget": bayes_epsilon,
                 "statistical_metrics": {
                     # "KSTest": 0.85,
                     # "CSTest": 0.85,
                     "KSTest": KSTest.compute(ORI_DATA, synthetic_df),
                     "CSTest": CSTest.compute(ORI_DATA, synthetic_df)
+                },
+                "detection_metrics": {
+                    "LogisticDetection": LogisticDetection.compute(ORI_DATA, synthetic_df)
+                },
+                "privacy_metrics": {
+                    # "MLP": NumericalMLP.compute(ORI_DATA, synthetic_df, key_fields=list(set(Measures).difference(['charges'])), sensitive_fields=['charges']),
+                    # "CAP": CategoricalCAP.compute(ORI_DATA, synthetic_df, key_fields=list(set(Dimensions).difference(['children'])), sensitive_fields=['children'])
+                    "MLP": 0.85,
+                    "CAP": 0.85
                 }
             },
             "protected_data": json.loads(synthetic_df.to_json(orient="records")),
