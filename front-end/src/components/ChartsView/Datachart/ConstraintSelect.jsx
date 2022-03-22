@@ -17,8 +17,8 @@ export default class ConstraintSelect extends Component {
   componentDidUpdate() {
     this.props.constraints.forEach((constraint, index) => {
       document
-        .getElementById("constraint-select-" + constraint.id)
-        .append(constraint.svgImage, constraint.canvasImage);
+        .getElementById("constraint-select-" + constraint.id + "images")
+        .replaceChildren(constraint.svgImage, constraint.canvasImage);
     });
   }
   render() {
@@ -51,6 +51,7 @@ export default class ConstraintSelect extends Component {
                 }}
               />
             )}
+            <div id={"constraint-select-" + constraint.id + "images"}></div>
           </Space>
         ))}
       </Space>

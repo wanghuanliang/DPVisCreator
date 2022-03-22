@@ -144,6 +144,9 @@ export default class ProtectedDataDisplay extends Component {
     const protected_chart_data = constraint.x_axis
       ? this.getData(this.props.protectedData, constraint)
       : [];
+    const original_data = constraint.x_axis
+      ? this.getData(this.props.originalData, constraint)
+      : [];
     return (
       <Row gutter={24}>
         <Col span={6}>
@@ -156,7 +159,12 @@ export default class ProtectedDataDisplay extends Component {
             ></ConstraintSelect>
             <ParameterDisplay
               params={{
-                Count: original_chart_data.length,
+                Original: this.state.constraint.data
+                  ? this.state.constraint.data.length
+                  : 0,
+                Protected: this.state.constraint.protectedData
+                  ? this.state.constraint.protectedData.length
+                  : 0,
               }}
             ></ParameterDisplay>
           </Row>
@@ -166,6 +174,7 @@ export default class ProtectedDataDisplay extends Component {
             name="protected-chart"
             oldData={original_chart_data}
             data={protected_chart_data}
+            originalData={original_data}
             attributes={this.props.attribute_character || {}}
             constraint={constraint}
           ></ChartDisplay>

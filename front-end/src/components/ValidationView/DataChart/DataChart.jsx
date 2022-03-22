@@ -6,8 +6,9 @@ import * as d3 from "d3";
 import { chart_constraint } from "../../ChartsView/constants";
 import { isArray, mean } from "lodash";
 const globalColor = [
-  "#f6bd17",
+  "#111111",
   "#74cbed",
+  "#f6bd17",
   "#5470c6",
   "#91cc75",
   "#ee6666",
@@ -79,7 +80,16 @@ function getSeriesOption(type, attribute, data, pointSize) {
     };
   });
 }
-
+function getOriginalSeriesOption(type, attribute, oldData, pointSize) {
+  return [
+    {
+      name: "original_data",
+      type,
+      symbolSize: pointSize,
+      data: oldData.map((data) => [data[0], data[1]]),
+    },
+  ];
+}
 const grid = {
   top: "12%",
   left: "15%",
@@ -144,23 +154,6 @@ export default class DataChart extends Component {
     this.width = divDom.offsetWidth;
     this.generateData();
   }
-  getSnapshotBeforeUpdate(prevProps, prevState) {
-    if (
-      prevProps.type !== this.props.type ||
-      prevProps.attributes[0].name !== this.props.attributes[0].name ||
-      prevProps.attributes[1].name !== this.props.attributes[1].name ||
-      prevProps.attributes[2].name !== this.props.attributes[2].name
-    ) {
-      this.selectBar = {};
-      this.selectedSeriesData = [];
-      const selected = {};
-      this.props.attributes[2].values.forEach((value) => {
-        selected[value] = true;
-      });
-      this.selectedLegend = selected;
-    }
-    return null;
-  }
   componentDidUpdate() {
     let mapper = {};
     this.params = this.props.constraint.params;
@@ -171,6 +164,13 @@ export default class DataChart extends Component {
       }
     });
     this.mapper = mapper;
+    this.selectBar = {};
+    this.selectedSeriesData = [];
+    const selected = {};
+    this.props.attributes[2].values.forEach((value) => {
+      selected[value] = true;
+    });
+    this.selectedLegend = selected;
     const divDom = document.getElementById("container-" + this.props.name);
     this.width = divDom.offsetWidth;
     this.generateData();
@@ -180,11 +180,12 @@ export default class DataChart extends Component {
     else if (type === "bar") this.getOrder();
   }
   getLegendOption() {
+    const data = ["original_data", ...this.props.attributes[2].values];
     return {
-      data: this.props.attributes[2].values,
+      data,
       left: "10%",
       top: "10%",
-      selected: this.selectedLegend,
+      selected: { original_data: true, ...this.selectedLegend },
     };
   }
   getScatterChartOption() {
@@ -216,12 +217,20 @@ export default class DataChart extends Component {
       legend: this.getLegendOption(),
       xAxis: getAxisOption(this.props.attributes[0]),
       yAxis: getAxisOption(this.props.attributes[1]),
-      series: getSeriesOption(
-        "scatter",
-        this.props.attributes[2],
-        this.props.data,
-        5
-      ),
+      series: [
+        ...getOriginalSeriesOption(
+          "scatter",
+          this.props.attributes[2],
+          this.props.oldData,
+          5
+        ),
+        ...getSeriesOption(
+          "scatter",
+          this.props.attributes[2],
+          this.props.data,
+          5
+        ),
+      ],
     };
     return option;
   }
@@ -253,17 +262,17 @@ export default class DataChart extends Component {
       xAxis: getAxisOption(this.props.attributes[0], this.props.data),
       yAxis: getAxisOption(this.props.attributes[1]),
       series: [
+        ...getOriginalSeriesOption(
+          "line",
+          this.props.attributes[2],
+          this.props.oldData,
+          5
+        ),
         ...getSeriesOption(
           "line",
           this.props.attributes[2],
           this.props.data,
           5
-        ),
-        ...getSeriesOption(
-          "scatter",
-          this.props.attributes[2],
-          this.props.data,
-          0
         ),
       ],
     };
@@ -271,6 +280,18 @@ export default class DataChart extends Component {
   }
   getBarChartOption() {
     const option = {
+      color: [
+        "#74cbed",
+        "#111111",
+        "#f6bd17",
+        "#5470c6",
+        "#91cc75",
+        "#ee6666",
+        "#3ba272",
+        "#fc8452",
+        "#9a60b4",
+        "#ea7ccc",
+      ],
       tooltip: {
         trigger: "axis",
         axisPointer: {
@@ -288,7 +309,14 @@ export default class DataChart extends Component {
       grid,
       xAxis: getXAxisOption(this.props.attributes[0], this.props.data),
       yAxis: getYAxisOption(this.props.attributes[1]),
-      series: getSeriesOption("bar", this.props.attributes[2], this.props.data),
+      series: [
+        ...getSeriesOption("bar", this.props.attributes[2], this.props.data),
+        ...getOriginalSeriesOption(
+          "bar",
+          this.props.attributes[2],
+          this.props.originalData
+        ),
+      ],
     };
     return option;
   }
@@ -326,7 +354,6 @@ export default class DataChart extends Component {
   }
   createCluster(cx, cy, rx, ry) {
     const self = this;
-
     this.svg
       .append("ellipse")
       .attr("opacity", "0.4")
@@ -378,7 +405,8 @@ export default class DataChart extends Component {
       self.initCluster();
     }
   }
-  createCorrelation(path, padding) {
+  createCorrelation(points, padding) {
+    const path = points.map((point) => this.convertToPixel(point));
     const self = this;
     const pathData = [];
     const d0 = self.convertToPixel([
@@ -424,7 +452,7 @@ export default class DataChart extends Component {
         data.map((d) => [d[0], d[1]]),
         this.params.fitting
       );
-      const path = regression.points.map((point) => this.convertToPixel(point));
+      const path = regression.points;
       self.createCorrelation(path, padding);
       self.updateParams({
         polynomial_params: regression.parameter.reverse(),
@@ -473,7 +501,7 @@ export default class DataChart extends Component {
     if (this.checkConstraint()) {
       self.selectBar = {};
       self.props.constraint.params.values.forEach((value) => {
-        const data = self.props.data.filter((d) => d[0] == value)[0];
+        const data = self.props.originalData.filter((d) => d[0] == value)[0];
         self.selectBar[value] = data;
       });
       self.createOrder();

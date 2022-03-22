@@ -35,7 +35,10 @@ const ValidationView = (props) => {
     const search = props.constraints.filter(
       (globalConstraint) => patternConstraint.id === globalConstraint.id
     )?.[0];
-    return { ...search, data: patternConstraint.data };
+    return {
+      ...search,
+      protectedData: patternConstraint.data,
+    };
   });
   return (
     <div style={{ display: "flex", margin: 10 }}>

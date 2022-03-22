@@ -3,12 +3,11 @@ import { Component } from "react";
 import { attributeType } from "../../../data/attributes";
 import * as ecStat from "echarts-stat";
 import * as d3 from "d3";
-import { createEllipseController } from "../Constraints/controller";
 import { chart_constraint } from "../constants";
 import { isArray, mean } from "lodash";
 const globalColor = [
-  "#f6bd17",
   "#74cbed",
+  "#f6bd17",
   "#5470c6",
   "#91cc75",
   "#ee6666",
@@ -480,7 +479,8 @@ export default class DataChart extends Component {
       self.initCluster();
     }
   }
-  createCorrelation(path, padding) {
+  createCorrelation(points, padding) {
+    const path = points.map((point) => this.convertToPixel(point));
     const self = this;
     function dragLineStart(d) {
       const event = d3.event;
@@ -573,7 +573,7 @@ export default class DataChart extends Component {
         data.map((d) => [d[0], d[1]]),
         this.params.fitting
       );
-      const path = regression.points.map((point) => this.convertToPixel(point));
+      const path = regression.points;
       self.createCorrelation(path, padding);
       self.updateParams({
         polynomial_params: regression.parameter.reverse(),
