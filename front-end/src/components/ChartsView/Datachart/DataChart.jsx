@@ -18,18 +18,24 @@ const globalColor = [
 ];
 const chart_height = 350;
 const thumbnailHeight = 60;
-// 散点图选择之后聚类，生成椭圆 柱状图单独选择柱子 折线图生成的拟合曲线可调整宽度，纵向，背景全部调成灰色
+const axisOption = {
+  nameTextStyle: {
+    fontSize: 24,
+    color: "#111111",
+  },
+  nameLocation: "center",
+  scale: true,
+  splitLine: {
+    show: false,
+  },
+};
 function getAxisOption(attribute) {
   return "Dimensions" === attributeType[attribute.attributeType]
     ? {
         type: "category",
         id: attribute.name,
         name: attribute.name,
-        nameLocation: "center",
-        scale: true,
-        splitLine: {
-          show: false,
-        },
+        ...axisOption,
       }
     : {
         type: "value",
@@ -37,11 +43,7 @@ function getAxisOption(attribute) {
         name: attribute.name,
         min: "dataMin",
         max: "dataMax",
-        nameLocation: "center",
-        scale: true,
-        splitLine: {
-          show: false,
-        },
+        ...axisOption,
       };
 }
 function getXAxisOption(attribute) {
@@ -49,11 +51,7 @@ function getXAxisOption(attribute) {
     type: "category",
     id: attribute.name,
     name: attribute.name,
-    nameLocation: "center",
-    scale: true,
-    splitLine: {
-      show: false,
-    },
+    ...axisOption,
   };
 }
 function getYAxisOption(attribute) {
@@ -61,11 +59,7 @@ function getYAxisOption(attribute) {
     type: "value",
     id: attribute.name,
     name: attribute.name,
-    nameLocation: "center",
-    scale: true,
-    splitLine: {
-      show: false,
-    },
+    ...axisOption,
   };
 }
 function getSeriesOption(type, attribute, data, pointSize) {
@@ -84,7 +78,7 @@ function getSeriesOption(type, attribute, data, pointSize) {
 const grid = {
   top: "12%",
   left: "15%",
-  right: "10%",
+  right: "2%",
 };
 export default class DataChart extends Component {
   constructor(props) {
@@ -261,8 +255,8 @@ export default class DataChart extends Component {
   getLegendOption() {
     return {
       data: this.props.attributes[2].values,
-      left: "10%",
-      top: "10%",
+      left: "7%",
+      top: "1%",
       selected: this.selectedLegend,
     };
   }

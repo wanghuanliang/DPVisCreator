@@ -230,7 +230,7 @@ class ChartsView extends Component {
             }
           ></ChartDisplay>
         </Col>
-        <Col span={6}>
+        <Col span={6} style={{ paddingLeft: 4 }}>
           <ConstraintSelect
             constraints={this.state.constraints}
             updateConstraint={(constraint) => {

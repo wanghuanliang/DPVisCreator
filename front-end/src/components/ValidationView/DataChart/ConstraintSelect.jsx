@@ -19,7 +19,11 @@ export default class ConstraintSelect extends Component {
             <Button
               size="small"
               key={"scheme-constraint-" + constraint.id}
-              style={{ borderColor: patternColor[constraint.type] }}
+              style={{
+                borderColor: patternColor[constraint.type],
+                color: patternColor[constraint.type],
+              }}
+              className="validation-constraint-select-button"
               onClick={() => {
                 self.props.selectConstraint(constraint);
               }}

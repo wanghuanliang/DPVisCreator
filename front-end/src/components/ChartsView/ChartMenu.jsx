@@ -38,7 +38,6 @@ const chartFitnesses = [
 export default class ChartMenu extends Component {
   constructor(props) {
     super(props);
-    this.constraintParams = props.constraintParams;
     this.initConstraint = props.initConstraint;
     this.saveConstraint = props.saveConstraint;
     this.removeConstraint = props.removeConstraint;
@@ -55,7 +54,6 @@ export default class ChartMenu extends Component {
   }
   componentDidUpdate() {
     this.attributes = Object.keys(this.props.attributes);
-    this.constraintParams = this.props.constraintParams;
   }
   checkState() {
     if (
@@ -236,6 +234,7 @@ export default class ChartMenu extends Component {
         });
       else return [];
     }
+    const constraintParams = this.props.constraintParams;
     return (
       <>
         <Col span={24}>
@@ -343,29 +342,33 @@ export default class ChartMenu extends Component {
               </Select>
             </Col>
 
-            <Col span={12}>
+            <Col span={12} className="menu-item-content">
               <Button size="small" block onClick={this.saveConstraint}>
                 Save
               </Button>
             </Col>
-            <Col span={12}>
+            <Col span={12} className="menu-item-content">
               <Button size="small" block onClick={this.removeConstraint}>
                 Delete
               </Button>
             </Col>
           </Row>
         </Col>
-        <Col span={5} className="menu-item-label config-item-label-parameters">
+        <Col
+          span={4}
+          className="menu-item-label config-item-label-parameters"
+          style={{ paddingLeft: 4 }}
+        >
           Parameters
         </Col>
         <Col
-          span={6}
+          span={7}
           className="menu-item-content config-item-content-parameters"
         >
-          {this.constraintParams
-            ? Object.keys(this.constraintParams).map((key) => {
+          {constraintParams
+            ? Object.keys(constraintParams).map((key) => {
                 const label = "" + key + ":";
-                let param = this.constraintParams[key];
+                let param = constraintParams[key];
                 if (key === "mean") {
                   param =
                     "cx:" +
