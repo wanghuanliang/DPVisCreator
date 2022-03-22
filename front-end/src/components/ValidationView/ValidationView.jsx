@@ -16,14 +16,13 @@ const ValidationView = (props) => {
     constraints,
     schemes,
   } = props;
-  console.log('props', props);
 
   const [selectedSchemeId, setSelectedSchemeId] = useState(0);
 
   const [selectedMetrics, setSelectedMetrics] = useState({
     statistical: ['KSTest'],
     detection: ['LogisticDetection'],
-    privacy: ['CAP']
+    privacy: ['CAP', 'MLP']
   }); // 选中的展示指标
 
   // schemes变化时候，默认选中schemes最后一项
@@ -41,6 +40,7 @@ const ValidationView = (props) => {
           allowClear
           style={{ width: 200}}
           defaultValue={selectedMetrics.statistical}
+          onChange={value => setSelectedMetrics({...selectedMetrics, statistical: value})}
         >
           <Option key='KSTest'>KSTest</Option>
           <Option key='CSTest'>CSTest</Option>
@@ -52,6 +52,7 @@ const ValidationView = (props) => {
           allowClear
           style={{ width: 200 }}
           defaultValue={selectedMetrics.detection}
+          onChange={value => setSelectedMetrics({...selectedMetrics, detection: value})}
         >
           <Option key='LogisticDetection'>LogisticDetection</Option>
         </Select>
@@ -62,6 +63,7 @@ const ValidationView = (props) => {
           allowClear
           style={{ width: 200 }}
           defaultValue={selectedMetrics.privacy}
+          onChange={value => setSelectedMetrics({...selectedMetrics, privacy: value})}
         >
           <Option key='CAP'>CAP</Option>
           <Option key='MLP'>MLP</Option>
@@ -85,7 +87,7 @@ const ValidationView = (props) => {
     <div style={{position: 'relative'}}>
       {renderSolutionControlPanel()}
       <div style={{ display: "flex", margin: 10 }}>
-        <div style={{ width: "60%" }}>
+        <div style={{ width: "60%", paddingRight: 10 }}>
           <LineupTable
             schemes={schemes}
             selectedSchemeId={selectedSchemeId}

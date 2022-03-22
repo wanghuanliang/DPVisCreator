@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Table, Tag, Radio, Space } from 'antd';
 
 // const data = [
@@ -48,15 +48,28 @@ const schemes = [
 
 const LineupTable = (props) => {
   const {
-    // schemes,
+    schemes,
     selectedSchemeId,
     setSelectedSchemeId,
     selectedMetrics,
   } = props;
 
   // schemes变化后重新计算表格数据
+  const tableData = useMemo(() => {
+    const tableData = [];
+    schemes.forEach((scheme, index) => {
+      const record = {};
+      record.key = index;
+      record.id = index;
+      record.budget = scheme.metrics.privacy_budget; //为值
+      record.statistical = scheme.metrics.statistical_metrics;
+      record.detection = scheme.metrics.detection_metrics;
+      record.privacy = scheme.metrics.privacy_metrics;
+      tableData.push(record);
+    })
+    return tableData;
+  }, [schemes])
   
-
   // data数据扩充最大值
   // data.forEach(obj => {
   //   obj.budgetSum = obj.budget.reduce((pre, cur) => pre + cur);
@@ -108,18 +121,54 @@ const LineupTable = (props) => {
   //     })}
   //   </svg>
   // };
+  
+  const totalWidth = 150;
+  const divHeight = 20;
+  // obj: {CAP: 0.5, MLP: 0.6}
+  // title: privacy
+  // selectedMetrics {privacy: ['CAP]}
+  const renderItem = (obj, title) => {
+    const n = selectedMetrics[title].length;
+    if (n === 0) return;
+    const divWidth = totalWidth / n;
+    return <div style={{width: totalWidth, height: divHeight, display: 'flex'}}>
+      {selectedMetrics[title].map(kind => {
+        return <div
+          style={{
+            width: divWidth * obj[kind],
+            height: divHeight,
+            backgroundColor: '#8ab0d0',
+            marginRight: 3
+          }}
+          onHov
+        ></div>
+      })}
+    </div>
+  }
 
   const columns = [
     {
       title: 'Schemes',
       dataIndex: 'id',
       key: 'id',
-      render: id => <div>Scheme #{id}</div>
+      render: id => <div
+        style={{
+          color: id === selectedSchemeId ? '#f0943d' : '#000',
+          cursor: 'pointer'
+        }}
+        onClick={() => id === selectedSchemeId ? null : setSelectedSchemeId(id)}
+      >Scheme #{id}</div>
     },
     {
       title: 'Privacy budget',
-      dataIndex: 'statistical',
+      dataIndex: 'budget',
       key: 'budget',
+      width: 200,
+      render: v => <div style={{
+        width: 20 / 20 * totalWidth,
+        height: divHeight,
+        backgroundColor: '#8ab0d0'
+      }}></div>
       // render: array => renderItem(array, 'budget'),
       // sorter: (a, b) => a.budgetSum - b.budgetSum,
     },
@@ -131,8 +180,10 @@ const LineupTable = (props) => {
           {(selectedMetrics.statistical || []).map(name => <div>{name}</div>)}
         </div>
       </div>,
-      dataIndex: 'cluster',
-      key: 'cluster',
+      dataIndex: 'statistical',
+      key: 'statistical',
+      width: 200,
+      render: obj => renderItem(obj, 'statistical'),
       // render: array => renderItem(array, 'cluster'),
       // sorter: (a, b) => a.clusterSum - b.clusterSum,
     },
@@ -143,8 +194,10 @@ const LineupTable = (props) => {
           {(selectedMetrics.detection || []).map(name => <div>{name}</div>)}
         </div>
       </div>,
-      dataIndex: 'correlation',
-      key: 'correlation',
+      dataIndex: 'detection',
+      key: 'detection',
+      width: 200,
+      render: obj => renderItem(obj, 'detection'),
       // render: array => renderItem(array, 'correlation'),
       // sorter: (a, b) => a.correlationSum - b.correlationSum,
     },
@@ -155,8 +208,10 @@ const LineupTable = (props) => {
           {(selectedMetrics.privacy || []).map(name => <div>{name}</div>)}
         </div>
       </div>,
-      dataIndex: 'order',
-      key: 'order',
+      dataIndex: 'privacy',
+      key: 'privacy',
+      width: 200,
+      render: obj => renderItem(obj, 'privacy'),
       // render: array => renderItem(array, 'order'),
       // sorter: (a, b) => a.orderSum - b.orderSum,
     },
@@ -166,7 +221,7 @@ const LineupTable = (props) => {
     <Table
       columns={columns}
       pagination={false}
-      dataSource={schemes}
+      dataSource={tableData}
     />
   )
 }
