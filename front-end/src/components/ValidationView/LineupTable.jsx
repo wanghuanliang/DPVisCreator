@@ -59,7 +59,7 @@ const LineupTable = (props) => {
     const tableData = [];
     schemes.forEach((scheme, index) => {
       const record = {};
-      record.key = index;
+      record.key = 'scheme' + index;
       record.id = index;
       record.budget = scheme.metrics.privacy_budget; //为值
       record.statistical = scheme.metrics.statistical_metrics;
@@ -140,10 +140,17 @@ const LineupTable = (props) => {
             backgroundColor: '#8ab0d0',
             marginRight: 3
           }}
-          onHov
         ></div>
       })}
     </div>
+  }
+
+  const calcSum = (obj, title) => {
+    let sum = 0;
+    (selectedMetrics[title] || []).forEach(kind => {
+      sum += obj[kind];
+    })
+    return sum;
   }
 
   const columns = [
@@ -157,7 +164,8 @@ const LineupTable = (props) => {
           cursor: 'pointer'
         }}
         onClick={() => id === selectedSchemeId ? null : setSelectedSchemeId(id)}
-      >Scheme #{id}</div>
+      >Scheme #{id}</div>,
+      sorter: (a, b) => a.id - b.id,
     },
     {
       title: 'Privacy budget',
@@ -165,12 +173,11 @@ const LineupTable = (props) => {
       key: 'budget',
       width: 200,
       render: v => <div style={{
-        width: 20 / 20 * totalWidth,
+        width: v / 20 * totalWidth,
         height: divHeight,
         backgroundColor: '#8ab0d0'
-      }}></div>
-      // render: array => renderItem(array, 'budget'),
-      // sorter: (a, b) => a.budgetSum - b.budgetSum,
+      }}></div>,
+      sorter: (a, b) => a.budget - b.budget,
     },
     {
       // title: 'Cluster',
@@ -184,8 +191,7 @@ const LineupTable = (props) => {
       key: 'statistical',
       width: 200,
       render: obj => renderItem(obj, 'statistical'),
-      // render: array => renderItem(array, 'cluster'),
-      // sorter: (a, b) => a.clusterSum - b.clusterSum,
+      sorter: (a, b) => calcSum(a.statistical, 'statistical') - calcSum(b.statistical, 'statistical'),
     },
     {
       title: <div>
@@ -198,8 +204,7 @@ const LineupTable = (props) => {
       key: 'detection',
       width: 200,
       render: obj => renderItem(obj, 'detection'),
-      // render: array => renderItem(array, 'correlation'),
-      // sorter: (a, b) => a.correlationSum - b.correlationSum,
+      sorter: (a, b) => calcSum(a.detection, 'detection') - calcSum(b.detection, 'detection'),
     },
     {
       title: <div>
@@ -212,8 +217,7 @@ const LineupTable = (props) => {
       key: 'privacy',
       width: 200,
       render: obj => renderItem(obj, 'privacy'),
-      // render: array => renderItem(array, 'order'),
-      // sorter: (a, b) => a.orderSum - b.orderSum,
+      sorter: (a, b) => calcSum(a.privacy, 'privacy') - calcSum(b.privacy, 'privacy'),
     },
   ];
 
@@ -222,6 +226,7 @@ const LineupTable = (props) => {
       columns={columns}
       pagination={false}
       dataSource={tableData}
+      scroll={{y: tableData.length > 4 && 220}}
     />
   )
 }
