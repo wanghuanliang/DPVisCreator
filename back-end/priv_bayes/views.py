@@ -184,7 +184,7 @@ def getModelData(request):
     DEFAULT_CATEGORIES = 3
     constraints = tmp_data_storage[session_id]['constraints'] = json.loads(request.body).get('constraints')  # 每个点的权重百分比
     tmp_data_storage[session_id]['weights'] = [{"id": constraint['id'], "weight": 1 / len(constraints)} for constraint in constraints]
-    weights = np.ones((len(constraints))) / len(constraints) * 10
+    weights = np.ones((len(constraints))) * 5
     # slice_methods = json.loads(request.body).get('slice_methods')
     slice_methods = {}  # 暂无slice_methods
     axis_order = []
@@ -326,7 +326,7 @@ def getModelData(request):
 
 def setWeights(request):
     global tmp_data_storage
-    session_id = request.GET.get('session_id')
+    session_id = json.loads(request.body).get("session_id")
     if not check_session_id(session_id):
         return HttpResponse(json.dumps({
             "status": "failed",
@@ -335,7 +335,10 @@ def setWeights(request):
     constraints = tmp_data_storage[session_id]['constraints']
     weights = tmp_data_storage[session_id]['weights'] = json.loads(request.body).get('weights')
     c_weights = [w["weight"] for w in weights if w["id"] != "others"]
-    c_weights = (c_weights - np.min(c_weights)) / (np.max(c_weights) - np.min(c_weights)) * 5 + 5
+    if np.max(c_weights) != np.min(c_weights):
+        c_weights = (c_weights - np.min(c_weights)) / (np.max(c_weights) - np.min(c_weights)) * 5 + 5
+    else:
+        c_weights = np.ones(len(c_weights)) * 5
     tmp_data_storage[session_id]['bayes_epsilon'] = json.loads(request.body).get('bayes_budget')
     matrix_data = get_mds_result(session_id)
     conses_ret = [{"id": constraint['id'], "type": constraint['type'], "pos": matrix_data[idx].tolist(),
@@ -426,7 +429,7 @@ def getMetrics(request):
             cond2 = synthetic_df[cons['x_axis']] >= cons['params']['range'][0]
             selected_data = synthetic_df[cond1 & cond2].index.tolist()
         if cons["type"] == "order":
-            selected_data = synthetic_df[synthetic_df[cons['x_axis']] in cons["params"]["values"]]
+            selected_data = synthetic_df[synthetic_df[cons['x_axis']].isin(cons["params"]["values"])].index.tolist()
         patterns.append({
             "id": cons["id"],
             "data": selected_data
