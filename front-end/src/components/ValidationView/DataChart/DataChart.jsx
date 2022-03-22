@@ -19,17 +19,24 @@ const globalColor = [
 ];
 const chart_height = 350;
 const thumbnailHeight = 60;
+const axisOption = {
+  nameTextStyle: {
+    fontSize: 24,
+    color: "#111111",
+  },
+  nameLocation: "center",
+  scale: true,
+  splitLine: {
+    show: false,
+  },
+};
 function getAxisOption(attribute) {
   return "Dimensions" === attributeType[attribute.attributeType]
     ? {
         type: "category",
         id: attribute.name,
         name: attribute.name,
-        nameLocation: "center",
-        scale: true,
-        splitLine: {
-          show: false,
-        },
+        ...axisOption,
       }
     : {
         type: "value",
@@ -37,11 +44,7 @@ function getAxisOption(attribute) {
         name: attribute.name,
         min: "dataMin",
         max: "dataMax",
-        nameLocation: "center",
-        scale: true,
-        splitLine: {
-          show: false,
-        },
+        ...axisOption,
       };
 }
 function getXAxisOption(attribute) {
@@ -49,11 +52,7 @@ function getXAxisOption(attribute) {
     type: "category",
     id: attribute.name,
     name: attribute.name,
-    nameLocation: "center",
-    scale: true,
-    splitLine: {
-      show: false,
-    },
+    ...axisOption,
   };
 }
 function getYAxisOption(attribute) {
@@ -61,11 +60,7 @@ function getYAxisOption(attribute) {
     type: "value",
     id: attribute.name,
     name: attribute.name,
-    nameLocation: "center",
-    scale: true,
-    splitLine: {
-      show: false,
-    },
+    ...axisOption,
   };
 }
 function getSeriesOption(type, attribute, data, pointSize) {
@@ -93,7 +88,7 @@ function getOriginalSeriesOption(type, attribute, oldData, pointSize) {
 const grid = {
   top: "12%",
   left: "15%",
-  right: "10%",
+  right: "2%",
 };
 export default class DataChart extends Component {
   constructor(props) {
@@ -183,8 +178,8 @@ export default class DataChart extends Component {
     const data = ["original_data", ...this.props.attributes[2].values];
     return {
       data,
-      left: "10%",
-      top: "10%",
+      left: "7%",
+      top: "1%",
       selected: { original_data: true, ...this.selectedLegend },
     };
   }

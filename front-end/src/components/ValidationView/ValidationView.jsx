@@ -9,26 +9,25 @@ import "./ValidationView.less";
 const { Option } = Select;
 
 const ValidationView = (props) => {
-
   const {
     attributeCharacter,
     originalData,
     constraints,
     schemes,
   } = props;
-
   const [selectedSchemeId, setSelectedSchemeId] = useState(0);
 
   const [selectedMetrics, setSelectedMetrics] = useState({
     statistical: ['KSTest'],
     detection: ['LogisticDetection'],
     privacy: ['CAP', 'MLP']
+
   }); // 选中的展示指标
 
   // schemes变化时候，默认选中schemes最后一项
   useEffect(() => {
     setSelectedSchemeId(schemes.length - 1);
-  }, [schemes])
+  }, [schemes]);
 
   const renderSolutionControlPanel = () => {
     return <div className="solution-control-panel">
@@ -84,7 +83,7 @@ const ValidationView = (props) => {
   });
 
   return (
-    <div style={{position: 'relative'}}>
+    <div style={{ position: "relative" }}>
       {renderSolutionControlPanel()}
       <div style={{ display: "flex", margin: 10 }}>
         <div style={{ width: "60%", paddingRight: 10 }}>
@@ -98,7 +97,7 @@ const ValidationView = (props) => {
         {/* 保护后的视图放这里 */}
         <div style={{ width: "40%" }}>
           <ProtectedDataDisplay
-            attributeCharacter={attributeCharacter}
+            attribute_character={attributeCharacter}
             originalData={originalData}
             protectedData={scheme.protected_data}
             constraints={patternConstraints || []}
