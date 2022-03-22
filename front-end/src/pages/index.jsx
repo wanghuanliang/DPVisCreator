@@ -37,7 +37,7 @@ const IndexPage = () => {
   // model 开关，是否使用临时数据
   const [modelData, setModelData] = useState(tempModelData); // null
   // 指标
-  const [schemes, setSchemes] = useState(null);
+  const [schemes, setSchemes] = useState([]);
 
   const handleNextClick = () => {
     const jcts = JSON.parse(JSON.stringify(constraints));

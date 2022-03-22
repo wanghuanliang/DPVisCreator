@@ -97,7 +97,7 @@ const ModelView = (props) => {
   const handleRecordClick = () => {
     getMetrics()
       .then(res => {
-        setSchemes([...schemes, res.data.schemes]);
+        setSchemes([...schemes, res.data.scheme]);
       })
       .catch(e => console.log(e));
   }
