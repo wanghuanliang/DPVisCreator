@@ -43,7 +43,6 @@ const IndexPage = () => {
   const [modelData, setModelData] = useState(tempModelData); // null
   // 指标
   const [schemes, setSchemes] = useState([]); // 初始化为数组，否则会出现iterable问题
-
   const handleNextClick = () => {
     const jcts = JSON.parse(JSON.stringify(constraints));
     const cts = [];
@@ -165,13 +164,13 @@ const IndexPage = () => {
               Validation View
             </div>
             <div className="cross-line"></div>
-            <Validation
+            {!!schemes.length && <Validation
               attributeCharacter={attributeCharacter}
               originalData={originalData}
               constraints={constraints}
               schemes={schemes}
               setSchemes={setSchemes}
-            ></Validation>
+            ></Validation>}
             {/* <LineupTable></LineupTable> */}
           </div>
         </div>

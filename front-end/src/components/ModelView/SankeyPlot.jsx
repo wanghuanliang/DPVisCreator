@@ -30,8 +30,6 @@ const SankeyPlot = (props) => {
     selectedId,
   } = props;
 
-  console.log('123', selectedId);
-
   // xScale
   const xScale = useMemo(() => {
     return d3.scalePoint()
