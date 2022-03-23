@@ -1,5 +1,5 @@
 export const chart_type = ["scatter", "line", "bar"];
-export const computation_type = ["average", "count"];
+export const computation_type = ["count", "average"];
 export const chart_constraint = {
   scatter: "cluster",
   line: "correlation",

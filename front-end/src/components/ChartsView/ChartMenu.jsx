@@ -26,10 +26,6 @@ const chartLabels = {
   line: "Line Chart",
   bar: "Bar Chart",
 };
-const computations = {
-  count: "Count",
-  average: "Average",
-};
 const chartFitnesses = [
   ["Normal", "Beta"],
   [1, 2, 3, 4, 5],
@@ -44,7 +40,7 @@ export default class ChartMenu extends Component {
     this.state = {
       columnIndex: -1,
       rowTagIndex: -1,
-      rowComputeIndex: -1,
+      rowComputeIndex: 0,
       colorIndex: -1,
       typeIndex: -1,
       fitIndex: -1,
@@ -130,6 +126,7 @@ export default class ChartMenu extends Component {
           </Col>
           <Col span={12}>
             <Select
+              value={self.state.columnIndex < 0 ? null : self.state.columnIndex}
               size="small"
               placeholder="x-axis"
               onChange={(value) => {
@@ -152,7 +149,8 @@ export default class ChartMenu extends Component {
           </Col>
           <Col span={12}>
             <InputNumber
-              min={0}
+              value={isNaN(self.state.step) ? null : self.state.step}
+              min={1}
               onChange={changeStep}
               size="small"
               disabled={
@@ -175,6 +173,7 @@ export default class ChartMenu extends Component {
           </Col>
           <Col span={12}>
             <Select
+              value={self.state.rowTagIndex < 0 ? null : self.state.rowTagIndex}
               size="small"
               placeholder="y-axis"
               onChange={(value) => {
@@ -196,6 +195,11 @@ export default class ChartMenu extends Component {
             <Select
               size="small"
               placeholder="computation"
+              value={
+                self.state.rowComputeIndex < 0
+                  ? null
+                  : self.state.rowComputeIndex
+              }
               onChange={(value) => {
                 self.setState({ rowComputeIndex: value }, self.checkState);
               }}
@@ -232,7 +236,7 @@ export default class ChartMenu extends Component {
     return (
       <>
         <Col span={24}>
-          <Title level={5}>Responsive Descriptions</Title>
+          <Title level={5}>Chart settings</Title>
         </Col>
         <Col span={12}>
           <Row>
@@ -246,6 +250,7 @@ export default class ChartMenu extends Component {
               <Select
                 size="small"
                 placeholder="Select type"
+                value={self.state.typeIndex < 0 ? null : self.state.typeIndex}
                 onChange={(value) => {
                   let state = { typeIndex: value, step: NaN };
                   if (chart_type[value] === "scatter")
@@ -282,6 +287,11 @@ export default class ChartMenu extends Component {
             </Col>
             <Col span={16} className="menu-item-content">
               <Select
+                value={self.state.colorIndex < 0 ? null : self.state.colorIndex}
+                allowClear
+                onClear={() => {
+                  self.setState({ colorIndex: -1 }, self.checkState);
+                }}
                 size="small"
                 placeholder="Select color"
                 onChange={(value) => {
@@ -313,7 +323,7 @@ export default class ChartMenu extends Component {
           </Row>
         </Col>
         <Col span={24}>
-          <Title level={5}>Pattern Configuration</Title>
+          <Title level={5}>Pattern selection</Title>
         </Col>
         <Col span={12}>
           <Row>
@@ -322,6 +332,7 @@ export default class ChartMenu extends Component {
             </Col>
             <Col span={16} className="menu-item-content">
               <Select
+                value={self.state.fitIndex < 0 ? null : self.state.fitIndex}
                 size="small"
                 placeholder="Fit by"
                 onChange={(value) => {
@@ -336,12 +347,16 @@ export default class ChartMenu extends Component {
               </Select>
             </Col>
 
-            <Col span={12} className="menu-item-content">
+            <Col
+              span={11}
+              className="menu-item-content"
+              style={{ marginRight: 18 }}
+            >
               <Button size="small" block onClick={this.saveConstraint}>
                 Save
               </Button>
             </Col>
-            <Col span={12} className="menu-item-content">
+            <Col span={11} className="menu-item-content">
               <Button size="small" block onClick={this.removeConstraint}>
                 Delete
               </Button>

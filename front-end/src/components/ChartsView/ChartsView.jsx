@@ -22,6 +22,7 @@ class ChartsView extends Component {
   initConstraint(settings) {
     const constraint = {
       type: chart_constraint[settings.chart_type],
+      selected: true,
       computation: settings.computation,
       x_axis: settings.x_axis,
       y_axis: settings.y_axis,
@@ -190,7 +191,6 @@ class ChartsView extends Component {
     const index = constraints.findIndex((value) => value.id === constraint.id);
     constraints.splice(index, 1);
     this.setState({ constraints });
-    console.log({ constraints: this.state.constraints });
     this.setConstraints();
   }
   selectConstraint(type, index) {

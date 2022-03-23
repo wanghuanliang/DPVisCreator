@@ -17,10 +17,9 @@ const globalColor = [
   "#ea7ccc",
 ];
 const chart_height = 350;
-const thumbnailHeight = 60;
 const axisOption = {
   nameTextStyle: {
-    fontSize: 24,
+    fontSize: 18,
     color: "#111111",
   },
   nameLocation: "center",
@@ -28,21 +27,38 @@ const axisOption = {
   splitLine: {
     show: false,
   },
+  axisPointer: {
+    show: false,
+  },
 };
-function getAxisOption(attribute) {
+const grid = {
+  top: "18%",
+  left: "20%",
+  right: "2%",
+};
+function isInteger(number) {
+  return parseInt(number) == parseFloat(number);
+}
+function getAxisOption(attribute, axis = "x") {
   return "Dimensions" === attribute.attribute_type
     ? {
         type: "category",
         id: attribute.name,
         name: attribute.name,
+        nameGap: axis === "x" ? "18" : "45",
         ...axisOption,
       }
     : {
         type: "value",
         id: attribute.name,
         name: attribute.name,
+        nameGap: axis === "x" ? "18" : "45",
         min: "dataMin",
-        max: "dataMax",
+        axisLabel: {
+          formatter: function (value, index) {
+            return isInteger(value) ? value : value.toPrecision(4);
+          },
+        },
         ...axisOption,
       };
 }
@@ -51,6 +67,7 @@ function getXAxisOption(attribute) {
     type: "category",
     id: attribute.name,
     name: attribute.name,
+    nameGap: "18",
     ...axisOption,
   };
 }
@@ -59,6 +76,12 @@ function getYAxisOption(attribute) {
     type: "value",
     id: attribute.name,
     name: attribute.name,
+    nameGap: "45",
+    axisLabel: {
+      formatter: function (value, index) {
+        return isInteger(value) ? value : value.toPrecision(4);
+      },
+    },
     ...axisOption,
   };
 }
@@ -84,11 +107,6 @@ function getOriginalSeriesOption(type, attribute, oldData, pointSize) {
     },
   ];
 }
-const grid = {
-  top: "12%",
-  left: "15%",
-  right: "2%",
-};
 export default class DataChart extends Component {
   constructor(props) {
     super(props);
@@ -174,14 +192,16 @@ export default class DataChart extends Component {
     else if (type === "bar") this.getOrder();
   }
   getLegendOption() {
-    const data = [
-      "original_data",
-      ...this.props.attributes[2].values.map((value) => value.toString()),
-    ]; // echarts数字0123……无法正常显示，需转成字符
+    const names = this.props.attributes[2].values.map((value) =>
+      value.toString()
+    );
+    const data =
+      this.props.type === "bar" ? names : ["original_data", ...names]; // echarts数字0123……无法正常显示，需转成字符
     return {
       data,
-      left: "7%",
-      top: "1%",
+      left: "10%",
+      width: "60%",
+      top: "3%",
       selected: { original_data: true, ...this.selectedLegend },
     };
   }
@@ -213,7 +233,7 @@ export default class DataChart extends Component {
       brush: { throttleType: "debounce" },
       legend: this.getLegendOption(),
       xAxis: getAxisOption(this.props.attributes[0]),
-      yAxis: getAxisOption(this.props.attributes[1]),
+      yAxis: getAxisOption(this.props.attributes[1], "y"),
       series: [
         ...getOriginalSeriesOption(
           "scatter",
@@ -256,8 +276,8 @@ export default class DataChart extends Component {
         throttleType: "debounce",
       },
       calculable: true,
-      xAxis: getAxisOption(this.props.attributes[0], this.props.data),
-      yAxis: getAxisOption(this.props.attributes[1]),
+      xAxis: getAxisOption(this.props.attributes[0]),
+      yAxis: getAxisOption(this.props.attributes[1], "y"),
       series: [
         ...getOriginalSeriesOption(
           "line",
@@ -304,15 +324,10 @@ export default class DataChart extends Component {
       calculable: true,
       legend: this.getLegendOption(),
       grid,
-      xAxis: getXAxisOption(this.props.attributes[0], this.props.data),
-      yAxis: getYAxisOption(this.props.attributes[1]),
+      xAxis: getXAxisOption(this.props.attributes[0]),
+      yAxis: getYAxisOption(this.props.attributes[1], "y"),
       series: [
         ...getSeriesOption("bar", this.props.attributes[2], this.props.data),
-        ...getOriginalSeriesOption(
-          "bar",
-          this.props.attributes[2],
-          this.props.originalData
-        ),
       ],
     };
     return option;
@@ -353,10 +368,10 @@ export default class DataChart extends Component {
     const self = this;
     this.svg
       .append("ellipse")
-      .attr("opacity", "0.4")
-      .attr("fill", "none")
-      .attr("stroke", "#111111")
-      .attr("stroke-width", 5)
+      .attr("opacity", "0.2")
+      .attr("fill", "#d9d9d9")
+      .attr("stroke", "#5D7092")
+      .attr("stroke-width", 2)
       .attr("cx", cx)
       .attr("cy", cy)
       .attr("rx", rx)
@@ -433,10 +448,10 @@ export default class DataChart extends Component {
       .append("path")
       .datum(pathData)
       .attr("points", path)
-      .attr("fill", "none")
-      .attr("stroke-width", 5)
-      .attr("stroke", "#111111")
-      .attr("opacity", 0.5)
+      .attr("fill", "#d9d9d9")
+      .attr("opacity", 0.2)
+      .attr("stroke", "#5D7092")
+      .attr("stroke-width", 2)
       .attr("d", line);
   }
   initCorrelation() {
@@ -486,9 +501,11 @@ export default class DataChart extends Component {
           .attr("y", y)
           .attr("value", point[0])
           .attr("width", width)
-          .attr("height", chart_height * 0.85 - y)
-          .style("fill", "#111111")
-          .attr("opacity", 0.5);
+          .attr("height", chart_height * 0.8 - y)
+          .style("fill", "#d9d9d9")
+          .attr("stroke", "#5D7092")
+          .attr("stroke-width", 2)
+          .attr("opacity", 0.4);
       });
     }
   }

@@ -121,14 +121,14 @@ const IndexPage = () => {
             <div className="block charts-view">
               <div className="view-title">
                 <ChartsViewIcon className="view-icon" />
-                Charts View
+                Pattern View
                 {/* 暂时加个按钮，用于进入model view */}
                 <Button
                   size="small"
                   style={{ float: "right", top: 2 }}
                   onClick={handleNextClick}
                 >
-                  next
+                  Next
                 </Button>
               </div>
               <div className="cross-line"></div>
@@ -164,13 +164,15 @@ const IndexPage = () => {
               Validation View
             </div>
             <div className="cross-line"></div>
-            {!!schemes.length && <Validation
-              attributeCharacter={attributeCharacter}
-              originalData={originalData}
-              constraints={constraints}
-              schemes={schemes}
-              setSchemes={setSchemes}
-            ></Validation>}
+            {!!schemes.length && (
+              <Validation
+                attributeCharacter={attributeCharacter}
+                originalData={originalData}
+                constraints={constraints}
+                schemes={schemes}
+                setSchemes={setSchemes}
+              ></Validation>
+            )}
             {/* <LineupTable></LineupTable> */}
           </div>
         </div>
