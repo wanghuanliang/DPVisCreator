@@ -10,7 +10,7 @@ const staticColor = "#5d7092";
 export default class ConstraintSelect extends Component {
   constructor(props) {
     super(props);
-    this.state = { value: 0, start: 0 };
+    this.state = { start: 0 };
     this.selectConstraint = props.selectConstraint;
     this.updateConstraint = props.updateConstraint;
   }
@@ -58,7 +58,9 @@ export default class ConstraintSelect extends Component {
                 className={"constraint-select-item"}
                 style={{
                   borderColor:
-                    this.state.value === index ? activeColor : staticColor,
+                    this.props.constraintId === constraint.id
+                      ? activeColor
+                      : staticColor,
                 }}
                 onClick={() => {
                   this.setState({ value: index });

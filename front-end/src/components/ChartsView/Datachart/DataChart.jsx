@@ -15,7 +15,7 @@ const globalColor = [
   "#9a60b4",
   "#ea7ccc",
 ];
-const chart_height = 350;
+const chart_height = 320;
 const thumbnailHeight = 56;
 const axisOption = {
   nameTextStyle: {
@@ -32,6 +32,7 @@ const grid = {
   top: "18%",
   left: "20%",
   right: "2%",
+  bottom: "12%",
 };
 function isInteger(number) {
   return parseInt(number) == parseFloat(number);
@@ -98,7 +99,7 @@ export default class DataChart extends Component {
     super(props);
     this.width = 300;
     this.mapper = {};
-    this.params = props.constraint.params;
+    this.params = {};
     this.selectedSeriesData = [];
     this.selectBar = {};
     this.selectedLegend = {};
@@ -235,7 +236,9 @@ export default class DataChart extends Component {
       prevProps.type !== this.props.type ||
       prevProps.attributes[0].name !== this.props.attributes[0].name ||
       prevProps.attributes[1].name !== this.props.attributes[1].name ||
-      prevProps.attributes[2].name !== this.props.attributes[2].name
+      prevProps.attributes[2].name !== this.props.attributes[2].name ||
+      (!isNaN(this.props.constraint.x_step) &&
+        prevProps.constraint.x_step !== this.props.constraint.x_step) // 确保step修改后重置
     ) {
       this.selectBar = {};
       this.selectedSeriesData = [];
@@ -244,12 +247,12 @@ export default class DataChart extends Component {
         selected[value] = true;
       });
       this.selectedLegend = selected;
+      this.params = {};
     }
     return null;
   }
   componentDidUpdate() {
     let mapper = {};
-    this.params = this.props.constraint.params;
     // 解决枚举类型为数字后，被echarts解析为数值索引的问题
     this.props.data.forEach((d, index) => {
       if (!mapper[d[0]]) {
@@ -404,7 +407,7 @@ export default class DataChart extends Component {
         params.polynomial_params &&
         params.padding &&
         params.range &&
-        params.path
+        params.fitting
       )
         return true;
     } else if (type === "bar") {
@@ -573,14 +576,44 @@ export default class DataChart extends Component {
           .on("end", dragLineEnd)
       );
   }
-  initCorrelation() {
+  updateCorrelation() {
     const self = this;
-    const data = self.selectedSeriesData;
+    const constraint = self.props.constraint;
+    const params = constraint.params;
+    const fitting = this.props.constraint.params.fitting;
+    const data = self.props.data.filter(
+      (data) => data[0] >= params.range[0] && data[0] <= params.range[1]
+    );
     if (data.length > 0) {
       const regression = ecStat.regression(
         "polynomial",
         data.map((d) => [d[0], d[1]]),
-        this.params.fitting
+        fitting
+      );
+      const padding = params.padding;
+      const path = regression.points;
+      self.createCorrelation(path, padding);
+      self.updateParams({
+        polynomial_params: regression.parameter.reverse(),
+        range: [
+          regression.points[0][0],
+          regression.points[regression.points.length - 1][0],
+        ],
+        fitting,
+        path,
+        padding,
+      });
+    }
+  }
+  initCorrelation() {
+    const self = this;
+    const data = self.selectedSeriesData;
+    const fitting = this.props.constraint.params.fitting;
+    if (data.length > 0) {
+      const regression = ecStat.regression(
+        "polynomial",
+        data.map((d) => [d[0], d[1]]),
+        fitting
       );
       const path = regression.points;
       const pixel = self.convertToPixel(path[0]);
@@ -593,6 +626,7 @@ export default class DataChart extends Component {
           regression.points[0][0],
           regression.points[regression.points.length - 1][0],
         ],
+        fitting,
         path,
         padding,
       });
@@ -602,9 +636,13 @@ export default class DataChart extends Component {
     this.clearSvg();
     const self = this;
     if (this.checkConstraint()) {
-      const path = self.props.constraint.params.path;
-      const padding = self.props.constraint.params.padding;
-      self.createCorrelation(path, padding);
+      if (self.props.constraint.params.fitting !== self.params.fitting)
+        self.updateCorrelation();
+      else {
+        const path = self.props.constraint.params.path;
+        const padding = self.props.constraint.params.padding;
+        self.createCorrelation(path, padding);
+      }
     } else {
       self.initCorrelation();
     }
@@ -622,7 +660,7 @@ export default class DataChart extends Component {
           .attr("y", y)
           .attr("value", point[0])
           .attr("width", width)
-          .attr("height", chart_height * 0.8 - y)
+          .attr("height", chart_height * 0.88 - y)
           .style("fill", "#d9d9d9")
           .attr("stroke", "#5D7092")
           .attr("stroke-width", 2)

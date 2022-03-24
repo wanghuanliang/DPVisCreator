@@ -16,7 +16,7 @@ const globalColor = [
   "#9a60b4",
   "#ea7ccc",
 ];
-const chart_height = 350;
+const chart_height = 320;
 const axisOption = {
   nameTextStyle: {
     fontSize: 18,
@@ -34,7 +34,8 @@ const axisOption = {
 const grid = {
   top: "18%",
   left: "20%",
-  right: "2%",
+  right: "7%",
+  bottom: "12%",
 };
 function isInteger(number) {
   return parseInt(number) == parseFloat(number);
@@ -53,7 +54,6 @@ function getAxisOption(attribute, axis = "x") {
         id: attribute.name,
         name: attribute.name,
         nameGap: axis === "x" ? "18" : "45",
-        min: "dataMin",
         axisLabel: {
           formatter: function (value, index) {
             return isInteger(value) ? value : value.toPrecision(4);
@@ -283,13 +283,13 @@ export default class DataChart extends Component {
           "line",
           this.props.attributes[2],
           this.props.oldData,
-          5
+          2
         ),
         ...getSeriesOption(
           "line",
           this.props.attributes[2],
           this.props.data,
-          5
+          2
         ),
       ],
     };
@@ -494,14 +494,14 @@ export default class DataChart extends Component {
     if (data) {
       data.forEach((point) => {
         const [x, y] = self.convertToPixel(point);
-        const width = (self.width * 0.8) / Object.keys(self.mapper).length;
+        const width = (self.width * 0.7) / Object.keys(self.mapper).length;
         self.svg
           .append("rect")
           .attr("x", x - width / 2)
           .attr("y", y)
           .attr("value", point[0])
           .attr("width", width)
-          .attr("height", chart_height * 0.8 - y)
+          .attr("height", chart_height * 0.88 - y)
           .style("fill", "#d9d9d9")
           .attr("stroke", "#5D7092")
           .attr("stroke-width", 2)

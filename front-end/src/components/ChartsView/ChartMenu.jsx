@@ -31,12 +31,18 @@ const chartFitnesses = [
   [1, 2, 3, 4, 5],
   ["Normal", "Beta"],
 ];
+const chartFittingMap = {
+  cluster: ["Normal", "Beta"],
+  correlation: [1, 2, 3, 4, 5],
+  order: ["Normal", "Beta"],
+};
 export default class ChartMenu extends Component {
   constructor(props) {
     super(props);
     this.initConstraint = props.initConstraint;
     this.saveConstraint = props.saveConstraint;
     this.removeConstraint = props.removeConstraint;
+    this.updateConstraintParams = props.updateConstraintParams;
     this.state = {
       columnIndex: -1,
       rowTagIndex: -1,
@@ -53,7 +59,8 @@ export default class ChartMenu extends Component {
       this.state.typeIndex >= 0 &&
       ((chart_type[this.state.typeIndex] === "scatter" &&
         this.state.rowTagIndex >= 0) ||
-        (this.state.rowTagIndex >= 0 && this.state.rowComputeIndex >= 0))
+        (this.state.rowTagIndex >= 0 && this.state.rowComputeIndex >= 0) ||
+        this.state.rowComputeIndex === 0)
     ) {
       const settings = this.getSettings();
       this.initConstraint(settings);
@@ -76,7 +83,9 @@ export default class ChartMenu extends Component {
       fitting:
         this.state.fitIndex >= 0
           ? chartFitnesses[this.state.typeIndex][this.state.fitIndex]
-          : null,
+          : this.state.typeIndex === 1
+          ? 2
+          : "Normal",
     };
   }
   render() {
@@ -179,7 +188,11 @@ export default class ChartMenu extends Component {
               onChange={(value) => {
                 self.setState({ rowTagIndex: value }, self.checkState);
               }}
-              disabled={self.state.typeIndex < 0 ? true : false}
+              disabled={
+                self.state.typeIndex < 0 || self.state.rowComputeIndex === 0
+                  ? true
+                  : false
+              }
             >
               {getRowTagSelect().map((select) => (
                 <Option value={select.index} key={"row" + select.index}>
@@ -220,19 +233,24 @@ export default class ChartMenu extends Component {
         </Row>
       );
     }
+    const constraint = this.props.constraint;
+    const constraintParams = constraint.params;
     function getAvaliableCharts() {
       return chart_type.map((type, index) => {
         return { type, index };
       });
     }
     function getChartFitnesses() {
-      if (self.state.typeIndex >= 0)
+      if (constraint.id)
+        return chartFittingMap[constraint.type].map((type, index) => {
+          return { type, index };
+        });
+      else if (self.state.typeIndex >= 0)
         return chartFitnesses[self.state.typeIndex].map((type, index) => {
           return { type, index };
         });
       else return [];
     }
-    const constraintParams = this.props.constraintParams;
     return (
       <>
         <Col span={24}>
@@ -255,6 +273,7 @@ export default class ChartMenu extends Component {
                   let state = { typeIndex: value, step: NaN };
                   if (chart_type[value] === "scatter")
                     state.rowComputeIndex = -1;
+                  else state.rowComputeIndex = 0;
                   if (chart_type[value] === "bar") state.colorIndex = -1;
                   self.setState(state, self.checkState);
                 }}
@@ -332,11 +351,23 @@ export default class ChartMenu extends Component {
             </Col>
             <Col span={16} className="menu-item-content">
               <Select
-                value={self.state.fitIndex < 0 ? null : self.state.fitIndex}
+                value={
+                  constraintParams
+                    ? chartFittingMap[constraint.type].indexOf(
+                        constraintParams.fitting
+                      )
+                    : self.state.fitIndex < 0
+                    ? null
+                    : self.state.fitIndex
+                }
                 size="small"
                 placeholder="Fit by"
                 onChange={(value) => {
-                  self.setState({ fitIndex: value }, self.checkState);
+                  constraintParams
+                    ? self.updateConstraintParams({
+                        fitting: chartFittingMap[constraint.type][value],
+                      })
+                    : self.setState({ fitIndex: value }, self.checkState);
                 }}
               >
                 {getChartFitnesses().map((fit) => (

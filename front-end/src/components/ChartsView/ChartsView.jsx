@@ -29,7 +29,7 @@ class ChartsView extends Component {
       color: settings.color,
       x_step: settings.x_step,
       params: {
-        fitting: settings.fitting ? settings.fitting : 2,
+        fitting: settings.fitting,
       },
     };
     this.getData("original", this.props.original_data, constraint);
@@ -159,7 +159,8 @@ class ChartsView extends Component {
     const constraints = this.state.constraints;
     constraints.push({ ...constraint, id: "C" + this.constraintId });
     this.constraintId++;
-    this.setState({ constraints });
+    const index = constraints.length - 1;
+    this.setState({ constraints, original_constraint: constraints[index] });
     this.setConstraints();
   }
   updateConstraint(constraint) {
@@ -208,7 +209,13 @@ class ChartsView extends Component {
         <ChartMenu
           attributes={this.props.attribute_character || {}}
           initConstraint={(settings) => this.initConstraint(settings)}
-          constraintParams={this.state.original_constraint.params}
+          constraint={this.state.original_constraint}
+          updateConstraintParams={(params) => {
+            const constraint = this.state.original_constraint;
+            const newParams = { ...constraint.params, ...params };
+            constraint.params = newParams;
+            this.updateConstraint(constraint);
+          }}
           removeConstraint={() =>
             this.removeConstraint(this.state.original_constraint)
           }
@@ -233,6 +240,7 @@ class ChartsView extends Component {
         <Col span={6} style={{ paddingLeft: 4 }}>
           <ConstraintSelect
             constraints={this.state.constraints}
+            constraintId={this.state.original_constraint.id}
             updateConstraint={(constraint) => {
               this.updateConstraint(constraint);
             }}

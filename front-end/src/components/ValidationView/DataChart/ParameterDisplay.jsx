@@ -12,24 +12,21 @@ export default class ParameterDisplay extends Component {
       }
       const value = Protected - Original;
       const percentage = ((Math.abs(value) / Original) * 100.0).toFixed(2);
-      return value >= 0 ? (
-        <Statistic
-          title="Changed"
-          value={percentage}
-          precision={2}
-          valueStyle={{ color: "#3f8600" }}
-          prefix={<ArrowUpOutlined />}
-          suffix="%"
-        />
-      ) : (
-        <Statistic
-          title="Changed"
-          value={percentage}
-          precision={2}
-          valueStyle={{ color: "#cf1322" }}
-          prefix={<ArrowDownOutlined />}
-          suffix="%"
-        />
+      return (
+        <div style={{ display: "flex" }}>
+          Changed:
+          {value >= 0 ? (
+            <div style={{ color: "red" }}>
+              <ArrowUpOutlined />
+              {percentage + "%"}
+            </div>
+          ) : (
+            <div style={{ color: "green" }}>
+              <ArrowDownOutlined />
+              {percentage + "%"}
+            </div>
+          )}
+        </div>
       );
     }
     return (

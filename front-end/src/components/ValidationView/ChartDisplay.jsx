@@ -9,10 +9,15 @@ export default class ChartDisplay extends Component {
         name: this.props.constraint.x_axis,
         ...this.props.attributes[this.props.constraint.x_axis],
       },
-      {
-        name: this.props.constraint.y_axis,
-        ...this.props.attributes[this.props.constraint.y_axis],
-      },
+      this.props.constraint.computation === "count"
+        ? {
+            name: "count",
+            attribute_type: "Measures",
+          }
+        : {
+            name: this.props.constraint.y_axis,
+            ...this.props.attributes[this.props.constraint.y_axis],
+          },
       {
         name: this.props.constraint.color,
         ...(this.props.constraint.color
