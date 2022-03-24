@@ -76,9 +76,9 @@ export default class ConstraintSelect extends Component {
                 {constraint.selected ? (
                   <TagSelectedIcon
                     className="constraint-select-item-tag"
-                    width="30"
-                    height="30"
-                    fill={"#ced4de"}
+                    width="24"
+                    height="24"
+                    fill={"#5d7092"}
                     onClick={() => {
                       constraint.selected = false;
                       this.updateConstraint(constraint);
@@ -87,9 +87,9 @@ export default class ConstraintSelect extends Component {
                 ) : (
                   <TagUnselectedIcon
                     className="constraint-select-item-tag"
-                    width="30"
-                    height="30"
-                    fill={"#ced4de"}
+                    width="24"
+                    height="24"
+                    fill={"#5d7092"}
                     onClick={() => {
                       constraint.selected = true;
                       this.updateConstraint(constraint);

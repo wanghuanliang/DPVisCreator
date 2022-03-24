@@ -25,7 +25,7 @@ const axisOption = {
   nameLocation: "center",
   scale: true,
   splitLine: {
-    show: false,
+    show: true,
   },
 };
 const grid = {
@@ -59,12 +59,15 @@ function getAxisOption(attribute, axis = "x") {
         ...axisOption,
       };
 }
-function getXAxisOption(attribute) {
+function getXAxisOption(attribute, hasNoStep = true, width = 0) {
   return {
     type: "category",
     id: attribute.name,
     name: attribute.name,
     nameGap: "18",
+    axisLabel: {
+      padding: hasNoStep ? [0, 0, 0, 0] : [0, 0, 0, -width],
+    },
     ...axisOption,
   };
 }
@@ -97,12 +100,13 @@ function getSeriesOption(type, attribute, data, pointSize) {
 export default class DataChart extends Component {
   constructor(props) {
     super(props);
-    this.width = 300;
+    this.width = 345;
     this.mapper = {};
     this.params = {};
     this.selectedSeriesData = [];
     this.selectBar = {};
     this.selectedLegend = {};
+    this.brushArea = {};
   }
   updateParams(params) {
     this.params = { ...this.params, ...params };
@@ -206,6 +210,10 @@ export default class DataChart extends Component {
       this.selectedLegend = params.selected;
     });
     this.chart.on("brushEnd", (params) => {
+      const area = params.areas[0];
+      if (area) {
+        this.brushArea = { type: area.brushType, range: area.range };
+      }
       const type = this.props.type;
       const data = JSON.parse(JSON.stringify(this.selectedSeriesData));
       if (type === "scatter") this.initCluster();
@@ -228,7 +236,7 @@ export default class DataChart extends Component {
       }
     });
     const divDom = document.getElementById("container-" + this.props.name);
-    this.width = divDom.offsetWidth;
+    this.width = 345;
     this.generateData();
   }
   getSnapshotBeforeUpdate(prevProps, prevState) {
@@ -248,6 +256,7 @@ export default class DataChart extends Component {
       });
       this.selectedLegend = selected;
       this.params = {};
+      this.brushArea = {};
     }
     return null;
   }
@@ -261,7 +270,7 @@ export default class DataChart extends Component {
     });
     this.mapper = mapper;
     const divDom = document.getElementById("container-" + this.props.name);
-    this.width = divDom.offsetWidth;
+    this.width = 345;
     this.generateData();
     const type = this.props.type;
     if (type === "scatter") this.getCluster();
@@ -269,8 +278,14 @@ export default class DataChart extends Component {
     else if (type === "bar") this.getOrder();
   }
   getLegendOption() {
+    const values = this.props.attributes[2].values;
+    let show = true;
+    if (values.length === 1 && values[0] === "default") {
+      show = false;
+    }
     return {
-      data: this.props.attributes[2].values.map((value) => value.toString()), // echarts数字0123……无法正常显示，需转成字符
+      data: values.map((value) => value.toString()), // echarts数字0123……无法正常显示，需转成字符
+      show,
       left: "10%",
       width: "60%",
       top: "3%",
@@ -378,7 +393,12 @@ export default class DataChart extends Component {
       calculable: true,
       legend: this.getLegendOption(),
       grid,
-      xAxis: getXAxisOption(this.props.attributes[0]),
+      barMaxWidth: "40",
+      xAxis: getXAxisOption(
+        this.props.attributes[0],
+        isNaN(this.props.constraint.x_step),
+        (this.width * 0.78) / Object.keys(this.mapper).length
+      ),
       yAxis: getYAxisOption(this.props.attributes[1], "y"),
       series: getSeriesOption("bar", this.props.attributes[2], this.props.data),
     };
@@ -405,7 +425,8 @@ export default class DataChart extends Component {
       if (constraint.type !== chart_constraint["line"]) return false;
       if (
         params.polynomial_params &&
-        params.padding &&
+        params.padding_top &&
+        params.padding_bottom &&
         params.range &&
         params.fitting
       )
@@ -416,7 +437,7 @@ export default class DataChart extends Component {
     }
     return false;
   }
-  createCluster(cx, cy, rx, ry) {
+  createCluster(type, range) {
     const self = this;
     function dragEllipseStart(d) {
       const event = d3.event;
@@ -433,24 +454,31 @@ export default class DataChart extends Component {
       const mean = self.convertFromPixel([event.x, event.y]);
       self.updateParams({ mean });
     }
-    this.svg
-      .append("ellipse")
-      .attr("opacity", "0.2")
-      .attr("fill", "#d9d9d9")
-      .attr("stroke", "#5D7092")
-      .attr("stroke-width", 2)
-      .attr("cx", cx)
-      .attr("cy", cy)
-      .attr("rx", rx)
-      .attr("ry", ry)
-      .style("pointer-events", "auto")
-      .call(
-        d3
-          .drag()
-          .on("start", dragEllipseStart)
-          .on("drag", dragEllipseDragging)
-          .on("end", dragEllipseEnd)
-      );
+    if (type === "rect") {
+      const [x, y] = [range[0][0], range[1][0]];
+      const [width, height] = [
+        range[0][1] - range[0][0],
+        range[1][1] - range[1][0],
+      ];
+      this.svg
+        .append("rect")
+        .attr("opacity", "0.2")
+        .attr("fill", "#d9d9d9")
+        .attr("stroke", "#5D7092")
+        .attr("stroke-width", 2)
+        .attr("x", x)
+        .attr("y", y)
+        .attr("width", width)
+        .attr("height", height);
+    } else if (type === "polygon") {
+      this.svg
+        .append("polygon")
+        .attr("opacity", "0.2")
+        .attr("fill", "#d9d9d9")
+        .attr("stroke", "#5D7092")
+        .attr("stroke-width", 2)
+        .attr("points", range);
+    }
   }
   initCluster() {
     const self = this;
@@ -468,8 +496,10 @@ export default class DataChart extends Component {
       ry = (ry - cy) * Math.sqrt(vary);
       rx *= 2;
       ry *= 2;
-      self.createCluster(cx, cy, rx, ry);
+      self.createCluster(self.brushArea.type, self.brushArea.range);
       self.updateParams({
+        type: self.brushArea.type,
+        area: self.brushArea.range,
         mean: [meanx, meany],
         radius: [Math.sqrt(varx) * 2, Math.sqrt(vary) * 2],
       });
@@ -480,6 +510,7 @@ export default class DataChart extends Component {
     const self = this;
     if (this.checkConstraint()) {
       const [meanx, meany] = self.props.constraint.params.mean;
+      const { type, area } = self.props.constraint.params;
       const [cx, cy] = self.convertToPixel([meanx, meany]);
       let [rx, ry] = self.convertToPixel([meanx + 1, meany - 1]);
       rx -= cx;
@@ -487,12 +518,12 @@ export default class DataChart extends Component {
       const [radiusx, radiusy] = self.props.constraint.params.radius;
       rx *= radiusx;
       ry *= radiusy;
-      self.createCluster(cx, cy, rx, ry);
+      self.createCluster(type, area);
     } else {
       self.initCluster();
     }
   }
-  createCorrelation(points, padding) {
+  createCorrelation(points, paddingTop, paddingBottom) {
     const path = points.map((point) => this.convertToPixel(point));
     const self = this;
     function dragLineStart(d) {
@@ -537,22 +568,27 @@ export default class DataChart extends Component {
     const pathData = [];
     const d0 = self.convertToPixel([
       self.props.data[0][0],
-      self.props.data[0][1] + padding,
+      self.props.data[0][1],
     ])[1];
     const d1 = self.convertToPixel([
       self.props.data[0][0],
-      self.props.data[0][1],
+      self.props.data[0][1] + paddingTop,
     ])[1];
-    const width = Math.abs(d0 - d1);
+    const d2 = self.convertToPixel([
+      self.props.data[0][0],
+      self.props.data[0][1] + paddingBottom,
+    ])[1];
+    const topWidth = Math.abs(d1 - d0);
+    const bottomWidth = Math.abs(d2 - d0);
     for (let i = 0; i < path.length; i++) {
       const [x, y] = path[i];
-      pathData.push({ x, y: y - width });
+      pathData.push({ x, y: y - topWidth });
     }
     for (let i = path.length - 1; i >= 0; i--) {
       const [x, y] = path[i];
-      pathData.push({ x, y: y + width });
+      pathData.push({ x, y: y + bottomWidth });
     }
-    pathData.push({ x: path[0][0], y: path[0][1] - width });
+    pathData.push({ x: path[0][0], y: path[0][1] - topWidth });
     const line = d3
       .line()
       .curve(d3.curveCardinal.tension(0.5))
@@ -566,15 +602,7 @@ export default class DataChart extends Component {
       .attr("opacity", 0.2)
       .attr("stroke", "#5D7092")
       .attr("stroke-width", 2)
-      .attr("d", line)
-      .style("pointer-events", "auto")
-      .call(
-        d3
-          .drag()
-          .on("start", dragLineStart)
-          .on("drag", dragLineDragging)
-          .on("end", dragLineEnd)
-      );
+      .attr("d", line);
   }
   updateCorrelation() {
     const self = this;
@@ -592,7 +620,16 @@ export default class DataChart extends Component {
       );
       const padding = params.padding;
       const path = regression.points;
-      self.createCorrelation(path, padding);
+      const upper = [];
+      const lower = [];
+      for (let i = 0; i < data.length; i++) {
+        const dist = data[i][1] - path[i][1];
+        if (dist >= 0) upper.push(dist);
+        else lower.push(-dist);
+      }
+      const paddingTop = Math.max(...upper);
+      const paddingBottom = Math.max(...lower);
+      self.createCorrelation(path, paddingTop, paddingBottom);
       self.updateParams({
         polynomial_params: regression.parameter.reverse(),
         range: [
@@ -602,6 +639,8 @@ export default class DataChart extends Component {
         fitting,
         path,
         padding,
+        padding_top: paddingTop,
+        padding_bottom: paddingBottom,
       });
     }
   }
@@ -616,10 +655,19 @@ export default class DataChart extends Component {
         fitting
       );
       const path = regression.points;
+      const upper = [];
+      const lower = [];
+      for (let i = 0; i < data.length; i++) {
+        const dist = data[i][1] - path[i][1];
+        if (dist >= 0) upper.push(dist);
+        else lower.push(-dist);
+      }
+      const paddingTop = Math.max(...upper);
+      const paddingBottom = Math.max(...lower);
       const pixel = self.convertToPixel(path[0]);
       const value = self.convertFromPixel([pixel[0], pixel[1] - 20]);
       const padding = value[1] - path[0][1];
-      self.createCorrelation(path, padding);
+      self.createCorrelation(path, paddingTop, paddingBottom);
       self.updateParams({
         polynomial_params: regression.parameter.reverse(),
         range: [
@@ -629,6 +677,8 @@ export default class DataChart extends Component {
         fitting,
         path,
         padding,
+        padding_top: paddingTop,
+        padding_bottom: paddingBottom,
       });
     }
   }
@@ -640,8 +690,9 @@ export default class DataChart extends Component {
         self.updateCorrelation();
       else {
         const path = self.props.constraint.params.path;
-        const padding = self.props.constraint.params.padding;
-        self.createCorrelation(path, padding);
+        const paddingTop = self.props.constraint.params.padding_top;
+        const paddingBottom = self.props.constraint.params.padding_bottom;
+        self.createCorrelation(path, paddingTop, paddingBottom);
       }
     } else {
       self.initCorrelation();
@@ -653,7 +704,8 @@ export default class DataChart extends Component {
     if (data) {
       data.forEach((point) => {
         const [x, y] = self.convertToPixel(point);
-        const width = (self.width * 0.8) / Object.keys(self.mapper).length;
+        let width = (self.width * 0.78) / Object.keys(self.mapper).length;
+        width = width > 48 ? 48 : width;
         self.svg
           .append("rect")
           .attr("x", x - width / 2)

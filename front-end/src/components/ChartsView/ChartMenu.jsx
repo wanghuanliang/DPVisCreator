@@ -19,6 +19,7 @@ import {
 } from "@ant-design/icons";
 import { chart_type, computation_type } from "./constants";
 import Title from "antd/lib/typography/Title";
+import { getModelData } from "../../services/api";
 // 布局变成右侧缩略图
 const { Option } = Select;
 const chartLabels = {
@@ -52,6 +53,30 @@ export default class ChartMenu extends Component {
       fitIndex: -1,
       step: NaN,
     };
+  }
+  finishPatternSettings() {
+    const self = this;
+    const jcts = JSON.parse(JSON.stringify(self.props.constraints));
+    const cts = [];
+    for (let i = 0; i < self.props.constraints.length; i++) {
+      if (jcts[i].selected) {
+        let constraint = jcts[i];
+        delete constraint.selected;
+        delete constraint.svgImage;
+        delete constraint.canvasImage;
+        delete constraint.params.fitting;
+        delete constraint.params.path;
+        cts.push(constraint);
+      }
+    }
+    getModelData({ constraints: cts })
+      .then((res) => {
+        self.props.setModelData(res.data.data);
+      })
+      .catch((e) => {
+        console.log(e);
+        self.props.setModelData(null);
+      });
   }
   checkState() {
     if (
@@ -164,8 +189,8 @@ export default class ChartMenu extends Component {
               size="small"
               disabled={
                 self.state.columnIndex < 0 ||
-                attributes[self.state.columnIndex].attribute_type ===
-                  "Dimensions"
+                self.props.attributes[attributes[self.state.columnIndex]]
+                  .attribute_type === "Dimensions"
                   ? true
                   : false
               }
@@ -234,7 +259,7 @@ export default class ChartMenu extends Component {
       );
     }
     const constraint = this.props.constraint;
-    const constraintParams = constraint.params;
+    const showingParameters = this.props.showingParameters;
     function getAvaliableCharts() {
       return chart_type.map((type, index) => {
         return { type, index };
@@ -253,8 +278,13 @@ export default class ChartMenu extends Component {
     }
     return (
       <>
-        <Col span={24}>
+        <Col span={18}>
           <Title level={5}>Chart settings</Title>
+        </Col>
+        <Col span={6} style={{ marginTop: 3 }}>
+          <Button size="small" block>
+            Recommend
+          </Button>
         </Col>
         <Col span={12}>
           <Row>
@@ -352,9 +382,9 @@ export default class ChartMenu extends Component {
             <Col span={16} className="menu-item-content">
               <Select
                 value={
-                  constraintParams
+                  constraint.params
                     ? chartFittingMap[constraint.type].indexOf(
-                        constraintParams.fitting
+                        constraint.params.fitting
                       )
                     : self.state.fitIndex < 0
                     ? null
@@ -363,7 +393,7 @@ export default class ChartMenu extends Component {
                 size="small"
                 placeholder="Fit by"
                 onChange={(value) => {
-                  constraintParams
+                  constraint.params
                     ? self.updateConstraintParams({
                         fitting: chartFittingMap[constraint.type][value],
                       })
@@ -388,64 +418,36 @@ export default class ChartMenu extends Component {
               </Button>
             </Col>
             <Col span={11} className="menu-item-content">
-              <Button size="small" block onClick={this.removeConstraint}>
-                Delete
+              <Button
+                size="small"
+                block
+                onClick={() => {
+                  this.finishPatternSettings();
+                }}
+              >
+                Finish
               </Button>
             </Col>
           </Row>
         </Col>
         <Col
-          span={4}
-          className="menu-item-label config-item-label-parameters"
-          style={{ paddingLeft: 4 }}
-        >
-          Parameters
-        </Col>
-        <Col
-          span={7}
+          span={12}
           className="menu-item-content config-item-content-parameters"
         >
-          {constraintParams
-            ? Object.keys(constraintParams).map((key) => {
-                const label = "" + key + ":";
-                let param = constraintParams[key];
-                if (key === "mean") {
-                  param =
-                    "cx:" +
-                    parseFloat(param[0]).toFixed(2) +
-                    " cy:" +
-                    parseFloat(param[1]).toFixed(2);
-                } else if (key === "radius") {
-                  param =
-                    "rx:" +
-                    parseFloat(param[0]).toFixed(2) +
-                    " ry:" +
-                    parseFloat(param[1]).toFixed(2);
-                } else if (key === "polynomial_params") {
-                  let temp = "y = ";
-                  for (let i = param.length - 1; i > 0; i--) {
-                    const index = param.length - 1 - i;
-                    temp +=
-                      " " +
-                      parseFloat(param[index]).toFixed(2) +
-                      "*x^" +
-                      i +
-                      " +";
-                  }
-                  temp += parseFloat(param[param.length - 1]).toFixed(2);
-                  param = temp;
-                } else if (key === "range") {
-                  param = "min:" + param[0] + " max:" + param[1];
-                }
-                const str = label + param;
-                return (
-                  <div key={"config-parameters-" + key}>
-                    {str}
-                    <br />
-                  </div>
-                );
-              })
-            : ""}
+          {Object.keys(showingParameters).map((key) => {
+            const label = "#" + key + ":";
+            let param = showingParameters[key];
+            const str = label + param;
+            return (
+              <div
+                key={"config-parameters-" + key}
+                className="config-item-content-parameters-line"
+              >
+                {str}
+                <br />
+              </div>
+            );
+          })}
         </Col>
       </>
     );

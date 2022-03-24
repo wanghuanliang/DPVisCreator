@@ -123,19 +123,21 @@ const IndexPage = () => {
                 <ChartsViewIcon className="view-icon" />
                 Pattern View
                 {/* 暂时加个按钮，用于进入model view */}
-                <Button
+                {/* <Button
                   size="small"
                   style={{ float: "right", top: 2 }}
                   onClick={handleNextClick}
                 >
                   Next
-                </Button>
+                </Button> */}
               </div>
               <div className="cross-line"></div>
               <ChartsView
                 original_data={originalData}
                 attribute_character={attributeCharacter}
+                constraints={constraints}
                 setConstraints={setConstraints}
+                setModelData={setModelData}
               ></ChartsView>
             </div>
             {/* model view */}

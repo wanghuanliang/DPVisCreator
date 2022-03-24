@@ -144,10 +144,11 @@ class ChartsView extends Component {
         }
       });
     }
-    if (chartType === "line" || chartType === "scatter")
-      dataset.sort((a, b) => a[0] - b[0]);
-    // 折线图按x值从小到大
-    else if (chartType === "bar") dataset.sort((a, b) => b[1] - a[1]); // 条形图按y值从大到小
+    dataset.sort((a, b) => a[0] - b[0]);
+    // if (chartType === "line" || chartType === "scatter")
+    //   dataset.sort((a, b) => a[0] - b[0]);
+    // // 折线图按x值从小到大
+    // else if (chartType === "bar") dataset.sort((a, b) => b[1] - a[1]); // 条形图按y值从大到小
     if (type === "original") {
       this.setState({
         original_constraint: constraint,
@@ -203,6 +204,31 @@ class ChartsView extends Component {
       );
     }
   }
+  getShowingParameters() {
+    const total = this.props.original_data.length;
+    const currentSelected = this.state.original_constraint.data
+      ? this.state.original_constraint.data.length
+      : 0;
+    const totalSelectedData = [];
+    const constraints = this.state.constraints;
+    const patterns = constraints.filter((constraint) => constraint.selected);
+    const attributes = [];
+    patterns.forEach((pattern) => {
+      const selectedData = pattern.data;
+      selectedData.forEach((d) => {
+        if (!totalSelectedData.includes(d)) totalSelectedData.push(d);
+      });
+      if (!attributes.includes(pattern.x_axis)) attributes.push(pattern.x_axis);
+      if (!attributes.includes(pattern.y_axis)) attributes.push(pattern.y_axis);
+    });
+    const totalSelected = totalSelectedData.length;
+    return {
+      "Currently Selected": "" + currentSelected + "/" + total,
+      "Total Selected": "" + totalSelected + "/" + total,
+      Patterns: patterns.length,
+      Attributes: attributes.length,
+    };
+  }
   render() {
     return (
       <Row gutter={24}>
@@ -210,6 +236,9 @@ class ChartsView extends Component {
           attributes={this.props.attribute_character || {}}
           initConstraint={(settings) => this.initConstraint(settings)}
           constraint={this.state.original_constraint}
+          constraints={this.props.constraints}
+          setModelData={this.props.setModelData}
+          showingParameters={this.getShowingParameters()}
           updateConstraintParams={(params) => {
             const constraint = this.state.original_constraint;
             const newParams = { ...constraint.params, ...params };

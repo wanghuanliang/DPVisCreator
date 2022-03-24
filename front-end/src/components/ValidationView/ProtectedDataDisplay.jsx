@@ -129,10 +129,11 @@ export default class ProtectedDataDisplay extends Component {
         }
       });
     }
-    if (chartType === "line" || chartType === "scatter")
-      dataset.sort((a, b) => a[0] - b[0]);
-    // 折线图按x值从小到大
-    else if (chartType === "bar") dataset.sort((a, b) => b[1] - a[1]); // 条形图按y值从大到小
+    dataset.sort((a, b) => a[0] - b[0]);
+    // if (chartType === "line" || chartType === "scatter")
+    //   dataset.sort((a, b) => a[0] - b[0]);
+    // // 折线图按x值从小到大
+    // else if (chartType === "bar") dataset.sort((a, b) => b[1] - a[1]); // 条形图按y值从大到小
     return dataset;
   }
   render() {
@@ -155,7 +156,7 @@ export default class ProtectedDataDisplay extends Component {
       : [];
     return (
       <Row gutter={24}>
-        <Col span={6}>
+        <Col span={8}>
           <Row>
             <ConstraintSelect
               constraints={this.props.constraints}
@@ -175,7 +176,7 @@ export default class ProtectedDataDisplay extends Component {
             ></ParameterDisplay>
           </Row>
         </Col>
-        <Col span={18}>
+        <Col span={16}>
           <ChartDisplay
             name="protected-chart"
             oldData={original_chart_data}
