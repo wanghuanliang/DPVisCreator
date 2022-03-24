@@ -114,8 +114,12 @@ const SankeyPlot = (props) => {
       // 遍历每一个间隔内的约束桑基
       constraints.forEach(constraint => {
         const constraintId = constraint.id;
+        // 新增需求，一个间隔内的约束桑基，只绘制topN的, 对约束进行原地排序
+        const n = 2;
+        (obj.constraints?.[constraintId] || []).sort((a, b) => b.num - a.num);
         // modelData.constraints内可能缺失桑基？（好像不可能）
-        (obj.constraints?.[constraintId] || []).forEach(sankey => {
+        (obj.constraints?.[constraintId] || []).forEach((sankey, index) => {
+          if (index >= n) return;
           // 计算每个点坐标
           const sankeyHeight = sankey.num / totalNum * lineTotalHeight; // 一条sankey高度
           // const x1 = x1;
