@@ -62,14 +62,24 @@ function getAxisOption(attribute, axis = "x") {
         ...axisOption,
       };
 }
-function getXAxisOption(attribute, hasNoStep = true, width = 0) {
+function getXAxisOption(attribute, step = NaN, width = 0) {
   return {
     type: "category",
     id: attribute.name,
     name: attribute.name,
     nameGap: "18",
     axisLabel: {
-      padding: hasNoStep ? [0, 0, 0, 0] : [0, 0, 0, -width],
+      padding: isNaN(step) ? [0, 0, 0, 0] : [0, 0, 0, -width],
+    },
+    axisPointer: {
+      show: true,
+      label: {
+        formatter: function (params) {
+          const value = params.value;
+          const end = parseInt(value) + step - 1;
+          return isNaN(step) || step <= 1 ? value : "" + value + "-" + end;
+        },
+      },
     },
     ...axisOption,
   };
@@ -80,6 +90,12 @@ function getYAxisOption(attribute) {
     id: attribute.name,
     name: attribute.name,
     nameGap: "45",
+    axisLine: {
+      show: true,
+    },
+    axisTick: {
+      show: true,
+    },
     axisLabel: {
       formatter: function (value, index) {
         return isInteger(value) ? value : value.toPrecision(4);
@@ -334,7 +350,7 @@ export default class DataChart extends Component {
       barMaxWidth: "40",
       xAxis: getXAxisOption(
         this.props.attributes[0],
-        isNaN(this.props.constraint.x_step),
+        this.props.constraint.x_step,
         (this.width * 0.78) / Object.keys(this.mapper).length
       ),
       yAxis: getYAxisOption(this.props.attributes[1], "y"),
@@ -386,7 +402,8 @@ export default class DataChart extends Component {
       ];
       this.svg
         .append("rect")
-        .attr("opacity", "0.2")
+        .attr("opacity", "0.4")
+        .attr("fill-opacity", "0.5")
         .attr("fill", "#d9d9d9")
         .attr("stroke", "#5D7092")
         .attr("stroke-width", 2)
@@ -397,7 +414,8 @@ export default class DataChart extends Component {
     } else if (type === "polygon") {
       this.svg
         .append("polygon")
-        .attr("opacity", "0.2")
+        .attr("opacity", "0.4")
+        .attr("fill-opacity", "0.5")
         .attr("fill", "#d9d9d9")
         .attr("stroke", "#5D7092")
         .attr("stroke-width", 2)
@@ -479,6 +497,7 @@ export default class DataChart extends Component {
       data.forEach((point) => {
         const [x, y] = self.convertToPixel(point);
         let width = (self.width * 0.68) / Object.keys(self.mapper).length;
+        width *= 0.9;
         width = width > 48 ? 48 : width;
         self.svg
           .append("rect")
@@ -489,7 +508,7 @@ export default class DataChart extends Component {
           .attr("height", chart_height * 0.88 - y)
           .style("fill", "#d9d9d9")
           .attr("stroke", "#5D7092")
-          .attr("stroke-width", 2)
+          .attr("stroke-width", 1)
           .attr("opacity", 0.4);
       });
     }

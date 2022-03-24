@@ -14,6 +14,14 @@ export default class ConstraintSelect extends Component {
     this.selectConstraint = props.selectConstraint;
     this.updateConstraint = props.updateConstraint;
   }
+  getSnapshotBeforeUpdate(prevProps, prevState) {
+    const currentLength = this.props.constraints.length;
+    if (currentLength > 0 && this.props.constraints[currentLength - 1].newly) {
+      delete this.props.constraints[currentLength - 1].newly;
+      this.setState({ start: currentLength >= 3 ? currentLength - 3 : 0 });
+    }
+    return null;
+  }
   componentDidUpdate() {
     this.props.constraints.forEach((constraint, index) => {
       document
@@ -98,7 +106,7 @@ export default class ConstraintSelect extends Component {
                 )}
               </Space>
             ) : (
-              <></>
+              <div key={"constraint-select-" + constraint.id}></div>
             )
           )}
         </div>

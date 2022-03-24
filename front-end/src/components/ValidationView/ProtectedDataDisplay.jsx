@@ -13,6 +13,7 @@ export default class ProtectedDataDisplay extends Component {
       constraint: {},
     };
   }
+  componentDidUpdate() {}
   getSnapshotBeforeUpdate(prevProps, prevState) {
     if (prevProps.defaultConstraint !== this.props.defaultConstraint) {
       this.setState({ constraint: this.props.defaultConstraint });

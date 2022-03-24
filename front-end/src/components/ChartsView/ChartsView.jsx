@@ -158,10 +158,18 @@ class ChartsView extends Component {
   }
   insertConstraint(constraint) {
     const constraints = this.state.constraints;
-    constraints.push({ ...constraint, id: "C" + this.constraintId });
+    constraints.push({
+      ...constraint,
+      id: "C" + this.constraintId,
+      newly: true,
+    });
     this.constraintId++;
     const index = constraints.length - 1;
-    this.setState({ constraints, original_constraint: constraints[index] });
+    this.creatingNewConstraint = true;
+    this.setState({
+      constraints,
+      original_constraint: constraints[index],
+    });
     this.setConstraints();
   }
   updateConstraint(constraint) {

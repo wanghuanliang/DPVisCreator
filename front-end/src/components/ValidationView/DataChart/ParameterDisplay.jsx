@@ -16,12 +16,12 @@ export default class ParameterDisplay extends Component {
         <div style={{ display: "flex" }}>
           Changed:
           {value >= 0 ? (
-            <div style={{ color: "red" }}>
+            <div style={{ color: "green" }}>
               <ArrowUpOutlined />
               {percentage + "%"}
             </div>
           ) : (
-            <div style={{ color: "green" }}>
+            <div style={{ color: "red" }}>
               <ArrowDownOutlined />
               {percentage + "%"}
             </div>
