@@ -368,14 +368,7 @@ export default class DataChart extends Component {
     const params = constraint.params;
     if (type === "scatter") {
       if (constraint.type !== chart_constraint["scatter"]) return false;
-      if (
-        params.mean &&
-        isArray(params.mean) &&
-        params.mean.length === 2 &&
-        params.radius &&
-        isArray(params.radius) &&
-        params.radius.length === 2
-      )
+      if (params.type && isArray(params.area) && params.area.length >= 2)
         return true;
     } else if (type === "line") {
       if (constraint.type !== chart_constraint["line"]) return false;
@@ -435,7 +428,10 @@ export default class DataChart extends Component {
       const [radiusx, radiusy] = self.props.constraint.params.radius;
       rx *= radiusx;
       ry *= radiusy;
-      self.createCluster(type, area);
+      self.createCluster(
+        type,
+        area.map((value) => self.convertToPixel(value))
+      );
     }
   }
   createCorrelation(points, paddingTop, paddingBottom) {

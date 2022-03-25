@@ -228,6 +228,8 @@ class ChartsView extends Component {
       });
       if (!attributes.includes(pattern.x_axis)) attributes.push(pattern.x_axis);
       if (!attributes.includes(pattern.y_axis)) attributes.push(pattern.y_axis);
+      if (pattern.color && !attributes.includes(pattern.color))
+        attributes.push(pattern.color);
     });
     const totalSelected = totalSelectedData.length;
     return {
