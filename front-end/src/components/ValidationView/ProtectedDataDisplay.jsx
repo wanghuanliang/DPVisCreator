@@ -107,16 +107,17 @@ export default class ProtectedDataDisplay extends Component {
         }
       }
     } else {
+      const dataMap = [];
       type_data.forEach((data) => {
+        let d = [];
         if (isNaN(step)) {
-          dataset.push([
+          d = [
             data[constraint.x_axis],
             data[constraint.y_axis],
             constraint.color ? data[constraint.color] : "default",
-            data.index,
-          ]);
+          ];
         } else {
-          dataset.push([
+          d = [
             x.attribute_type === "Measures"
               ? data[constraint.x_axis] -
                 ((data[constraint.x_axis] -
@@ -125,10 +126,18 @@ export default class ProtectedDataDisplay extends Component {
               : data[constraint.x_axis],
             data[constraint.y_axis],
             constraint.color ? data[constraint.color] : "default",
-            data.index,
-          ]);
+          ];
+        }
+        const target = dataMap.filter(
+          (value) => value[0] === d[0] && value[1] === d[1] && value[2] === d[2]
+        );
+        if (target.length === 0) {
+          dataMap.push([...d, [data.index]]);
+        } else {
+          target[0][3].push(data.index);
         }
       });
+      dataset.push(...dataMap);
     }
     dataset.sort((a, b) => a[0] - b[0]);
     // if (chartType === "line" || chartType === "scatter")

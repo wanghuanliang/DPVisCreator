@@ -579,7 +579,6 @@ export default class DataChart extends Component {
       );
       self.updateParams({ padding });
     }
-    const pathData = [];
     const d0 = self.convertToPixel([
       self.props.data[0][0],
       self.props.data[0][1],
@@ -594,29 +593,46 @@ export default class DataChart extends Component {
     ])[1];
     const topWidth = Math.abs(d1 - d0);
     const bottomWidth = Math.abs(d2 - d0);
+    const topPath = [];
     for (let i = 0; i < path.length; i++) {
       const [x, y] = path[i];
-      pathData.push({ x, y: y - topWidth });
+      topPath.push({ x, y: y - topWidth });
     }
+    const bottomPath = [];
     for (let i = path.length - 1; i >= 0; i--) {
       const [x, y] = path[i];
-      pathData.push({ x, y: y + bottomWidth });
+      bottomPath.push({ x, y: y + bottomWidth });
     }
-    pathData.push({ x: path[0][0], y: path[0][1] - topWidth });
-    const line = d3
+    const line1 = d3
       .line()
       .curve(d3.curveCardinal.tension(0.5))
       .x((d) => d.x)
       .y((d) => d.y);
+    const line2 = d3
+      .line()
+      .curve(d3.curveCardinal.tension(0.5))
+      .x((d) => d.x)
+      .y((d) => d.y);
+    const p1 = this.svg
+      .append("path")
+      .datum(topPath)
+      .attr("d", line1)
+      .attr("d");
+    const p2 = this.svg
+      .append("path")
+      .datum(bottomPath)
+      .attr("d", line2)
+      .attr("d");
+    const pathString = p1 + "L" + p2.substring(1) + "Z";
+    this.clearSvg();
     this.svg
       .append("path")
-      .datum(pathData)
       .attr("points", path)
       .attr("fill", "#d9d9d9")
       .attr("opacity", 0.2)
       .attr("stroke", "#5D7092")
       .attr("stroke-width", 2)
-      .attr("d", line);
+      .attr("d", pathString);
   }
   updateCorrelation() {
     const self = this;
