@@ -24,7 +24,8 @@ const DataView = (props) => {
 
   const prop = {
     action: 'http://101.43.188.187:30010/api/getOriginalData',
-    data: {session_id: session},
+    data: { session_id: session },
+    maxCount: 1,
     onChange({ file, fileList }) {
       if (file.status === 'done') {
         // console.log(file.response.data);
@@ -41,51 +42,59 @@ const DataView = (props) => {
         status: 'done',
         response: 'Server Error 500', // custom error message to show
       },
-    ]
+    ],
+    showUploadList: {
+      showRemoveIcon: false,
+    }
   };
 
   return (
-    <div className='data-view-box'>
-      <div>
-        <div>Upload Data</div>
-        <Upload {...prop}>
-          <Button icon={<UploadOutlined />} size='small'>select file</Button>
-        </Upload>
-      </div>
-      {
-        attributeData && Object.keys(attributeData).map((type, index) => {
-          return (
-            <AttributeBlock
-              key={type}
-              originalData={originalData}
-              data={attributeData[type]}
-              title={type}
-              attributeType={String(index)}
-              color={colorArray[index]}
-              filterData={filterData}
-              setFilterData={setFilterData}
-            ></AttributeBlock>
-          )
-        })
-      }
-      <div>
-        {filterData && Object.keys(filterData).length !== 0 && <div>Filter</div>}
+    <>
+      <div className='data-view-box'>
+        <div className='upload-box'>
+          <div style={{fontWeight: 'bold', marginBottom: '0.5em'}}>Select data</div>
+          <Upload {...prop}>
+            <Button icon={<UploadOutlined />} size='small'>Change</Button>
+          </Upload>
+        </div>
         {
-          Object.keys(filterData).map((attribute, index) => {
+          attributeData && Object.keys(attributeData).map((type, index) => {
             return (
-              <FilterBlock
-                key={attribute}
-                attributeCharacter={attributeCharacter}
-                attribute={attribute}
+              <AttributeBlock
+                key={type}
+                originalData={originalData}
+                data={attributeData[type]}
+                title={type}
+                attributeType={String(index)}
+                color={colorArray[index]}
                 filterData={filterData}
                 setFilterData={setFilterData}
-              ></FilterBlock>
+              ></AttributeBlock>
             )
           })
         }
+        <div>
+          {filterData && Object.keys(filterData).length !== 0 && <div>Filter</div>}
+          {
+            Object.keys(filterData).map((attribute, index) => {
+              return (
+                <FilterBlock
+                  key={attribute}
+                  attributeCharacter={attributeCharacter}
+                  attribute={attribute}
+                  filterData={filterData}
+                  setFilterData={setFilterData}
+                ></FilterBlock>
+              )
+            })
+          }
+        </div>
       </div>
-      <div style={{display: 'flex', justifyContent: 'center'}}><Button>Confirm</Button></div>
-    </div>
+      <div style={{ display: 'flex', justifyContent: 'center', margin: 10 }}>
+        <Button style={{width: 250}} size='large'>Confirm</Button>
+      </div>
+    </>
+    
   );
 };
 
