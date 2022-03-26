@@ -1,24 +1,17 @@
 import React, { Component } from "react";
-import { Col, Row, Space } from "antd";
+import { Col, Row, Space, Switch } from "antd";
 import ChartDisplay from "./ChartDisplay";
-import ConstraintSelect from "./DataChart/ConstraintSelect";
 import { chart_constraint, constraint_chart } from "../ChartsView/constants";
-import ParameterDisplay from "./DataChart/ParameterDisplay";
+import "./ProtectedDataDisplay.less";
 export default class ProtectedDataDisplay extends Component {
   constructor(props) {
     super(props);
     this.original_chart_data = [];
     this.protected_chart_data = [];
     this.state = {
-      constraint: {},
+      showConstraint: true,
+      showScheme: true,
     };
-  }
-  componentDidUpdate() {}
-  getSnapshotBeforeUpdate(prevProps, prevState) {
-    if (prevProps.defaultConstraint !== this.props.defaultConstraint) {
-      this.setState({ constraint: this.props.defaultConstraint });
-    }
-    return null;
   }
   getData(type_data, constraint) {
     const [x, y, computation, color, fitting, chartType, step] = [
@@ -148,7 +141,7 @@ export default class ProtectedDataDisplay extends Component {
   }
   render() {
     const self = this;
-    const constraint = this.state.constraint;
+    const constraint = this.props.constraint;
     const originalData = [];
     this.props.originalData.forEach((data) => {
       originalData[data.index] = data;
@@ -159,34 +152,45 @@ export default class ProtectedDataDisplay extends Component {
       ? this.getData(selectedOriginalData, constraint)
       : [];
     const protected_chart_data = constraint.x_axis
-      ? this.getData(this.props.protectedData, constraint)
+      ? this.getData(
+          this.state.showScheme
+            ? this.props.protectedData
+            : this.props.baselineData,
+          constraint
+        )
       : [];
     const original_data = constraint.x_axis
       ? this.getData(this.props.originalData, constraint)
       : [];
     return (
       <Row gutter={24}>
-        <Col span={8}>
-          <Row>
-            <ConstraintSelect
-              constraints={this.props.constraints}
-              selectConstraint={(constraint) => {
-                self.setState({ constraint });
+        <Col span={24} className="show-constraint">
+          <Space direction="horizontal">
+            <div className="show-constraint-label">Constraint</div>
+            <Switch
+              className="show-constraint-switcher"
+              checkedChildren="Show"
+              unCheckedChildren="Hide"
+              size="small"
+              defaultChecked
+              onChange={(checked) => {
+                self.setState({ showConstraint: checked });
               }}
-            ></ConstraintSelect>
-            <ParameterDisplay
-              params={{
-                Original: this.state.constraint.data
-                  ? this.state.constraint.data.length
-                  : 0,
-                Protected: this.state.constraint.protectedData
-                  ? this.state.constraint.protectedData.length
-                  : 0,
+            />
+            <div className="show-constraint-label">Comparison</div>
+            <Switch
+              className="show-constraint-switcher"
+              checkedChildren="Scheme"
+              unCheckedChildren="BaseLine"
+              defaultChecked
+              size="small"
+              onChange={(checked) => {
+                self.setState({ showScheme: checked });
               }}
-            ></ParameterDisplay>
-          </Row>
+            />
+          </Space>
         </Col>
-        <Col span={16}>
+        <Col span={24}>
           <ChartDisplay
             name="protected-chart"
             oldData={original_chart_data}
@@ -194,6 +198,7 @@ export default class ProtectedDataDisplay extends Component {
             originalData={original_data}
             attributes={this.props.attribute_character || {}}
             constraint={constraint}
+            showConstraint={this.state.showConstraint}
           ></ChartDisplay>
         </Col>
       </Row>

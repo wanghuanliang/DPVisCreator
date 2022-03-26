@@ -464,10 +464,10 @@ export default class DataChart extends Component {
       self.updateParams({ mean });
     }
     if (type === "rect") {
-      const [x, y] = [range[0][0], range[1][0]];
+      const [x, y] = [range[0][0], range[0][1]];
       const [width, height] = [
-        range[0][1] - range[0][0],
-        range[1][1] - range[1][0],
+        range[1][0] - range[0][0],
+        range[1][1] - range[0][1],
       ];
       this.svg
         .append("rect")
@@ -494,6 +494,7 @@ export default class DataChart extends Component {
   initCluster() {
     const self = this;
     const data = self.selectedSeriesData;
+    const type = self.brushArea.type;
     if (data.length > 0) {
       const xSamples = data.map((d) => d[0]);
       const ySamples = data.map((d) => d[1]);
@@ -507,10 +508,21 @@ export default class DataChart extends Component {
       ry = (ry - cy) * Math.sqrt(vary);
       rx *= 2;
       ry *= 2;
-      self.createCluster(self.brushArea.type, self.brushArea.range);
       self.updateParams({
-        type: self.brushArea.type,
-        area: self.brushArea.range.map((point) => self.convertFromPixel(point)),
+        type,
+        area:
+          type === "rect"
+            ? [
+                self.convertFromPixel([
+                  self.brushArea.range[0][0],
+                  self.brushArea.range[1][0],
+                ]),
+                self.convertFromPixel([
+                  self.brushArea.range[0][1],
+                  self.brushArea.range[1][1],
+                ]),
+              ]
+            : self.brushArea.range.map((point) => self.convertFromPixel(point)),
         mean: [meanx, meany],
         radius: [Math.sqrt(varx) * 2, Math.sqrt(vary) * 2],
       });

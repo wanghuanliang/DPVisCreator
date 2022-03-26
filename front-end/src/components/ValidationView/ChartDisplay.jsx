@@ -34,6 +34,7 @@ export default class ChartDisplay extends Component {
         oldData={this.props.oldData}
         originalData={this.props.originalData}
         constraint={this.props.constraint}
+        showConstraint={this.props.showConstraint}
       ></DataChart>
     );
   }

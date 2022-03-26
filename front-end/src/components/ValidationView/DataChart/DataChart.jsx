@@ -206,9 +206,13 @@ export default class DataChart extends Component {
     this.width = 345;
     this.generateData();
     const type = this.props.type;
-    if (type === "scatter") this.getCluster();
-    else if (type === "line") this.getCorrelation();
-    else if (type === "bar") this.getOrder();
+    if (this.props.showConstraint) {
+      if (type === "scatter") this.getCluster();
+      else if (type === "line") this.getCorrelation();
+      else if (type === "bar") this.getOrder();
+    } else {
+      this.clearSvg();
+    }
   }
   getLegendOption() {
     const values = this.props.attributes[2].values;
@@ -225,7 +229,10 @@ export default class DataChart extends Component {
       left: "10%",
       width: "60%",
       top: "3%",
-      selected: { original_data: true, ...this.selectedLegend },
+      selected: {
+        original_data: this.props.showConstraint ? true : false,
+        ...this.selectedLegend,
+      },
     };
   }
   getScatterChartOption() {
@@ -388,10 +395,10 @@ export default class DataChart extends Component {
   createCluster(type, range) {
     const self = this;
     if (type === "rect") {
-      const [x, y] = [range[0][0], range[1][0]];
+      const [x, y] = [range[0][0], range[0][1]];
       const [width, height] = [
-        range[0][1] - range[0][0],
-        range[1][1] - range[1][0],
+        range[1][0] - range[0][0],
+        range[1][1] - range[0][1],
       ];
       this.svg
         .append("rect")

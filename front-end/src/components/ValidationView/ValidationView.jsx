@@ -1,12 +1,40 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./ValidationView.less";
 import * as d3 from "d3";
-import { Table, Tag, Radio, Space, Select } from "antd";
+import { Table, Tag, Radio, Space, Select, Switch, Button } from "antd";
 import LineupTable from "./LineupTable";
 import ProtectedDataDisplay from "./ProtectedDataDisplay";
 import "./ValidationView.less";
+import { ExportOutlined } from "@ant-design/icons";
 
 const { Option } = Select;
+
+const staticMetrics = {
+  statistical: {
+    title: "Statistical",
+    options: ["KSTest", "CSTest"],
+  },
+  detection: {
+    title: "Detection",
+    options: ["LogisticDetection"],
+  },
+  // privacy: {
+  //   title: "Privacy",
+  //   options: ["CAP", "MLP"],
+  // },
+  cluster: {
+    title: "Cluster",
+    options: ["JS", "Wasserstein"],
+  },
+  correlation: {
+    title: "Correlation",
+    options: ["DTW", "PearsonCorrelationDiff"],
+  },
+  order: {
+    title: "Order",
+    options: ["NDCG", "mAP"],
+  },
+};
 
 const ValidationView = (props) => {
   const { attributeCharacter, originalData, constraints, schemes } = props;
@@ -16,6 +44,9 @@ const ValidationView = (props) => {
     statistical: ["KSTest"],
     detection: ["LogisticDetection"],
     privacy: ["CAP", "MLP"],
+    cluster: ["JS", "Wasserstein"],
+    correlation: ["DTW", "PearsonCorrelationDiff"],
+    order: ["NDCG", "mAP"],
   }); // 选中的展示指标
 
   // schemes变化时候，默认选中schemes最后一项
@@ -23,51 +54,49 @@ const ValidationView = (props) => {
     setSelectedSchemeId(schemes.length - 1);
   }, [schemes]);
 
+  const [shouldMerge, setShouldMerge] = useState(true);
   const renderSolutionControlPanel = () => {
     return (
       <div className="solution-control-panel">
         <Space>
-          <span>Statistical metrics</span>
-          <Select
-            size="small"
-            mode="multiple"
-            allowClear
-            style={{ width: 200 }}
-            defaultValue={selectedMetrics.statistical}
-            onChange={(value) =>
-              setSelectedMetrics({ ...selectedMetrics, statistical: value })
-            }
-          >
-            <Option key="KSTest">KSTest</Option>
-            <Option key="CSTest">CSTest</Option>
-          </Select>
-          <span>Detection metrics</span>
-          <Select
-            size="small"
-            mode="multiple"
-            allowClear
-            style={{ width: 200 }}
-            defaultValue={selectedMetrics.detection}
-            onChange={(value) =>
-              setSelectedMetrics({ ...selectedMetrics, detection: value })
-            }
-          >
-            <Option key="LogisticDetection">LogisticDetection</Option>
-          </Select>
-          <span>Privacy metrics</span>
-          <Select
-            size="small"
-            mode="multiple"
-            allowClear
-            style={{ width: 200 }}
-            defaultValue={selectedMetrics.privacy}
-            onChange={(value) =>
-              setSelectedMetrics({ ...selectedMetrics, privacy: value })
-            }
-          >
-            <Option key="CAP">CAP</Option>
-            <Option key="MLP">MLP</Option>
-          </Select>
+          {Object.keys(staticMetrics).map((metrics) => (
+            <>
+              <span key={"span-" + metrics}>
+                {staticMetrics[metrics].title}
+              </span>
+              <Select
+                key={"select-" + metrics}
+                size="small"
+                mode="multiple"
+                allowClear
+                style={{ width: 138, flexWrap: "nowrap" }}
+                maxTagCount={1}
+                maxTagTextLength={4}
+                defaultValue={selectedMetrics[metrics]}
+                onChange={(value) =>
+                  setSelectedMetrics({ ...selectedMetrics, [metrics]: value })
+                }
+              >
+                {staticMetrics[metrics].options.map((option) => (
+                  <Option key={option}>{option}</Option>
+                ))}
+              </Select>
+            </>
+          ))}
+          <span style={{ marginLeft: 10 }}>Merge</span>
+          <Switch
+            checkedChildren="Merge"
+            unCheckedChildren="Unmerge"
+            defaultChecked
+            size="default"
+            style={{ width: 80, marginRight: 100 }}
+            onChange={(checked) => {
+              setShouldMerge(checked);
+            }}
+          />
+          <Button size="small" icon={<ExportOutlined />}>
+            Export
+          </Button>
         </Space>
       </div>
     );
@@ -84,28 +113,37 @@ const ValidationView = (props) => {
     };
   });
 
+  const [selectedConstraint, setSelectedConstraint] = useState(
+    patternConstraints.length > 0 ? patternConstraints[0] : {}
+  );
+
   return (
     <div style={{ position: "relative" }}>
       {renderSolutionControlPanel()}
       <div style={{ display: "flex" }}>
-        <div style={{ width: "60%", margin: 10 }}>
+        <div style={{ width: "75%", margin: 10 }}>
           <LineupTable
             schemes={schemes}
             selectedSchemeId={selectedSchemeId}
             setSelectedSchemeId={setSelectedSchemeId}
             selectedMetrics={selectedMetrics}
+            constraints={props.constraints}
+            selectedConstraint={selectedConstraint}
+            selectConstraint={(constraint) => {
+              setSelectedConstraint(constraint);
+            }}
+            merge={shouldMerge}
           ></LineupTable>
         </div>
         {/* 保护后的视图放这里 */}
-        <div style={{ width: "40%" }}>
+        <div style={{ width: "25%" }}>
           <ProtectedDataDisplay
             attribute_character={attributeCharacter}
             originalData={originalData}
             protectedData={scheme.protected_data}
+            baselineData={originalData}
             constraints={patternConstraints || []}
-            defaultConstraint={
-              patternConstraints.length > 0 ? patternConstraints[0] : null
-            }
+            constraint={selectedConstraint}
           ></ProtectedDataDisplay>
         </div>
       </div>

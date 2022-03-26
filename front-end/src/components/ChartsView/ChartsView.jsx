@@ -169,7 +169,7 @@ class ChartsView extends Component {
     const constraints = this.state.constraints;
     constraints.push({
       ...constraint,
-      id: "C" + this.constraintId,
+      id: "P" + this.constraintId,
       newly: true,
     });
     this.constraintId++;
