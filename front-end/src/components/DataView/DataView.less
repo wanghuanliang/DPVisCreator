@@ -1,7 +1,11 @@
 .data-view-box {
-  padding: 10px 5px;
-  height: 950px;
-  overflow-y: auto;
+  font-size: 16px;
+  padding: 0px 8px;
+  height: 900px;
+  // margin-right: 6px;
+  // position: absolute;
+  // margin-right: -8px;
+  overflow-y: overlay;
   overflow-x: hidden;
   // 自定义滚动条样式
   &::-webkit-scrollbar {
@@ -16,5 +20,36 @@
     background: #f1f1f1;
     border-radius: 4px;
     border: 1px solid #dfdfdf;
+  }
+}
+
+// antd upload样式修改
+.upload-box {
+  position: relative;
+  height: 70px;
+
+  .ant-upload {
+    position: absolute;
+    right: 0px;
+  }
+
+  .ant-btn > .anticon + span {
+    margin-left: 0px;
+  }
+
+  .anticon-upload {
+    display: none;
+  }
+
+  // .ant-upload-list-item-info {
+  //   width: 180px;
+  //   position: absolute;
+  //   top: -6px;
+  // }
+
+  .ant-upload-list-text-container {
+    width: 180px;
+    position: absolute;
+    top: 26px;
   }
 }

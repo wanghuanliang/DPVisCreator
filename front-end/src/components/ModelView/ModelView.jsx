@@ -19,7 +19,7 @@ import ParallelPlot from "./ParallelPlot";
 import SankeyPlot from "./SankeyPlot";
 import Matrix from "./Matrix/Matrix";
 import Legend from "./Matrix/Legend";
-import AlluvialPlot from "./AlluvialPlot";
+import AlluvialPlot from "./AlluvialPlot/AlluvialPlot";
 import WeightsTable from "./WeightsTable/WeightsTable";
 import Projection from "./Projection/Projection";
 import { getMetrics } from "../../services/api";
@@ -181,6 +181,13 @@ const ModelView = (props) => {
               ></Projection>
             )}
           </g>
+          {/* 切换按钮 */}
+          <foreignObject x={700} y={10} width={400} height={50}>
+            <div style={{display: 'flex', justifyContent: 'flex-end'}}>
+              <div className="exchange-button">Sankey diagram</div>
+              <div className="exchange-button">Bayesian network</div>
+            </div>
+         </foreignObject>
           <g transform="translate(400,0)">
             <SankeyPlot
               totalNum={totalNum}
