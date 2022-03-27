@@ -3,15 +3,15 @@ import * as d3 from 'd3';
 
 // const [svgWidth, svgHeight] = [400, 400];
 const margin = {
-  top: 20,
+  top: 10,
   right: 20,
-  bottom: 100,
-  left: 50,
+  bottom: 20,
+  left: 20,
 }
 // const width = svgWidth - margin.left - margin.right,
 //   height = svgHeight - margin.top - margin.bottom;
 
-const width = 300, height = 300;
+const width = 360, height = 290;
 const svgWidth = width + margin.left + margin.right,
   svgHeight = height + margin.bottom + margin.top;
 
@@ -23,9 +23,8 @@ const Projection = (props) => {
     setSelectedId,
   } = props;
 
-  const xAxisRef = useRef(null);
   const xScale = d3.scaleLinear()
-    .domain([0, 100])
+    .domain([0, 124])
     .range([0, width]);
   
   const yScale = d3.scaleLinear()
@@ -34,8 +33,8 @@ const Projection = (props) => {
   
   const rScale = xScale;
   
-  const xGrid = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
-  const yGrid = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+  const xGrid = [0,124];
+  const yGrid = [0,100];
   
   return <svg width={svgWidth} height={svgHeight}>
     {/* 散点图 */}
@@ -51,13 +50,13 @@ const Projection = (props) => {
               y2={yScale(100)}
               stroke='#ccc'
             ></line>   
-            <text
+            {/* <text
               x={xScale(x)}
               y={yScale(0)}
               textAnchor='middle'
               dy={20}
               fill='#888'
-            >{x}</text>
+            >{x}</text> */}
           </g>
         })}
 
@@ -68,19 +67,19 @@ const Projection = (props) => {
           return <g key={y}>
             <line
               x1={xScale(0)}
-              x2={xScale(100)}
+              x2={xScale(124)}
               y1={yScale(y)}
               y2={yScale(y)}
               stroke='#ccc'
             ></line>   
-            <text
+            {/* <text
               x={xScale(0)}
               y={yScale(y)}
               alignmentBaseline='central'
               textAnchor='end'
               dx={-10}
               fill='#888'
-            >{y}</text>
+            >{y}</text> */}
           </g>
         })}
       </g>

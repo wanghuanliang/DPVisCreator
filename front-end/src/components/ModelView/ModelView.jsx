@@ -51,6 +51,7 @@ const patternColor = {
   cluster: "#9cb0a2",
   correlation: "#c39b83",
   order: "#bbafd1",
+  others: '#ccc',
 };
 
 const ModelView = (props) => {
@@ -72,17 +73,19 @@ const ModelView = (props) => {
   const [selectedId, setSelectedId] = useState([]); // 选中点亮的约束
 
   // modelData修改，更新patternWeights、constraintsPos, 清空selectedId
+  // 用于绘制weightsTable，initialPatternWeight, patternType, 
   const [initialPatternWeight, patternType] = useMemo(() => {
     const initial = {},
       patternType = {};
     constraints.forEach((constraint) => {
-      initial[constraint.id] = 0.8;
+      initial[constraint.id] = 0.5;
       patternType[constraint.id] = constraint.type;
     });
-    initial.others = 0.8;
+    initial.others = 0.5;
     patternType.others = "others";
     return [initial, patternType];
   }, [constraints]);
+  console.log('initial', initialPatternWeight);
   useEffect(() => {
     setPatternWeights(initialPatternWeight);
     setConstraintsPos(constraints);
@@ -97,7 +100,6 @@ const ModelView = (props) => {
     Object.entries(patternWeights).forEach(([key, value]) => {
       data.weights.push({ id: key, weight: value });
     });
-    console.log("updateClick", data);
     setWeights(data)
       .then((res) => setConstraintsPos(res.data.constraints))
       .catch((e) => console.log("e", e));
@@ -161,17 +163,18 @@ const ModelView = (props) => {
       {/* 一个大的svg放置小svg */}
       {modelData && (
         <svg width={svgWidth} height={svgHeight}>
-          <foreignObject x={30} y={10} width={350} height={200}>
+          <foreignObject x={0} y={0} width={400} height={230}>
             {patternWeights && (
               <WeightsTable
                 patternWeights={patternWeights}
                 setPatternWeights={setPatternWeights}
                 handleUpdateClick={handleUpdateClick}
                 patternType={patternType}
+                patternColor={patternColor}
               ></WeightsTable>
             )}
           </foreignObject>
-          <g transform="translate(0, 200)">
+          <g transform="translate(0, 230)">
             {constraintsPos && (
               <Projection
                 constraints={constraintsPos}
