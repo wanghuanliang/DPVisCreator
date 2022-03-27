@@ -5,7 +5,7 @@ import ChartsView from "../components/ChartsView/ChartsView";
 import ModelView from "../components/ModelView/ModelView";
 import Validation from "../components/ValidationView/ValidationView";
 import LineupTable from "../components/ValidationView/LineupTable";
-import { ReactComponent as Title } from "../assets/title.svg";
+import { ReactComponent as Title } from "../assets/title2.svg";
 import { ReactComponent as DataViewIcon } from "../assets/data-view-icon.svg";
 import { ReactComponent as ChartsViewIcon } from "../assets/charts-view-icon.svg";
 import { ReactComponent as ModelViewIcon } from "../assets/model-view-icon.svg";
@@ -163,7 +163,7 @@ const IndexPage = () => {
           <div className="block validation-view">
             <div className="view-title">
               <ValidationViewIcon className="view-icon" />
-              Validation View
+              Solution View
             </div>
             <div className="cross-line"></div>
             {!!schemes.length && (
