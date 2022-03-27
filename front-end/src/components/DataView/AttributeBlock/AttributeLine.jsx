@@ -32,7 +32,7 @@ const AttributeLine = (props) => {
           {/* <span style={{ padding: '0px 5px' }}><SettingOutlined /></span> */}
           <span style={{ padding: '0px 5px' }}>{attribute}</span>
         </span>
-        {attributeType !== '2' &&<span>
+        {attributeType !== 'Computations' &&<span>
           <span style={{ padding: '0px 5px' }} onClick={handleFilterClick}>
             <FilterIcon className='small-icon' />
           </span>
@@ -41,8 +41,8 @@ const AttributeLine = (props) => {
           </span>
         </span>}
       </div>
-      {isShowOverview && attributeType === '0' && <ColumnPlot originalData={originalData} attribute={attribute} svgWidth={divRef.current.offsetWidth}></ColumnPlot>}
-      {isShowOverview && attributeType === '1' && <DensityPlot originalData={originalData} attribute={attribute} svgWidth={divRef.current.offsetWidth}></DensityPlot>}
+      {isShowOverview && attributeType === 'Dimensions' && <ColumnPlot originalData={originalData} attribute={attribute} svgWidth={divRef.current.offsetWidth}></ColumnPlot>}
+      {isShowOverview && attributeType === 'Measures' && <DensityPlot originalData={originalData} attribute={attribute} svgWidth={divRef.current.offsetWidth}></DensityPlot>}
     </div>
   )
 

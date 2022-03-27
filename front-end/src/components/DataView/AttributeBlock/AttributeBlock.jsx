@@ -8,10 +8,9 @@ const AttributeBlock = (props) => {
   const num = data.length;
 
   return (
-    <div style={{margin: '5px 0px'}}>
+    <div style={{margin: '5px 0px 20px 0px'}}>
       <div className='attribute-block-title'>
         <span>{`${title} (${num})`}</span>
-        <span style={{textDecoration: 'underline', fontSize: 12}}>hide</span>
       </div>
       {
         data.map((attr) => {
