@@ -7,7 +7,7 @@ import AttributeBlock from './AttributeBlock/AttributeBlock';
 import FilterBlock from './FilterBlock/FilterBlock';
 import { session } from '../../services/api';
 
-const colorArray = ['#d0ddfa', '#d4f2e5', '#f6c3cb'];
+const colorArray = ['#92B0C9', '#92B0C9', '#92B0C9'];
 
 const DataView = (props) => {
 
@@ -21,6 +21,11 @@ const DataView = (props) => {
     filterData,
     setFilterData,
   } = props;
+
+  // 新增recordNum, attributeNum
+  const recordNum = originalData.length;
+  const attributeNum = Object.keys(attributeCharacter).length;
+
 
   const prop = {
     action: 'http://101.43.188.187:30010/api/getOriginalData',
@@ -52,10 +57,14 @@ const DataView = (props) => {
     <>
       <div className='data-view-box'>
         <div className='upload-box'>
-          <div style={{fontWeight: 'bold', marginBottom: '0.5em'}}>Select data</div>
+          <div style={{fontWeight: '500', marginBottom: '0.5em', fontSize:18}}>Select data</div>
           <Upload {...prop}>
             <Button icon={<UploadOutlined />} size='small'>Change</Button>
           </Upload>
+          <div style={{position:'absolute',bottom: 0}}>
+            <div>#Record: {recordNum}</div>
+            <div>#Attributes: {attributeNum}</div>
+          </div>
         </div>
         {
           attributeData && Object.keys(attributeData).map((type, index) => {
@@ -65,7 +74,7 @@ const DataView = (props) => {
                 originalData={originalData}
                 data={attributeData[type]}
                 title={type}
-                attributeType={String(index)}
+                attributeType={type}
                 color={colorArray[index]}
                 filterData={filterData}
                 setFilterData={setFilterData}
