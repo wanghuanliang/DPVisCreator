@@ -78,11 +78,12 @@ const DataView = (props) => {
                 color={colorArray[index]}
                 filterData={filterData}
                 setFilterData={setFilterData}
+                attributeCharacter={attributeCharacter}
               ></AttributeBlock>
             )
           })
         }
-        <div>
+        {/* <div>
           {filterData && Object.keys(filterData).length !== 0 && <div>Filter</div>}
           {
             Object.keys(filterData).map((attribute, index) => {
@@ -97,7 +98,7 @@ const DataView = (props) => {
               )
             })
           }
-        </div>
+        </div> */}
       </div>
       <div style={{ display: 'flex', justifyContent: 'center', margin: 10 }}>
         <Button style={{width: 250}} size='large'>Confirm</Button>

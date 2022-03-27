@@ -175,7 +175,6 @@ const SankeyPlot = (props) => {
             return <g key={constraintId}>
               {
                 constraintsSankeyPos[constraintId].map((d, i) => {
-                  console.log();
                   // let color = "#000";
                   return <path
                     key={i}

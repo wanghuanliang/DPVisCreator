@@ -68,7 +68,7 @@ const ColumnPlot = (props) => {
       .attr("y", d => yScale(d.value))
       .attr("width", xScale.bandwidth())
       .attr("height", d => height - yScale(d.value))
-      .attr("fill", "#d0ddfa")
+      .attr("fill", "#92B0C9")
       .on('mouseover', (d, i) => {
         svg.append("text")
           .attr("class", "tooltip")

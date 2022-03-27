@@ -47,7 +47,6 @@ const AlluvialPlot = memo((props) => {
     })
     return [linePos, currentStartPos];
   }, [proportionData, totalNum, axisOrder])
-  console.log('start', currentStartPos);
   // flowPos: [{flowIndex: 0, constraintId: c1, pos: ['d', 'd', 'd']}]
   const flowPos = useMemo(() => {
     const flowPos = [];

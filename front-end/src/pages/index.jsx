@@ -33,7 +33,7 @@ const IndexPage = () => {
     initialAttributeCharacter
   );
   // 过滤条件数据{'age': {attributeType: '1', max: '55', min: '10'}, 'sex': {attributeType: '0', value: ['male', 'female']}}
-  const [filterData, setFilterData] = useState({});
+  const [filterData, setFilterData] = useState(initialAttributeCharacter);
   const [afterFilterData, setAfterFilterData] = useState(originalData);
   // 约束
   const [constraints, setConstraints] = useState(null);

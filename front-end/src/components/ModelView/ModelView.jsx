@@ -85,7 +85,6 @@ const ModelView = (props) => {
     patternType.others = "others";
     return [initial, patternType];
   }, [constraints]);
-  console.log('initial', initialPatternWeight);
   useEffect(() => {
     setPatternWeights(initialPatternWeight);
     setConstraintsPos(constraints);

@@ -47,7 +47,6 @@ const WeightsTable = (props) => {
     patternType,
     patternColor,
   } = props;
-  console.log('props', props);
   
   // 表格数据
   const tableData = useMemo(() => {
@@ -70,12 +69,9 @@ const WeightsTable = (props) => {
     legendData.cluster = [];
     legendData.others = [];
     const weightsSum = Object.values(patternWeights).reduce((pre, cur) => pre + cur, 0);
-    console.log(patternWeights);
     Object.keys(patternWeights).forEach(id => {
       const type = patternType[id];
       const weight = patternWeights[id];
-      console.log('patternType', patternType);
-      console.log('id', id);
       legendData[type].push({
         id: id,
         proportion: weight / weightsSum,
@@ -83,7 +79,6 @@ const WeightsTable = (props) => {
     })
     return legendData
   }, [patternWeights]); //放入patternType会出问题，patternType更新完成后，patternWeights还没有更新
-  console.log('patternWeights', legendData);
   //图例总长度
   const totalHeight = useMemo(() => {
     return 170 - (Object.keys(patternWeights).length - 1) * 1; //总长度150
@@ -99,7 +94,6 @@ const WeightsTable = (props) => {
       for (let i = 0; i < legendData[type].length; i++) {
         sumHeight += legendData[type][i].proportion * totalHeight + 1;
       }
-      console.log('sumHeight', sumHeight);
       let pos = (nowPos + sumHeight - 1 + nowPos) / 2;
       legendFontPos.push({
         type: type,
@@ -172,7 +166,6 @@ const WeightsTable = (props) => {
           legendFontPos.map(obj => {
             const type = obj.type;
             const pos = obj.pos;
-            console.log(type, pos);
             return <div key={type} className='legend-font' style={{
               top: pos - 7
             }}>{type}</div>

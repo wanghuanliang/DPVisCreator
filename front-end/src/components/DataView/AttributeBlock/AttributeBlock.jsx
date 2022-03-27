@@ -3,7 +3,16 @@ import './AttributeBlock.less';
 import AttributeLine from './AttributeLine';
 
 const AttributeBlock = (props) => {
-  const { originalData, data, title, attributeType, color, filterData, setFilterData } = props;
+  const {
+    originalData,
+    data,
+    title,
+    attributeType,
+    color,
+    filterData,
+    setFilterData,
+    attributeCharacter,
+  } = props;
   
   const num = data.length;
 
@@ -23,6 +32,7 @@ const AttributeBlock = (props) => {
               color={color}
               filterData={filterData}
               setFilterData={setFilterData}
+              attributeCharacter={attributeCharacter}
             ></AttributeLine>
           )
         })

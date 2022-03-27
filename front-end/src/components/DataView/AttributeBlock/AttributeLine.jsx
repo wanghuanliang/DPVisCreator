@@ -1,13 +1,22 @@
 import React, { useEffect, useState, useRef } from 'react';
 import './AttributeLine.less';
 import DensityPlot from '../../common/DensityPlot';
-import ColumnPlot from '../../common/ColumnPlot';
+// import ColumnPlot from '../../common/ColumnPlot';
 import { ReactComponent as FilterIcon } from "../../../assets/filter-icon.svg";
 import { ReactComponent as OverviewExpandView } from "../../../assets/overview-expand-icon.svg";
 import { ReactComponent as OverviewFoldView } from "../../../assets/overview-fold-icon.svg";
-
+import ColumnPlot from '../MiniPlot/ColumnPlot';
 const AttributeLine = (props) => {
-  const { originalData, attribute, attributeType, color, filterData, setFilterData } = props;
+  const {
+    originalData,
+    attribute,
+    attributeType,
+    color,
+    filterData,
+    setFilterData,
+    attributeCharacter,
+  } = props;
+
   const [isShowOverview, setIsShowOverview] = useState(false);
   const divRef = useRef(null);
 
@@ -41,8 +50,22 @@ const AttributeLine = (props) => {
           </span>
         </span>}
       </div>
-      {isShowOverview && attributeType === 'Dimensions' && <ColumnPlot originalData={originalData} attribute={attribute} svgWidth={divRef.current.offsetWidth}></ColumnPlot>}
-      {isShowOverview && attributeType === 'Measures' && <DensityPlot originalData={originalData} attribute={attribute} svgWidth={divRef.current.offsetWidth}></DensityPlot>}
+      {isShowOverview && attributeType === 'Dimensions' && <ColumnPlot
+        originalData={originalData}
+        attribute={attribute}
+        svgWidth={divRef.current.offsetWidth}
+        filterData={filterData}
+        setFilterData={setFilterData}
+        attributeCharacter={attributeCharacter}
+       ></ColumnPlot>}
+      {isShowOverview && attributeType === 'Measures' && <DensityPlot
+        originalData={originalData}
+        attribute={attribute}
+        svgWidth={divRef.current.offsetWidth}
+        filterData={filterData}
+        setFilterData={setFilterData}
+        attributeCharacter={attributeCharacter}
+      ></DensityPlot>}
     </div>
   )
 
