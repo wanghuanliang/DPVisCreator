@@ -6,6 +6,10 @@ axios.defaults.baseURL = "http://101.43.188.187:30010/api"; // 服务器后端
 const session = String(new Date().getTime());
 export { session };
 
+export const getFilteredData = (params) =>
+  axios.post("/getFilteredData", { ...params, session_id: session });
+export const getBaseData = (params) =>
+  axios.get("/getBaseData", { params: { ...params, session_id: session } });
 export const setPattern = (params) =>
   axios.post("/setPattern", { ...params, session_id: session });
 export const setWeights = (params) =>

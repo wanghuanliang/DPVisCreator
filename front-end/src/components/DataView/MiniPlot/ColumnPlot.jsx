@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import * as d3 from 'd3';
 import { Checkbox } from 'antd';
+import { cloneDeep } from 'lodash';
 
 // {female: 662, male: 676} 
 // bugfix: children的kind为数值型，作为键会转化为字符型，改用map,还能保证有序
@@ -66,13 +67,24 @@ const ColumnPlot = (props) => {
         data.map((obj, index) => {
           const kind = obj[attribute];
           const value = obj.value;
+          // const checked = filterData?.[attribute]?.values.includes(kind);
+          let allChecked = true; // 是否之前为全选
+          let checked = true;
+          if (filterData.hasOwnProperty(attribute)) {
+            allChecked = false;
+            checked = filterData?.[attribute]?.values.includes(kind);
+          } else {
+            // 没有该属性，为全选
+            allChecked = true;
+            checked = true;
+          }
           return <g key={String(kind)}>
             <rect
               x={xScale(kind)}
               y={yScale(value)}
               width={xScale.bandwidth()}
               height={height - yScale(value)}
-              fill="#92B0C9"
+              fill={checked ? '#92B0C9' : '#CED4DE'}
             ></rect>
             <text
               x={xScale(kind) + xScale.bandwidth() / 2}
@@ -90,14 +102,19 @@ const ColumnPlot = (props) => {
             >
               <Checkbox
                 // defaultChecked={true}
-                checked={filterData[attribute].values.includes(kind)}
+                checked={checked}
                 onChange={(e) => {
                   if (e.target.checked) { 
-                    // 之前false，点击为true，加上这一项
-                    filterData[attribute].values.splice(index, 0, kind);
+                    // 之前false，点击为true，加上这一项, 全选上后需要去掉对象里的该属性
+                    filterData[attribute].values.push(kind);
+                    if (filterData[attribute].values.length === attributeCharacter[attribute].values.length)
+                      delete filterData[attribute];
                   } else {
-                    // const pos = filterData[attribute].values.indexOf(kind);
-                    filterData[attribute].values.splice(index, 1);
+                    // 之前true，点击为false，处理之前是全选特殊情况
+                    if (allChecked)
+                      filterData[attribute] = cloneDeep(attributeCharacter[attribute]);
+                    const pos = filterData[attribute].values.indexOf(kind);
+                    filterData[attribute].values.splice(pos, 1);
                   }
                   setFilterData({ ...filterData });
                 }}

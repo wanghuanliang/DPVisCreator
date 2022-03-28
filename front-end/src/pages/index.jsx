@@ -27,14 +27,16 @@ import { Button, message } from "antd";
 
 const IndexPage = () => {
   // 不使用redux，直接在此处定义全局数据，通过props传递
+  // 原始数据
   const [originalData, setOriginalData] = useState(initialOriginalData);
   const [attributeData, setAttributeData] = useState(initialAttributeData);
   const [attributeCharacter, setAttributeCharacter] = useState(
     initialAttributeCharacter
   );
   // 过滤条件数据{'age': {attributeType: '1', max: '55', min: '10'}, 'sex': {attributeType: '0', value: ['male', 'female']}}
-  const [filterData, setFilterData] = useState(initialAttributeCharacter);
-  const [afterFilterData, setAfterFilterData] = useState(originalData);
+  const [filterData, setFilterData] = useState({});
+  const [filterOriginalData, setFilterOriginalData] = useState(initialOriginalData);
+  const [filterAttributeCharacter, setFilterAttributeCharacter] = useState(initialAttributeCharacter);
   // 约束
   const [constraints, setConstraints] = useState(null);
   const [augmentedData, setAugmentedData] = useState(null);
@@ -112,6 +114,8 @@ const IndexPage = () => {
             setAttributeCharacter={setAttributeCharacter}
             filterData={filterData}
             setFilterData={setFilterData}
+            setFilterOriginalData={setFilterOriginalData}
+            setFilterAttributeCharacter={setFilterAttributeCharacter}
           ></DataView>
         </div>
 
@@ -133,8 +137,8 @@ const IndexPage = () => {
               </div>
               <div className="cross-line"></div>
               <ChartsView
-                original_data={originalData}
-                attribute_character={attributeCharacter}
+                original_data={filterOriginalData}
+                attribute_character={filterAttributeCharacter}
                 constraints={constraints}
                 setConstraints={setConstraints}
                 setModelData={setModelData}
@@ -168,8 +172,8 @@ const IndexPage = () => {
             <div className="cross-line"></div>
             {!!schemes.length && (
               <Validation
-                attributeCharacter={attributeCharacter}
-                originalData={originalData}
+                attributeCharacter={filterAttributeCharacter}
+                originalData={filterOriginalData}
                 constraints={constraints}
                 schemes={schemes}
                 setSchemes={setSchemes}

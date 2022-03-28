@@ -53,7 +53,7 @@ const DensityPlot = (props) => {
     // Compute kernel density estimation
     const kde = kernelDensityEstimator(kernelEpanechnikov(7), x.ticks(40))
     const density = kde(data);
-    // console.log(kde(data));
+    console.log('density', density);
     // let sum = 0
     // density.forEach((array, index) => sum += array[1]);
     // console.log('sum', sum);
@@ -72,7 +72,7 @@ const DensityPlot = (props) => {
     svg.append("path")
         .attr("class", "mypath")
         .datum(density)
-        .attr("fill", "#daf1e6")
+        .attr("fill", "#92B0C9")
         .attr("opacity", "0.8")
         .attr("stroke", "#8ab0d0")
         .attr("stroke-width", 1)

@@ -5,7 +5,7 @@ import { Upload, Button, DatePicker, Space } from 'antd'
 import { UploadOutlined } from '@ant-design/icons';
 import AttributeBlock from './AttributeBlock/AttributeBlock';
 import FilterBlock from './FilterBlock/FilterBlock';
-import { session } from '../../services/api';
+import { session, getFilteredData, getBaseData } from '../../services/api';
 
 const colorArray = ['#92B0C9', '#92B0C9', '#92B0C9'];
 
@@ -20,12 +20,15 @@ const DataView = (props) => {
     setAttributeCharacter,
     filterData,
     setFilterData,
+    setFilterOriginalData,
+    setFilterAttributeCharacter,
   } = props;
+
+  const [drops, setDrops] = useState([]); //去掉的属性
 
   // 新增recordNum, attributeNum
   const recordNum = originalData.length;
   const attributeNum = Object.keys(attributeCharacter).length;
-
 
   const prop = {
     action: 'http://101.43.188.187:30010/api/getOriginalData',
@@ -38,6 +41,7 @@ const DataView = (props) => {
         setOriginalData(data.original_data);
         setAttributeData(data.attribute_data);
         setAttributeCharacter(data.attribute_character);
+        setFilterData(data.attribute_character);
       }
     },
     defaultFileList: [
@@ -52,6 +56,20 @@ const DataView = (props) => {
       showRemoveIcon: false,
     }
   };
+
+  const handleConfirmClick = () => {
+    getFilteredData({ filter: filterData, drops: drops })
+      .then(res => {
+        console.log('123',res);
+        setFilterOriginalData(res.data.data.original_data);
+        setFilterAttributeCharacter(res.data.data.attribute_character);
+        // 完成后，再发送getBaseData请求
+        getBaseData()
+          .then(res => console.log('res', res))
+          .catch(e => console.log(e));
+      })
+      .catch(e => console.log(e));
+  }
 
   return (
     <>
@@ -79,6 +97,8 @@ const DataView = (props) => {
                 filterData={filterData}
                 setFilterData={setFilterData}
                 attributeCharacter={attributeCharacter}
+                drops={drops}
+                setDrops={setDrops}
               ></AttributeBlock>
             )
           })
@@ -101,7 +121,7 @@ const DataView = (props) => {
         </div> */}
       </div>
       <div style={{ display: 'flex', justifyContent: 'center', margin: 10 }}>
-        <Button style={{width: 250}} size='large'>Confirm</Button>
+        <Button style={{width: 250}} size='large' onClick={handleConfirmClick}>Confirm</Button>
       </div>
     </>
     

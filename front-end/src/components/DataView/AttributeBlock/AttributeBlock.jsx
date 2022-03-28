@@ -12,6 +12,8 @@ const AttributeBlock = (props) => {
     filterData,
     setFilterData,
     attributeCharacter,
+    drops,
+    setDrops,
   } = props;
   
   const num = data.length;
@@ -33,6 +35,8 @@ const AttributeBlock = (props) => {
               filterData={filterData}
               setFilterData={setFilterData}
               attributeCharacter={attributeCharacter}
+              drops={drops}
+              setDrops={setDrops}
             ></AttributeLine>
           )
         })
