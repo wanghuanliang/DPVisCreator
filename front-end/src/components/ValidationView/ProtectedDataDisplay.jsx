@@ -164,9 +164,8 @@ export default class ProtectedDataDisplay extends Component {
       : [];
     return (
       <Row gutter={24}>
-        <Col span={24} className="show-constraint">
-          <Space direction="horizontal">
-            <div className="show-constraint-label">Constraint</div>
+        <Col span={24}>
+          <Space direction="vertical" className="show-constraint">
             <Switch
               className="show-constraint-switcher"
               checkedChildren="Show"
@@ -177,11 +176,10 @@ export default class ProtectedDataDisplay extends Component {
                 self.setState({ showConstraint: checked });
               }}
             />
-            <div className="show-constraint-label">Comparison</div>
             <Switch
               className="show-constraint-switcher"
-              checkedChildren="Scheme"
-              unCheckedChildren="BaseLine"
+              checkedChildren={"Scheme#" + this.props.selectedSchemeId}
+              unCheckedChildren="PrivBayes"
               defaultChecked
               size="small"
               onChange={(checked) => {

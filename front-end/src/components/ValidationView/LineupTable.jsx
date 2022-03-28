@@ -48,6 +48,7 @@ const schemes = [
 
 const LineupTable = (props) => {
   const {
+    prevBayes,
     schemes,
     selectedSchemeId,
     setSelectedSchemeId,
@@ -128,6 +129,41 @@ const LineupTable = (props) => {
 
   const totalWidth = 150;
   const divHeight = 20;
+  const originalColor = "#8ab0d0";
+  const risingColor = "#cdf3e4";
+  const fallingColor = "#f8d0cb";
+  const unselectedColor = "#ced4de";
+  const renderRatingElement = (obj, title) => {
+    const n = selectedConstraint[title].length;
+    if (n === 0) return;
+    const divWidth = totalWidth / n;
+    return (
+      <div
+        style={
+          merge
+            ? { width: totalWidth, height: divHeight, display: "flex" }
+            : {
+                justifyContent: "space-between",
+                height: divHeight,
+                display: "flex",
+              }
+        }
+      >
+        {selectedMetrics[title].map((kind) => {
+          return (
+            <div
+              style={{
+                width: divWidth * obj[kind],
+                height: divHeight,
+                backgroundColor: originalColor,
+                marginRight: 3,
+              }}
+            ></div>
+          );
+        })}
+      </div>
+    );
+  };
   // obj: {CAP: 0.5, MLP: 0.6}
   // title: privacy
   // selectedMetrics {privacy: ['CAP]}

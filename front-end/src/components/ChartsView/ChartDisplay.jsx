@@ -52,6 +52,7 @@ export default class ChartDisplay extends Component {
         attributes={attributes}
         data={this.props.data}
         constraint={this.props.constraint}
+        showConstraint={this.props.showConstraint}
         updateConstraintParams={this.props.updateConstraintParams}
         onSelected={(selected) => {
           this.onSelected(selected);

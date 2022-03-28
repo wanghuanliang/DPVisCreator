@@ -59,6 +59,17 @@ const ValidationView = (props) => {
     return (
       <div className="solution-control-panel">
         <Space>
+          <span style={{ marginLeft: 10 }}>Merge</span>
+          <Switch
+            checkedChildren="Merge"
+            unCheckedChildren="Unmerge"
+            defaultChecked
+            size="small"
+            style={{ width: 80 }}
+            onChange={(checked) => {
+              setShouldMerge(checked);
+            }}
+          />
           {Object.keys(staticMetrics).map((metrics) => (
             <>
               <span key={"span-" + metrics}>
@@ -83,18 +94,11 @@ const ValidationView = (props) => {
               </Select>
             </>
           ))}
-          <span style={{ marginLeft: 10 }}>Merge</span>
-          <Switch
-            checkedChildren="Merge"
-            unCheckedChildren="Unmerge"
-            defaultChecked
-            size="default"
-            style={{ width: 80, marginRight: 100 }}
-            onChange={(checked) => {
-              setShouldMerge(checked);
-            }}
-          />
-          <Button size="small" icon={<ExportOutlined />}>
+          <Button
+            size="small"
+            icon={<ExportOutlined />}
+            style={{ marginLeft: 140 }}
+          >
             Export
           </Button>
         </Space>
@@ -140,6 +144,7 @@ const ValidationView = (props) => {
           <ProtectedDataDisplay
             attribute_character={attributeCharacter}
             originalData={originalData}
+            selectedSchemeId={selectedSchemeId}
             protectedData={scheme.protected_data}
             baselineData={originalData}
             constraints={patternConstraints || []}
