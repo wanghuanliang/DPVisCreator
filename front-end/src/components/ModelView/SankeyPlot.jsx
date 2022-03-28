@@ -2,7 +2,7 @@ import React, { memo, useMemo } from 'react';
 import * as d3 from 'd3';
 
 const svgWidth = 700, svgHeight = 540;
-const margin = { top: 80, right: 50, bottom: 30, left: 60 };
+const margin = { top: 30, right: 50, bottom: 30, left: 60 };
 const width = svgWidth - margin.left - margin.right,
   height = svgHeight - margin.top - margin.bottom;
 

@@ -71,6 +71,7 @@ const ModelView = (props) => {
   const [patternWeights, setPatternWeights] = useState(null); // 权重{'c1': 1, 'c2': 1}
   const [constraintsPos, setConstraintsPos] = useState(null); // 约束坐标
   const [selectedId, setSelectedId] = useState([]); // 选中点亮的约束
+  const [showSankey, setShowSankey] = useState(true); //是否展示桑基图
 
   // modelData修改，更新patternWeights、constraintsPos, 清空selectedId
   // 用于绘制weightsTable，initialPatternWeight, patternType, 
@@ -137,16 +138,18 @@ const ModelView = (props) => {
             onChange={(value) => setPrivacyBudget(value)}
           ></InputNumber>
           <div style={{ display: "inline-block", width: 20 }}></div>
-          <div className="constraints-block">
-            <div style={{ backgroundColor: patternColor.original }}>
-              Original
+          <div style={{display: 'flex', justifyContent: 'flex-end'}}>
+            <div
+              className="exchange-button"
+              onClick={() => setShowSankey(true)}
+              style={{borderColor: showSankey ? '#FF9845' : '#F5F5F5'}}
+            >Sankey diagram</div>
+            <div
+              className="exchange-button"
+              onClick={() => setShowSankey(false)}
+              style={{borderColor: showSankey ? '#F5F5F5' : '#FF9845'}}
+            >Bayesian network</div>
             </div>
-            <div style={{ backgroundColor: patternColor.cluster }}>Cluster</div>
-            <div style={{ backgroundColor: patternColor.correlation }}>
-              Correlation
-            </div>
-            <div style={{ backgroundColor: patternColor.order }}>Order</div>
-          </div>
           <div style={{ display: "inline-block", width: 20 }}></div>
           <Button size="small" onClick={handleRecordClick}>
             Record
@@ -183,24 +186,20 @@ const ModelView = (props) => {
               ></Projection>
             )}
           </g>
-          {/* 切换按钮 */}
-          <foreignObject x={700} y={10} width={400} height={50}>
-            <div style={{display: 'flex', justifyContent: 'flex-end'}}>
-              <div className="exchange-button">Sankey diagram</div>
-              <div className="exchange-button">Bayesian network</div>
-            </div>
-         </foreignObject>
           <g transform="translate(400,0)">
-            <SankeyPlot
-              totalNum={totalNum}
-              axisOrder={axisOrder}
-              proportionData={proportionData}
-              sankeyData={sankeyData}
-              constraints={constraints}
-              patternColor={patternColor}
-              patternType={patternType}
-              selectedId={selectedId}
-            ></SankeyPlot>
+            {showSankey ?
+              <SankeyPlot
+                totalNum={totalNum}
+                axisOrder={axisOrder}
+                proportionData={proportionData}
+                sankeyData={sankeyData}
+                constraints={constraints}
+                patternColor={patternColor}
+                patternType={patternType}
+                selectedId={selectedId}
+              ></SankeyPlot> :
+              <BayesianNetwork></BayesianNetwork>
+            }
           </g>
 
           {/* <ClockBlock></ClockBlock> */}
