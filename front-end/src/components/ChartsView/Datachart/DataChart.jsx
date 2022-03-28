@@ -289,9 +289,13 @@ export default class DataChart extends Component {
     this.width = 345;
     this.generateData();
     const type = this.props.type;
-    if (type === "scatter") this.getCluster();
-    else if (type === "line") this.getCorrelation();
-    else if (type === "bar") this.getOrder();
+    if (this.props.showConstraint) {
+      if (type === "scatter") this.getCluster();
+      else if (type === "line") this.getCorrelation();
+      else if (type === "bar") this.getOrder();
+    } else {
+      this.clearSvg();
+    }
   }
   getLegendOption() {
     const values = this.props.attributes[2].values;

@@ -1,10 +1,12 @@
 import React, { Component } from "react";
-import { Col, Row } from "antd";
+import { Button, Col, Row, Switch } from "antd";
 import ChartMenu from "./ChartMenu";
 import ChartDisplay from "./ChartDisplay";
 import ConstraintSelect from "./Datachart/ConstraintSelect";
 import { chart_constraint, constraint_chart } from "./constants";
 import "./ChartsView.less";
+import Title from "antd/lib/typography/Title";
+import { getModelData } from "../../services/api";
 class ChartsView extends Component {
   constructor(props) {
     super(props);
@@ -14,6 +16,7 @@ class ChartsView extends Component {
     this.constraintId = 0;
     this.state = {
       constraints: [],
+      shouldShowShadow: true,
       original_constraint: {},
       original_chart_data: [],
       protected_chart_data: [],
@@ -242,13 +245,21 @@ class ChartsView extends Component {
     });
     const totalSelected = totalSelectedData.length;
     return {
-      "Currently Selected": "" + currentSelected + "/" + total,
-      "Total Selected": "" + totalSelected + "/" + total,
-      Patterns: patterns.length,
-      Attributes: attributes.length,
+      current: {
+        "Currently selected records": "" + currentSelected + "/" + total,
+      },
+      total: {
+        "Total selected records": "" + totalSelected + "/" + total,
+        "Total selected attributes":
+          attributes.length +
+          "/" +
+          Object.keys(this.props.attribute_character).length,
+        "Total selected patterns": patterns.length,
+      },
     };
   }
   render() {
+    const showingParameters = this.getShowingParameters();
     return (
       <Row gutter={24}>
         <ChartMenu
@@ -267,16 +278,109 @@ class ChartsView extends Component {
           removeConstraint={() =>
             this.removeConstraint(this.state.original_constraint)
           }
-          saveConstraint={() => {
-            if (this.state.original_constraint.id)
-              this.updateConstraint(this.state.original_constraint);
-            else this.insertConstraint(this.state.original_constraint);
-          }}
         ></ChartMenu>
+        <Col span={18}>
+          <Title level={5}>Pattern selection</Title>
+        </Col>
+        <Col span={6}>
+          <Switch
+            checkedChildren="Show Shadow"
+            unCheckedChildren="Hide Shadow"
+            defaultChecked
+            size="default"
+            style={{}}
+            onChange={(checked) => {
+              this.setState({ shouldShowShadow: checked });
+            }}
+          />
+        </Col>
+        <Col span={12}>
+          <Row>
+            <Col span={24} className="config-item-content-parameters-left">
+              {Object.keys(showingParameters.current).map((key) => {
+                const label = "#" + key + ":";
+                let param = showingParameters.current[key];
+                return (
+                  <div
+                    key={"config-parameters-" + key}
+                    className="config-item-content-parameters-line"
+                  >
+                    {label}
+                    <br />
+                    {param}
+                  </div>
+                );
+              })}
+            </Col>
+            <Col span={11} style={{ marginRight: 18 }}>
+              <Button
+                size="small"
+                block
+                onClick={() => {
+                  if (this.state.original_constraint.id)
+                    this.updateConstraint(this.state.original_constraint);
+                  else this.insertConstraint(this.state.original_constraint);
+                }}
+              >
+                Save
+              </Button>
+            </Col>
+            <Col span={11}>
+              <Button
+                size="small"
+                block
+                onClick={() => {
+                  const self = this;
+                  const jcts = JSON.parse(
+                    JSON.stringify(self.state.constraints)
+                  );
+                  const cts = [];
+                  for (let i = 0; i < self.state.constraints.length; i++) {
+                    if (jcts[i].selected) {
+                      let constraint = jcts[i];
+                      delete constraint.selected;
+                      delete constraint.svgImage;
+                      delete constraint.canvasImage;
+                      delete constraint.params.path;
+                      cts.push(constraint);
+                    }
+                  }
+                  getModelData({ constraints: cts })
+                    .then((res) => {
+                      self.props.setModelData(res.data.data);
+                    })
+                    .catch((e) => {
+                      console.log(e);
+                      self.props.setModelData(null);
+                    });
+                }}
+              >
+                Finish
+              </Button>
+            </Col>
+          </Row>
+        </Col>
+        <Col span={12} className="config-item-content-parameters-right">
+          {Object.keys(showingParameters.total).map((key) => {
+            const label = "#" + key + ":";
+            let param = showingParameters.total[key];
+            const str = label + param;
+            return (
+              <div
+                key={"config-parameters-" + key}
+                className="config-item-content-parameters-line"
+              >
+                {str}
+                <br />
+              </div>
+            );
+          })}
+        </Col>
         <Col span={18}>
           <ChartDisplay
             name="original-chart"
             data={this.state.original_chart_data}
+            showConstraint={this.state.shouldShowShadow}
             attributes={this.props.attribute_character || {}}
             constraint={this.state.original_constraint}
             updateConstraint={(constraint) => this.updateConstraint(constraint)}

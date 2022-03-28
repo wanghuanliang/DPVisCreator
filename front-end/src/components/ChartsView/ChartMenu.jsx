@@ -50,33 +50,8 @@ export default class ChartMenu extends Component {
       rowComputeIndex: 0,
       colorIndex: -1,
       typeIndex: -1,
-      fitIndex: -1,
       step: NaN,
     };
-  }
-  finishPatternSettings() {
-    const self = this;
-    const jcts = JSON.parse(JSON.stringify(self.props.constraints));
-    const cts = [];
-    for (let i = 0; i < self.props.constraints.length; i++) {
-      if (jcts[i].selected) {
-        let constraint = jcts[i];
-        delete constraint.selected;
-        delete constraint.svgImage;
-        delete constraint.canvasImage;
-        delete constraint.params.fitting;
-        delete constraint.params.path;
-        cts.push(constraint);
-      }
-    }
-    getModelData({ constraints: cts })
-      .then((res) => {
-        self.props.setModelData(res.data.data);
-      })
-      .catch((e) => {
-        console.log(e);
-        self.props.setModelData(null);
-      });
   }
   checkState() {
     if (
@@ -105,12 +80,7 @@ export default class ChartMenu extends Component {
           ? computation_type[this.state.rowComputeIndex]
           : null,
       x_step: this.state.step,
-      fitting:
-        this.state.fitIndex >= 0
-          ? chartFitnesses[this.state.typeIndex][this.state.fitIndex]
-          : this.state.typeIndex === 1
-          ? 2
-          : "Normal",
+      fitting: this.state.typeIndex === 1 ? 3 : "Normal",
     };
   }
   render() {
@@ -258,23 +228,10 @@ export default class ChartMenu extends Component {
         </Row>
       );
     }
-    const constraint = this.props.constraint;
-    const showingParameters = this.props.showingParameters;
     function getAvaliableCharts() {
       return chart_type.map((type, index) => {
         return { type, index };
       });
-    }
-    function getChartFitnesses() {
-      if (constraint.id)
-        return chartFittingMap[constraint.type].map((type, index) => {
-          return { type, index };
-        });
-      else if (self.state.typeIndex >= 0)
-        return chartFitnesses[self.state.typeIndex].map((type, index) => {
-          return { type, index };
-        });
-      else return [];
     }
     return (
       <>
@@ -370,84 +327,6 @@ export default class ChartMenu extends Component {
               {getYAxisElements()}
             </Col>
           </Row>
-        </Col>
-        <Col span={24}>
-          <Title level={5}>Pattern selection</Title>
-        </Col>
-        <Col span={12}>
-          <Row>
-            <Col span={8} className="menu-item-label">
-              <div className="config-item-label">Fitting</div>
-            </Col>
-            <Col span={16} className="menu-item-content">
-              <Select
-                value={
-                  constraint.params
-                    ? chartFittingMap[constraint.type].indexOf(
-                        constraint.params.fitting
-                      )
-                    : self.state.fitIndex < 0
-                    ? null
-                    : self.state.fitIndex
-                }
-                size="small"
-                placeholder="Fit by"
-                onChange={(value) => {
-                  constraint.params
-                    ? self.updateConstraintParams({
-                        fitting: chartFittingMap[constraint.type][value],
-                      })
-                    : self.setState({ fitIndex: value }, self.checkState);
-                }}
-              >
-                {getChartFitnesses().map((fit) => (
-                  <Option value={fit.index} key={"chart-fit-" + fit.index}>
-                    {fit.type}
-                  </Option>
-                ))}
-              </Select>
-            </Col>
-
-            <Col
-              span={11}
-              className="menu-item-content"
-              style={{ marginRight: 18 }}
-            >
-              <Button size="small" block onClick={this.saveConstraint}>
-                Save
-              </Button>
-            </Col>
-            <Col span={11} className="menu-item-content">
-              <Button
-                size="small"
-                block
-                onClick={() => {
-                  this.finishPatternSettings();
-                }}
-              >
-                Finish
-              </Button>
-            </Col>
-          </Row>
-        </Col>
-        <Col
-          span={12}
-          className="menu-item-content config-item-content-parameters"
-        >
-          {Object.keys(showingParameters).map((key) => {
-            const label = "#" + key + ":";
-            let param = showingParameters[key];
-            const str = label + param;
-            return (
-              <div
-                key={"config-parameters-" + key}
-                className="config-item-content-parameters-line"
-              >
-                {str}
-                <br />
-              </div>
-            );
-          })}
         </Col>
       </>
     );
