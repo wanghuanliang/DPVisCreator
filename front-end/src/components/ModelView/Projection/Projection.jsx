@@ -84,6 +84,109 @@ const Projection = (props) => {
         })}
       </g>
       {/* 图例 */}
+      
+      {/* <PlotLegend
+        style={{ width: 50, height: 50}}
+      ></PlotLegend> */}
+      <g transform='translate(255,0)'>
+        <defs>
+          <marker
+            id="triangle"
+            markerUnits="strokeWidth"
+            markerWidth="1"
+            markerHeight="1"
+            refX="1"
+            refY="0.5"
+            orient="auto"
+          >
+            <path
+              fill="#5D7092"
+              d="M 0 0 L 1 0.5 L 0 1 z"
+            />
+          </marker>
+        </defs>
+        <g>
+          <circle
+            cx={10}
+            cy={10}
+            r={5}
+            fill='#CED4DE'
+          ></circle>
+          <circle
+            cx={30}
+            cy={10}
+            r={5}
+            fill='#CED4DE'
+          ></circle>
+          <line
+            x1={10}
+            y1={10}
+            x2={30}
+            y2={10}
+            stroke='#5D7092'
+            markerEnd='url(#triangle)'
+          ></line>
+          <text
+            x={40}
+            y={9}
+            fontSize={8}
+          >Data distribution</text>
+          <text
+            x={40}
+            y={18}
+            fontSize={8}
+          >distance</text>
+        </g>
+        <g>
+          <rect
+            x={7}
+            y={25}
+            width={26}
+            height={8}
+            fill='#CED4DE'
+          ></rect>
+          <line
+            x1={20}
+            y1={25}
+            x2={20}
+            y2={33}
+            stroke='#5D7092'
+          ></line>
+          <text
+            x={40}
+            y={32}
+            fontSize={8}
+          >MI influence</text>
+        </g>
+        <g>
+          <rect
+            x={7}
+            y={40}
+            width={26}
+            height={8}
+            fill='#CDF3E4'
+          ></rect>
+          <text
+            x={40}
+            y={47}
+            fontSize={8}
+          >Positive</text>
+        </g>
+        <g>
+        <rect
+            x={7}
+            y={54}
+            width={26}
+            height={8}
+            fill='#F8D0CB'
+          ></rect>
+          <text
+             x={40}
+             y={61}
+             fontSize={8}
+          >Negative</text>
+        </g>
+      </g>
       {/* 圆点 */}
       <g className='circle'>
         {
