@@ -25,7 +25,9 @@ def mutual_info_score(labels_true, labels_pred, axes, weights):
     pi = np.ravel(contingency.sum(axis=1))
     pj = np.ravel(contingency.sum(axis=0))
 
-    flag = True  # 添加权重的开关
+    flag = False
+    if weights is not None:  # 权重如果传空，这里不再做任何操作
+        flag = True  # 添加权重的开关
     if flag:
         ori_sum = np.sum(nz_val)
         nz_val = np.float64(nz_val)

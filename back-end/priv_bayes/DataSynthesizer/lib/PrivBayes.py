@@ -102,6 +102,11 @@ def calculate_k(num_attributes, num_tuples, target_usefulness=4, epsilon=0.1):
         return ans
 
 
+def worker_mutual(paras):
+    axis1, axis2, dataset = paras
+    mi = mutual_information(dataset[axis1], dataset[[axis2]], None)
+    return axis1, axis2, mi
+
 def worker(paras):
     child, V, num_parents, split, dataset, weights = paras
     parents_pair_list = []
@@ -117,6 +122,25 @@ def worker(paras):
             mutual_info_list.append(mi)
 
     return parents_pair_list, mutual_info_list
+
+
+def get_mutual_info_list(dataset, k=2):
+    """
+    计算在当前pattern对应的数据下，任意两个维度的互信息
+    Parameters
+    ----------
+    dataset
+    k
+
+    Returns
+    -------
+    返回互信息列表[("age", "bmi", "0.539")]
+    """
+    axes = dataset.columns.tolist()
+    with Pool() as pool:
+        res_list = pool.map(worker_mutual, [(axis1, axis2, dataset) for axis1, axis2 in product(axes, axes) if axis1 != axis2])
+
+    return res_list
 
 
 def greedy_bayes(dataset: DataFrame, k: int, epsilon: float, weights: {}):

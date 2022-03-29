@@ -13,6 +13,7 @@ from priv_bayes.DataSynthesizer.datatypes.StringAttribute import StringAttribute
 from priv_bayes.DataSynthesizer.datatypes.utils.DataType import DataType
 from priv_bayes.DataSynthesizer.lib import utils
 from priv_bayes.DataSynthesizer.lib.PrivBayes import greedy_bayes, construct_noisy_conditional_distributions
+from priv_bayes.DataSynthesizer.lib.PrivBayes import get_mutual_info_list
 
 
 class DataDescriber:
@@ -121,8 +122,8 @@ class DataDescriber:
 
         for column in self.attr_to_column.values():
             column.infer_distribution()
-
-        self.inject_laplace_noise_into_distribution_per_attribute(epsilon)
+        if epsilon is not None:
+            self.inject_laplace_noise_into_distribution_per_attribute(epsilon)
         # record attribute information in json format
         self.data_description['attribute_description'] = {}
         for attr, column in self.attr_to_column.items():
@@ -189,6 +190,32 @@ class DataDescriber:
         self.data_description['bayesian_network'] = self.bayesian_network
         self.data_description['conditional_probabilities'] = construct_noisy_conditional_distributions(
             self.bayesian_network, self.df_encoded, epsilon / 2)
+
+    def get_mutual_info_init(self,
+                             dataset_file,
+                             epsilon=0.1,
+                             attribute_to_datatype: Dict[str, DataType] = None,
+                             attribute_to_is_categorical: Dict[str, bool] = None,
+                             attribute_to_is_candidate_key: Dict[str, bool] = None,
+                             categorical_attribute_domain_file: str = None,
+                             numerical_attribute_ranges: Dict[str, List] = None,
+                             seed=0):
+        self.describe_dataset_in_independent_attribute_mode(dataset_file,
+                                                            epsilon,
+                                                            attribute_to_datatype,
+                                                            attribute_to_is_categorical,
+                                                            attribute_to_is_candidate_key,
+                                                            categorical_attribute_domain_file,
+                                                            numerical_attribute_ranges,
+                                                            seed)
+        self.df_encoded = self.encode_dataset_into_binning_indices()
+        if self.df_encoded.shape[1] < 2:
+            raise Exception("Correlated Attribute Mode requires at least 2 attributes(i.e., columns) in dataset.")
+
+    def get_mutual_info_list(self, cur_ids):
+        # cur_ids: 当前pattern选取的数据下标
+
+        return get_mutual_info_list(self.df_encoded.iloc[cur_ids])
 
     def read_dataset_from_csv(self, file_name=None):
         try:

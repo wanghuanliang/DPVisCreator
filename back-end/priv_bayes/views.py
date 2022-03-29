@@ -1,5 +1,6 @@
 import json
 import copy
+import itertools
 import pandas as pd
 import numpy as np
 from sklearn.manifold import MDS
@@ -7,7 +8,8 @@ from priv_bayes.kl import get_w_distance
 from django.http import HttpResponse
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-from sdv.metrics.tabular import KSTest, CSTest, LogisticDetection, CategoricalCAP, NumericalMLP
+import networkx as nx
+# from sdv.metrics.tabular import KSTest, CSTest, LogisticDetection, CategoricalCAP, NumericalMLP
 # 隐私保护相关包
 
 from priv_bayes.DataSynthesizer.DataDescriber import DataDescriber
@@ -15,6 +17,48 @@ from priv_bayes.DataSynthesizer.DataGenerator import DataGenerator
 from priv_bayes.DataSynthesizer.lib.utils import display_bayesian_network
 
 tmp_data_storage = {}
+
+
+def point_inside_polygon(x, y, poly, include_edges=True):
+    '''
+    Test if point (x,y) is inside polygon poly.
+
+    poly is N-vertices polygon defined as
+    [(x1,y1),...,(xN,yN)] or [(x1,y1),...,(xN,yN),(x1,y1)]
+    (function works fine in both cases)
+
+    Geometrical idea: point is inside polygon if horisontal beam
+    to the right from point crosses polygon even number of times.
+    Works fine for non-convex polygons.
+    '''
+    n = len(poly)
+    inside = False
+
+    p1x, p1y = poly[0]
+    for i in range(1, n + 1):
+        p2x, p2y = poly[i % n]
+        if p1y == p2y:
+            if y == p1y:
+                if min(p1x, p2x) <= x <= max(p1x, p2x):
+                    # point is on horisontal edge
+                    inside = include_edges
+                    break
+                elif x < min(p1x, p2x):  # point is to the left from current edge
+                    inside = not inside
+        else:  # p1y!= p2y
+            if min(p1y, p2y) <= y <= max(p1y, p2y):
+                xinters = (y - p1y) * (p2x - p1x) / float(p2y - p1y) + p1x
+
+                if x == xinters:  # point is right on the edge
+                    inside = include_edges
+                    break
+
+                if x < xinters:  # point is to the left from current edge
+                    inside = not inside
+
+        p1x, p1y = p2x, p2y
+
+    return inside
 
 
 def check_session_id(session_id):
@@ -30,6 +74,8 @@ def index(request):
 
 def solveOriginalData(session_id):
     global tmp_data_storage
+    tmp_data_storage[session_id]['Measures'] = []
+    tmp_data_storage[session_id]['Dimensions'] = []
     ORI_DATA = tmp_data_storage[session_id]['ORI_DATA']
     threshold_value = tmp_data_storage[session_id]['threshold_value']
     df = copy.deepcopy(ORI_DATA)
@@ -112,10 +158,12 @@ def initialize(request):
         "Dimensions": [],
         "Measures": [],
         "INT_TYPE": [],
-        "ORI_DATA": None
+        "ORI_DATA": None,
+        "BASE_SCHEME": None
     }
     df = pd.read_csv(tmp_data_storage[session_id]['DATA_PATH'])
-    tmp_data_storage[session_id]['ORI_DATA'] = df  # 保存原始数据，用于后续数据生成
+    tmp_data_storage[session_id]['ORI_DATA'] = df  # ORI_DATA中的数据是filter过的，用于后续处理
+    tmp_data_storage[session_id]['RAW_DATA'] = copy.deepcopy(df)  # 这个是真的原始数据
     solveOriginalData(session_id)
     ret = {
         "status": "success",
@@ -133,6 +181,7 @@ def destroyed(request):
         }))
     del tmp_data_storage[session_id]
     return HttpResponse(json.dumps({"status": "success"}))
+
 
 def get_mds_result(session_id):
     constraints = tmp_data_storage[session_id]['constraints']
@@ -169,6 +218,29 @@ def get_mds_result(session_id):
     return D2_MDS_data
 
 
+def getFilteredData(request):
+    global tmp_data_storage
+    session_id = json.loads(request.body).get('session_id')
+    if not check_session_id(session_id):
+        return HttpResponse(json.dumps({
+            "status": "failed",
+            "err_msg": "disconnected with the server"
+        }))
+    filters = json.loads(request.body).get('filter')
+    cur_df = tmp_data_storage[session_id]['RAW_DATA']
+    for filter_axis in filters:
+        if filters[filter_axis]['attribute_type'] == "Dimensions":
+            vals = filters[filter_axis]['values']
+            cur_df = cur_df.loc[cur_df[filter_axis].isin(vals)]
+        if filters[filter_axis]['attribute_type'] == "Measures":
+            minn = filters[filter_axis]['min']
+            maxx = filters[filter_axis]['max']
+            cur_df = cur_df[(cur_df[filter_axis] >= minn) & (cur_df[filter_axis] <= maxx)]
+    tmp_data_storage[session_id]['ORI_DATA'] = cur_df
+    ret = solveOriginalData(session_id)
+    return HttpResponse(json.dumps(ret))
+
+
 def getModelData(request):
     global tmp_data_storage
     session_id = json.loads(request.body).get('session_id')
@@ -183,7 +255,8 @@ def getModelData(request):
     cur_df = copy.deepcopy(ORI_DATA)
     DEFAULT_CATEGORIES = 3
     constraints = tmp_data_storage[session_id]['constraints'] = json.loads(request.body).get('constraints')  # 每个点的权重百分比
-    tmp_data_storage[session_id]['weights'] = [{"id": constraint['id'], "weight": 1 / len(constraints)} for constraint in constraints]
+    tmp_data_storage[session_id]['weights'] = [{"id": constraint['id'], "weight": 1 / len(constraints)} for constraint
+                                               in constraints]
     weights = np.ones((len(constraints))) * 5
     # slice_methods = json.loads(request.body).get('slice_methods')
     slice_methods = {}  # 暂无slice_methods
@@ -211,15 +284,21 @@ def getModelData(request):
         cut_points[-1] += 1e-10  # 最后一个分位点加一个微小的偏移量
         new_df[axis] = pd.cut(ORI_DATA[axis], cut_points, right=False)
     cur_df['index'] = range(len(cur_df))
-    cur_df['constraint'] = "empty"
+    for constraint in constraints:
+        cur_df['constraint_' + constraint['id']] = False
 
     matrix_data = get_mds_result(session_id)
 
     for constraint in constraints:
-        cur_df.loc[cur_df['index'].isin(constraint['data']), 'constraint'] = constraint['id']
+        cur_df.loc[cur_df['index'].isin(constraint['data']), 'constraint_' + constraint['id']] = True
+
     new_df['count'] = 1
-    new_df['constraint'] = cur_df['constraint']
-    data_df = new_df.groupby(axis_order + ['constraint']).agg('count')
+    constraint_axis_list = []
+    for constraint in constraints:
+        cur_cons = 'constraint_' + constraint['id']
+        constraint_axis_list.append(cur_cons)
+        new_df[cur_cons] = cur_df[cur_cons]
+    data_df = new_df.groupby(axis_order + constraint_axis_list).agg('count')
     c_df = pd.DataFrame(data_df)
     c_df.reset_index(inplace=True)
     raw_data = json.loads(c_df.to_json(orient="records"))
@@ -251,23 +330,39 @@ def getModelData(request):
         proportion_data[axis] = cur_proportiondata
 
     flow_data = []
+    for_background_flow_data = []
     idx = 0
     for item in filtered_data:
-        cur_flow = {"flow_index": idx, "constraint_id": item['constraint'], "num": item['count'], "pos": {}}
+        cur_bk_flow = {"flow_index": idx, "num": item['count'], "pos": {}}
         for key in axis_order:
             if key in Measures:
                 for i in range(len(proportion_data[key])):
                     if proportion_data[key][i]['minn'] == item[key]['left']:
-                        cur_flow['pos'][key] = i
+                        cur_bk_flow['pos'][key] = i
                         break
             else:
                 for i in range(len(proportion_data[key])):
                     if proportion_data[key][i]['value'] == item[key]:
-                        cur_flow['pos'][key] = i
+                        cur_bk_flow['pos'][key] = i
                         break
-        flow_data.append(cur_flow)
-        idx = idx + 1
-
+        for cons in constraint_axis_list:
+            if item[cons] == False:
+                continue
+            cur_flow = {"flow_index": idx, "constraint_id": cons.split('_')[1], "num": item['count'], "pos": {}}
+            for key in axis_order:
+                if key in Measures:
+                    for i in range(len(proportion_data[key])):
+                        if proportion_data[key][i]['minn'] == item[key]['left']:
+                            cur_flow['pos'][key] = i
+                            break
+                else:
+                    for i in range(len(proportion_data[key])):
+                        if proportion_data[key][i]['value'] == item[key]:
+                            cur_flow['pos'][key] = i
+                            break
+            flow_data.append(cur_flow)
+            idx = idx + 1
+        for_background_flow_data.append(cur_bk_flow)
     sankey_data = []
     conses_ret = [{"id": constraint['id'], "type": constraint['type'], "pos": matrix_data[idx].tolist()
                       , "r": weights[idx]} for idx, constraint in enumerate(constraints)]
@@ -280,7 +375,8 @@ def getModelData(request):
         back_ground = []
         for i in range(x_len):
             for j in range(y_len):
-                tar = sum([flow['num'] for flow in flow_data if flow['pos'][x] == i and flow['pos'][y] == j])
+                tar = sum(
+                    [flow['num'] for flow in for_background_flow_data if flow['pos'][x] == i and flow['pos'][y] == j])
                 if tar == 0:
                     continue
                 back_ground.append({
@@ -310,6 +406,39 @@ def getModelData(request):
             "constraints": cur_conses
         }
         sankey_data.append(cur_data)
+    DATA_PATH = tmp_data_storage[session_id]['DATA_PATH']
+    threshold_value = tmp_data_storage[session_id]['threshold_value']
+
+    describer = DataDescriber(histogram_bins=15, category_threshold=threshold_value)
+    describer.get_mutual_info_init(dataset_file=DATA_PATH,
+                                   epsilon=None)
+    mutual_dict = {}
+    for constraint in constraints:
+        res_list = describer.get_mutual_info_list(constraint['data'])
+        mutual_dict[constraint['id']] = res_list
+
+    num_of_constraints = len(constraints)
+    k = 2
+    matrix_data = np.zeros((num_of_constraints, num_of_constraints))
+    axes = ORI_DATA.columns.tolist()
+    cons2id = {}
+    for idx, constraint in enumerate(constraints):
+        cons2id[constraint['id']] = idx
+    for per in itertools.product(constraints, constraints):
+        if per[0]['id'] == per[1]['id']:
+            continue
+        ans = 0
+        for axis in axes:
+            per1 = [item for item in mutual_dict[per[0]['id']] if item[0] == axis]
+            per2 = [item for item in mutual_dict[per[1]['id']] if item[0] == axis]
+            per1.sort(key=lambda x: x[2])
+            per2.sort(key=lambda x: x[2])
+            per1 = [item[1] for item in per1]
+            per2 = [item[1] for item in per2]
+            intersection = len([val for val in per1[-2:] if val in per2[-2:]])
+            ans += intersection
+            ans -= (k - intersection)
+        matrix_data[cons2id[per[0]['id']]][cons2id[per[1]['id']]] = ans
 
     ret = {
         "status": "success",
@@ -318,7 +447,8 @@ def getModelData(request):
             "axis_order": axis_order,
             "proportion_data": proportion_data,
             "constraints": conses_ret,
-            "sankey_data": sankey_data
+            "sankey_data": sankey_data,
+            "matrix_data": matrix_data.tolist()
         }
     }
     return HttpResponse(json.dumps(ret))
@@ -351,53 +481,45 @@ def setWeights(request):
     return HttpResponse(json.dumps(ret))
 
 
-def getMetrics(request):
-    global tmp_data_storage
-    session_id = request.GET.get('session_id')
-    if not check_session_id(session_id):
-        return HttpResponse(json.dumps({
-            "status": "failed",
-            "err_msg": "disconnected with the server"
-        }))
+def get_bayes_with_weights(session_id):
+    description_file = "priv_bayes/out/dscrpt.json"
     DATA_PATH = tmp_data_storage[session_id]['DATA_PATH']
     ORI_DATA = tmp_data_storage[session_id]['ORI_DATA']
-    Dimensions = tmp_data_storage[session_id]['Dimensions']
-    Measures = tmp_data_storage[session_id]['Measures']
     constraints = tmp_data_storage[session_id]['constraints']
     weights = tmp_data_storage[session_id]['weights']
     threshold_value = tmp_data_storage[session_id]['threshold_value']
     bayes_epsilon = tmp_data_storage[session_id]['bayes_epsilon']
-    # 构建一个weights数组
-    weight_df = copy.deepcopy(ORI_DATA)
-    weight_df[weight_df.columns] = 1
-    ssum = sum(np.array([w["weight"] for w in weights]))
-    # 建立一张axis到id的索引表
-    axis2id = {}
-    for idx, val in enumerate(weight_df.columns):
-        axis2id[val] = idx
-    arr = weight_df.values
-    for w in weights:
-        if w["id"] == "others":
-            continue
-        cons = [c for c in constraints if c["id"] == w["id"]][0]
-        x_id = axis2id.get(cons["x_axis"])
-        y_id = axis2id.get(cons["y_axis"])
-        cur_ids = cons["data"]
-        for id in cur_ids:
-            if x_id is not None:
-                arr[id][x_id] = max(arr[id][x_id], w["weight"] / ssum * 200)
-            if y_id is not None:
-                arr[id][y_id] = max(arr[id][y_id], w["weight"] / ssum * 200)
-        for axis in axis2id:
-            weight_df[axis] = arr[:, axis2id[axis]]
-    cur_scheme_weights = {}
-    dtdt = json.loads(weight_df.to_json(orient="records"))
-    for idx, dt in enumerate(dtdt):
-        cur_scheme_weights[idx] = dt
-    description_file = "priv_bayes/out/dscrpt.json"
-    synthetic_data = "priv_bayes/out/syndata.csv"
+    cur_scheme_weights = None
+    if weights is not None:
+        # 构建一个weights数组
+        weight_df = copy.deepcopy(ORI_DATA)
+        weight_df[weight_df.columns] = 1
+        ssum = sum(np.array([w["weight"] for w in weights]))
+        # 建立一张axis到id的索引表
+        axis2id = {}
+        for idx, val in enumerate(weight_df.columns):
+            axis2id[val] = idx
+        arr = weight_df.values
+        for w in weights:
+            if w["id"] == "others":
+                continue
+            cons = [c for c in constraints if c["id"] == w["id"]][0]
+            x_id = axis2id.get(cons["x_axis"])
+            y_id = axis2id.get(cons["y_axis"])
+            cur_ids = cons["data"]
+            for id in cur_ids:
+                if x_id is not None:
+                    arr[id][x_id] = max(arr[id][x_id], w["weight"] / ssum * 200)
+                if y_id is not None:
+                    arr[id][y_id] = max(arr[id][y_id], w["weight"] / ssum * 200)
+            for axis in axis2id:
+                weight_df[axis] = arr[:, axis2id[axis]]
+        cur_scheme_weights = {}
+        dtdt = json.loads(weight_df.to_json(orient="records"))
+        for idx, dt in enumerate(dtdt):
+            cur_scheme_weights[idx] = dt
 
-    describer = DataDescriber(category_threshold=threshold_value)
+    describer = DataDescriber(histogram_bins=15, category_threshold=threshold_value)
     describer.describe_dataset_in_correlated_attribute_mode(dataset_file=DATA_PATH,
                                                             epsilon=bayes_epsilon,
                                                             k=2,
@@ -409,6 +531,107 @@ def getMetrics(request):
 
     display_bayesian_network(describer.bayesian_network)
 
+    # 认为贝叶斯网络中边权是-1，使用bellman-ford算法得到每个点的最长路径长度
+    axis_ls = ORI_DATA.columns.tolist()
+    G = nx.DiGraph()
+    G.add_nodes_from(axis_ls)
+    linkData = []
+    start_point = describer.bayesian_network[0][1][0]
+    for item in describer.bayesian_network:
+        for fa in item[1]:
+            G.add_edge(fa, item[0], weight=-1)
+            linkData.append([fa, item[0]])
+    res = dict(nx.single_source_bellman_ford_path_length(G, start_point))
+    maxx = 1 - min([val for val in res.values()])
+    nodeData = [[] for i in range(maxx)]
+
+    for dot in res:
+        nodeData[-res[dot]].append(dot)
+
+    ret = {
+        "data": {
+            "network": {
+                "nodeData": nodeData,
+                "linkData": linkData
+            }
+        }
+    }
+    return ret
+
+
+def getBaseData(request):
+    global tmp_data_storage
+    session_id = request.GET.get('session_id')
+    if not check_session_id(session_id):
+        return HttpResponse(json.dumps({
+            "status": "failed",
+            "err_msg": "disconnected with the server"
+        }))
+    ret = get_bayes_with_weights(session_id)
+    # 增加ret['data']['base']，存放base方案各项指标
+    description_file = "priv_bayes/out/dscrpt.json"
+    synthetic_data = "priv_bayes/out/syndata.csv"
+    bayes_epsilon = tmp_data_storage[session_id]['bayes_epsilon']
+    ORI_DATA = tmp_data_storage[session_id]['ORI_DATA']
+
+    generator = DataGenerator()
+    generator.generate_dataset_in_correlated_attribute_mode(len(ORI_DATA), description_file)
+    generator.save_synthetic_data(synthetic_data)
+    synthetic_df = pd.read_csv(synthetic_data)
+    ret['data']['base'] = {
+        "id": "base",
+        "metrics": {
+            "privacy_budget": bayes_epsilon,
+            "statistical_metrics": {
+                "KSTest": 0.85,
+                "CSTest": 0.85,
+                # "KSTest": KSTest.compute(ORI_DATA, synthetic_df),
+                # "CSTest": CSTest.compute(ORI_DATA, synthetic_df)
+            },
+            "detection_metrics": {
+                # "LogisticDetection": LogisticDetection.compute(ORI_DATA, synthetic_df)
+            },
+            "privacy_metrics": {
+                # "MLP": NumericalMLP.compute(ORI_DATA, synthetic_df, key_fields=list(set(Measures).difference(['charges'])), sensitive_fields=['charges']),
+                # "CAP": CategoricalCAP.compute(ORI_DATA, synthetic_df, key_fields=list(set(Dimensions).difference(['children'])), sensitive_fields=['children'])
+                "MLP": 0.85,
+                "CAP": 0.85
+            }
+        },
+        "protected_data": json.loads(synthetic_df.to_json(orient="records")),
+    }
+    tmp_data_storage[session_id]['BASE_SCHEME'] = ret['data']['base']  # 将base存入缓存
+    return HttpResponse(json.dumps(ret))
+
+
+def getNetwork(request):
+    global tmp_data_storage
+    session_id = request.GET.get('session_id')
+    if not check_session_id(session_id):
+        return HttpResponse(json.dumps({
+            "status": "failed",
+            "err_msg": "disconnected with the server"
+        }))
+    ret = get_bayes_with_weights(session_id)
+    return HttpResponse(json.dumps(ret))
+
+
+def getMetrics(request):
+    global tmp_data_storage
+    session_id = request.GET.get('session_id')
+    if not check_session_id(session_id):
+        return HttpResponse(json.dumps({
+            "status": "failed",
+            "err_msg": "disconnected with the server"
+        }))
+    description_file = "priv_bayes/out/dscrpt.json"
+    synthetic_data = "priv_bayes/out/syndata.csv"
+    ORI_DATA = tmp_data_storage[session_id]['ORI_DATA']
+    constraints = tmp_data_storage[session_id]['constraints']
+    bayes_epsilon = tmp_data_storage[session_id]['bayes_epsilon']
+
+    get_bayes_with_weights(session_id)
+
     generator = DataGenerator()
     generator.generate_dataset_in_correlated_attribute_mode(len(ORI_DATA), description_file)
     generator.save_synthetic_data(synthetic_data)
@@ -418,14 +641,25 @@ def getMetrics(request):
     for cons in constraints:
         selected_data = None
         if cons["type"] == "cluster":
-            m_x = cons['params']['mean'][0]
-            m_y = cons['params']['mean'][1]
-            p_a = cons['params']['radius'][0]
-            p_b = cons['params']['radius'][1]
+            area = cons["params"]["area"]
             dt_x = synthetic_df[cons["x_axis"]]
             dt_y = synthetic_df[cons["y_axis"]]
-            selected_data = synthetic_df[
-                (dt_x - m_x) ** 2 / p_a ** 2 + (dt_y - m_y) ** 2 / p_b ** 2 <= 1].index.tolist()
+            if cons["params"]["type"] == "rect":
+                selected_data = synthetic_df[(dt_x >= area[0][0]) & (dt_x <= area[1][0]) & (dt_y >= area[0][1])
+                                             & (dt_y <= area[1][1])].index.tolist()
+            if cons["params"]["type"] == "polygon":
+                selected_data = []
+                for idx, row in synthetic_df.iterrows():
+                    if point_inside_polygon(row[cons["x_axis"]], row[cons["y_axis"]], cons["params"]["area"]):
+                        selected_data.append(idx)
+            # 处理椭圆逻辑代码，现已废弃
+            # m_x = cons['params']['mean'][0]
+            # m_y = cons['params']['mean'][1]
+            # p_a = cons['params']['radius'][0]
+            # p_b = cons['params']['radius'][1]
+            #
+            # selected_data = synthetic_df[
+            #     (dt_x - m_x) ** 2 / p_a ** 2 + (dt_y - m_y) ** 2 / p_b ** 2 <= 1].index.tolist()
         if cons["type"] == "correlation":
             cond1 = synthetic_df[cons['x_axis']] <= cons['params']['range'][1]
             cond2 = synthetic_df[cons['x_axis']] >= cons['params']['range'][0]
@@ -442,13 +676,13 @@ def getMetrics(request):
             "metrics": {
                 "privacy_budget": bayes_epsilon,
                 "statistical_metrics": {
-                    # "KSTest": 0.85,
-                    # "CSTest": 0.85,
-                    "KSTest": KSTest.compute(ORI_DATA, synthetic_df),
-                    "CSTest": CSTest.compute(ORI_DATA, synthetic_df)
+                    "KSTest": 0.85,
+                    "CSTest": 0.85,
+                    # "KSTest": KSTest.compute(ORI_DATA, synthetic_df),
+                    # "CSTest": CSTest.compute(ORI_DATA, synthetic_df)
                 },
                 "detection_metrics": {
-                    "LogisticDetection": LogisticDetection.compute(ORI_DATA, synthetic_df)
+                    # "LogisticDetection": LogisticDetection.compute(ORI_DATA, synthetic_df)
                 },
                 "privacy_metrics": {
                     # "MLP": NumericalMLP.compute(ORI_DATA, synthetic_df, key_fields=list(set(Measures).difference(['charges'])), sensitive_fields=['charges']),
