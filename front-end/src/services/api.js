@@ -16,6 +16,8 @@ export const setWeights = (params) =>
   axios.post("/setWeights", { ...params, session_id: session });
 export const getModelData = (params) =>
   axios.post("/getModelData", { ...params, session_id: session });
+export const getNetwork = (params) =>
+  axios.get("/getNetwork", { params: { ...params, session_id: session } });
 export const getMetrics = (params) =>
   axios.get("/getMetrics", { params: { ...params, session_id: session } });
 

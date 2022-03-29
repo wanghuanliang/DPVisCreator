@@ -63,8 +63,8 @@ const ModelView = (props) => {
     proportion_data: proportionData,
     // flow_data: flowData,
     constraints,
-    // matrix_data: matrixData,
     sankey_data: sankeyData,
+    matrix_data: matrixData, //绘制边用
   } = modelData;
 
   const [privacyBudgetValue, setPrivacyBudget] = useState(10); // 整体隐私预算,0-20,默认10
@@ -82,8 +82,8 @@ const ModelView = (props) => {
       initial[constraint.id] = 0.5;
       patternType[constraint.id] = constraint.type;
     });
-    initial.others = 0.5;
-    patternType.others = "others";
+    // initial.others = 0.5;
+    // patternType.others = "others";
     return [initial, patternType];
   }, [constraints]);
   useEffect(() => {
@@ -176,6 +176,7 @@ const ModelView = (props) => {
               ></WeightsTable>
             )}
           </foreignObject>
+          {/* 投影视图 */}
           <g transform="translate(0, 230)">
             {constraintsPos && (
               <Projection
@@ -183,6 +184,8 @@ const ModelView = (props) => {
                 patternColor={patternColor}
                 selectedId={selectedId}
                 setSelectedId={setSelectedId}
+                matrixData={matrixData}
+                patternWeights={patternWeights}
               ></Projection>
             )}
           </g>
