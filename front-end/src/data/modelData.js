@@ -1722,7 +1722,7 @@ export const modelData = {
     {
       source: "C0",
       target: "C2",
-      value: 5,
+      value: 2,
     },
   ],
 };

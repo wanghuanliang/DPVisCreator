@@ -6,7 +6,7 @@ import ConstraintSelect from "./Datachart/ConstraintSelect";
 import { chart_constraint, constraint_chart } from "./constants";
 import "./ChartsView.less";
 import Title from "antd/lib/typography/Title";
-import { getModelData } from "../../services/api";
+import { getModelData, getNetwork } from "../../services/api";
 class ChartsView extends Component {
   constructor(props) {
     super(props);
@@ -349,6 +349,9 @@ class ChartsView extends Component {
                     .then((res) => {
                       self.props.setModelData(res.data.data);
                       // 为提高渲染效果，获取modelData后请求贝叶斯网络数据
+                      getNetwork()
+                        .then(res => self.props.setNetworkData(res.data.data.network))
+                        .catch(e => console.log(e));
                     })
                     .catch((e) => {
                       console.log(e);

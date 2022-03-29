@@ -7,11 +7,6 @@ import React, {
 } from "react";
 import "./ModelView.less";
 import { Switch, Slider, InputNumber, Row, Col, Space, Button } from "antd";
-import {
-  CheckCircleOutlined,
-  RightOutlined,
-  CheckOutlined,
-} from "@ant-design/icons";
 import * as d3 from "d3";
 import ClockBlock from "./ClockBlock/ClockBlock";
 import BayesianNetwork from "./BayesianNetwork/BayyesianNetWork";
@@ -22,7 +17,7 @@ import Legend from "./Matrix/Legend";
 import AlluvialPlot from "./AlluvialPlot/AlluvialPlot";
 import WeightsTable from "./WeightsTable/WeightsTable";
 import Projection from "./Projection/Projection";
-import { getMetrics } from "../../services/api";
+import { setWeights, getNetwork, getMetrics } from "../../services/api";
 
 const [svgWidth, svgHeight] = [1118, 550];
 const margin = {
@@ -31,20 +26,6 @@ const margin = {
   right: 0,
   bottom: 0,
 };
-const constraints = [
-  {
-    id: "C0",
-    type: "cluster",
-  },
-  {
-    id: "C1",
-    type: "correlation",
-  },
-  {
-    id: "C2",
-    type: "order",
-  },
-];
 // 约束模式颜色
 const patternColor = {
   original: "#dedede",
@@ -55,8 +36,14 @@ const patternColor = {
 };
 
 const ModelView = (props) => {
-  const { setWeights, modelData, setProtectedData, schemes, setSchemes } =
-    props;
+  const {
+    modelData,
+    setProtectedData,
+    schemes,
+    setSchemes,
+    networkData,
+    setNetworkData,
+  } = props;
   const {
     total_num: totalNum,
     axis_order: axisOrder,
@@ -66,10 +53,11 @@ const ModelView = (props) => {
     sankey_data: sankeyData,
     matrix_data: matrixData, //绘制边用
   } = modelData;
+  console.log('networkData', networkData);
 
   const [privacyBudgetValue, setPrivacyBudget] = useState(10); // 整体隐私预算,0-20,默认10
   const [patternWeights, setPatternWeights] = useState(null); // 权重{'c1': 1, 'c2': 1}
-  const [constraintsPos, setConstraintsPos] = useState(null); // 约束坐标
+  // const [constraintsPos, setConstraintsPos] = useState(null); // 约束坐标，改成坐标不变，边权重matrix_data改变
   const [selectedId, setSelectedId] = useState([]); // 选中点亮的约束
   const [showSankey, setShowSankey] = useState(true); //是否展示桑基图
 
@@ -88,11 +76,11 @@ const ModelView = (props) => {
   }, [constraints]);
   useEffect(() => {
     setPatternWeights(initialPatternWeight);
-    setConstraintsPos(constraints);
+    // setConstraintsPos(constraints);
     setSelectedId([]);
   }, [constraints, initialPatternWeight]);
 
-  // 点击update，更新constraintsPos
+  // 点击update，更新constraintsPos, 更新matrixData, 再发送getNetwork请求
   const handleUpdateClick = () => {
     const data = {};
     data.bayes_budget = privacyBudgetValue;
@@ -101,11 +89,17 @@ const ModelView = (props) => {
       data.weights.push({ id: key, weight: value });
     });
     setWeights(data)
-      .then((res) => setConstraintsPos(res.data.constraints))
+      .then((res) => {
+        // setConstraintsPos(res.data.constraints)
+        console.log('res', res);
+        getNetwork()
+          .then(res => setNetworkData(res.data.data.network))
+          .catch(e => console.log(e));
+      })
       .catch((e) => console.log("e", e));
   };
 
-  // 点击record，发送请求
+  // 点击record，发送请求, 并且需要记录下这一份model view数据
   const handleRecordClick = () => {
     getMetrics()
       .then((res) => {
@@ -178,16 +172,14 @@ const ModelView = (props) => {
           </foreignObject>
           {/* 投影视图 */}
           <g transform="translate(0, 230)">
-            {constraintsPos && (
-              <Projection
-                constraints={constraintsPos}
-                patternColor={patternColor}
-                selectedId={selectedId}
-                setSelectedId={setSelectedId}
-                matrixData={matrixData}
-                patternWeights={patternWeights}
-              ></Projection>
-            )}
+            <Projection
+              constraints={constraints}
+              patternColor={patternColor}
+              selectedId={selectedId}
+              setSelectedId={setSelectedId}
+              matrixData={matrixData}
+              patternWeights={patternWeights}
+            ></Projection>
           </g>
           <g transform="translate(400,0)">
             {showSankey ?
@@ -201,7 +193,9 @@ const ModelView = (props) => {
                 patternType={patternType}
                 selectedId={selectedId}
               ></SankeyPlot> :
-              <BayesianNetwork></BayesianNetwork>
+              <BayesianNetwork
+                networkData={networkData}
+              ></BayesianNetwork>
             }
           </g>
 

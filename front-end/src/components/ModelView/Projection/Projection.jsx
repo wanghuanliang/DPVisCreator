@@ -22,7 +22,6 @@ const Projection = (props) => {
     selectedId,
     setSelectedId,
     matrixData,
-    patternWeights,
   } = props;
 
   // 暂存点坐标，画边用
@@ -33,7 +32,6 @@ const Projection = (props) => {
     })
     return patternPos;
   }, [constraints]);
-  console.log(patternPos);
 
   const xScale = d3.scaleLinear()
     .domain([0, 124])
@@ -199,7 +197,7 @@ const Projection = (props) => {
         </g>
       </g>
      {/* 边 */}
-     {/* <g className='link'>
+     <g className='link'>
         {patternPos && matrixData.map((link, index) => {
           const startPos = patternPos?.[link.source],
             endPos = patternPos?.[link.target];
@@ -211,10 +209,10 @@ const Projection = (props) => {
             x2={xScale(endPos[0])}
             y2={yScale(endPos[1])}
             stroke={link.value > 0 ? '#CDF3E4' : '#F8D0CB'}
-            strokeWidth={Math.abs(link.value * 2)}
+            strokeWidth={Math.abs(link.value * 4)}
           ></line>
         })}
-      </g> */}
+      </g>
       {/* 圆点 */}
       <g className='circle'>
         {

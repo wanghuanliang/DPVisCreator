@@ -15,69 +15,6 @@ import React from 'react';
 //   ['age', 'children'],
 //   ['age', 'region'],
 // ];
-const nodeData = [
-  [
-    "charges"
-  ],
-  [
-    "age"
-  ],
-  [
-    "smoker",
-    "bmi",
-    "children",
-    "sex"
-  ],
-  [
-    "region"
-  ]
-];
-const linkData = [
-  [
-    "charges",
-    "age"
-  ],
-  [
-    "age",
-    "smoker"
-  ],
-  [
-    "charges",
-    "smoker"
-  ],
-  [
-    "age",
-    "bmi"
-  ],
-  [
-    "charges",
-    "bmi"
-  ],
-  [
-    "age",
-    "children"
-  ],
-  [
-    "charges",
-    "children"
-  ],
-  [
-    "bmi",
-    "region"
-  ],
-  [
-    "age",
-    "region"
-  ],
-  [
-    "age",
-    "sex"
-  ],
-  [
-    "charges",
-    "sex"
-  ]
-]
 
 const svgWidth = 700, svgHeight = 540;
 const margin = { top: 30, right: 50, bottom: 30, left: 60 };
@@ -86,7 +23,10 @@ const width = svgWidth - margin.left - margin.right,
 
 const circleRadius = 15; // 圆点半径
 
-const BayesianNetwork = () => {
+const BayesianNetwork = (props) => {
+  const { networkData } = props;
+  const { nodeData, linkData } = networkData;
+
   const calcNodePosition = (nodeData) => {
     const res = {};
     const n = nodeData.length; // 树层数
@@ -120,7 +60,7 @@ const BayesianNetwork = () => {
       {/* 定义箭头 */}
       <defs>
         <marker
-          id="triangle"
+          id="triangle0"
           markerUnits="strokeWidth"
           markerWidth="5"
           markerHeight="4"
@@ -155,7 +95,7 @@ const BayesianNetwork = () => {
               stroke="#CED4DE"
               strokeWidth={2}
               fill='none'
-              style={{markerEnd: 'url(#triangle)'}}
+              style={{markerEnd: 'url(#triangle0)'}}
             ></path>
             // return <path
             //   d={`M ${startPos[0]} ${startPos[1]} L ${endPos[0]} ${endPos[1]}`}
