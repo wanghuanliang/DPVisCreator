@@ -1242,14 +1242,14 @@ export const modelData = {
     {
       id: "C2",
       type: "order",
-      pos: [10, 70],
-      r: 7,
+      pos: [70, 20],
+      r: 5,
     },
   ],
-  matrix_data: [
-    [0.14018993154245965, 0.0],
-    [1.0, 0.14018993154245965],
-  ],
+  // matrix_data: [
+  //   [0.14018993154245965, 0.0],
+  //   [1.0, 0.14018993154245965],
+  // ],
   sankey_data: [
     {
       source_attr: "age",
@@ -1716,6 +1716,13 @@ export const modelData = {
           },
         ],
       },
+    },
+  ],
+  matrix_data: [
+    {
+      source: "C0",
+      target: "C2",
+      value: 2,
     },
   ],
 };

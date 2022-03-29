@@ -16,6 +16,7 @@ import {
   attributeData as initialAttributeData,
   attributeCharacter as initialAttributeCharacter,
 } from "../data/attributes"; // 原始数据属性、数据属性特镇
+import { networkData as initialNetworkData } from "../data/networkData";
 import { modelData as tempModelData } from "../data/modelData";
 import {
   servicesInit,
@@ -46,6 +47,7 @@ const IndexPage = () => {
   const [protectedData, setProtectedData] = useState(null);
   // model 开关，是否使用临时数据
   const [modelData, setModelData] = useState(tempModelData); // null
+  const [networkData, setNetworkData] = useState(initialNetworkData);
   // 指标
   const [schemes, setSchemes] = useState([]); // 初始化为数组，否则会出现iterable问题
   const handleNextClick = () => {
@@ -96,6 +98,7 @@ const IndexPage = () => {
   console.log("augmentedData", augmentedData);
   // console.log("protectedData", protectedData);
   console.log("modelData", modelData);
+  console.log("networkData", networkData);
 
   return (
     <>
@@ -149,6 +152,7 @@ const IndexPage = () => {
                 constraints={constraints}
                 setConstraints={setConstraints}
                 setModelData={setModelData}
+                setNetworkData={setNetworkData}
               ></ChartsView>
             </div>
             {/* model view */}
@@ -160,11 +164,12 @@ const IndexPage = () => {
               <div className="cross-line"></div>
               {modelData && (
                 <ModelView
-                  setWeights={setWeights}
                   modelData={modelData}
                   setProtectedData={setProtectedData}
                   schemes={schemes}
                   setSchemes={setSchemes}
+                  networkData={networkData}
+                  setNetworkData={setNetworkData}
                 ></ModelView>
               )}
             </div>

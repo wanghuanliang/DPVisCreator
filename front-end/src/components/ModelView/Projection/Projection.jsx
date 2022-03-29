@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import * as d3 from 'd3';
 
 // const [svgWidth, svgHeight] = [400, 400];
@@ -21,7 +21,17 @@ const Projection = (props) => {
     patternColor,
     selectedId,
     setSelectedId,
+    matrixData,
   } = props;
+
+  // 暂存点坐标，画边用
+  const patternPos = useMemo(() => {
+    const patternPos = {};
+    constraints.forEach(constraint => {
+      patternPos[constraint.id] = constraint.pos;
+    })
+    return patternPos;
+  }, [constraints]);
 
   const xScale = d3.scaleLinear()
     .domain([0, 124])
@@ -84,7 +94,6 @@ const Projection = (props) => {
         })}
       </g>
       {/* 图例 */}
-      
       {/* <PlotLegend
         style={{ width: 50, height: 50}}
       ></PlotLegend> */}
@@ -187,6 +196,23 @@ const Projection = (props) => {
           >Negative</text>
         </g>
       </g>
+     {/* 边 */}
+     <g className='link'>
+        {patternPos && matrixData.map((link, index) => {
+          const startPos = patternPos?.[link.source],
+            endPos = patternPos?.[link.target];
+          
+          return <line
+            key={index}
+            x1={xScale(startPos[0])}
+            y1={yScale(startPos[1])}
+            x2={xScale(endPos[0])}
+            y2={yScale(endPos[1])}
+            stroke={link.value > 0 ? '#CDF3E4' : '#F8D0CB'}
+            strokeWidth={Math.abs(link.value * 4)}
+          ></line>
+        })}
+      </g>
       {/* 圆点 */}
       <g className='circle'>
         {
@@ -234,7 +260,8 @@ const Projection = (props) => {
             </g>
           })  
         }
-    </g>
+      </g>
+      
     </g>
     
   </svg>
