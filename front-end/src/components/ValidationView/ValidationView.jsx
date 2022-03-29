@@ -24,11 +24,11 @@ const staticMetrics = {
   // },
   cluster: {
     title: "Cluster",
-    options: ["JS", "Wasserstein"],
+    options: ["KL", "Wasserstein"],
   },
   correlation: {
     title: "Correlation",
-    options: ["DTW", "PearsonCorrelationDiff"],
+    options: ["DTW", "Euclidean", "PearsonCorrelation"],
   },
   order: {
     title: "Order",
@@ -44,8 +44,8 @@ const ValidationView = (props) => {
     statistical: ["KSTest"],
     detection: ["LogisticDetection"],
     privacy: ["CAP", "MLP"],
-    cluster: ["JS", "Wasserstein"],
-    correlation: ["DTW", "PearsonCorrelationDiff"],
+    cluster: ["KL"],
+    correlation: ["DTW", "PearsonCorrelation"],
     order: ["NDCG", "mAP"],
   }); // 选中的展示指标
 

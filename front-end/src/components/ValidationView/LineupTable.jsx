@@ -28,6 +28,17 @@ import { Table, Tag, Radio, Space, Button } from "antd";
 //   },
 // ];
 
+// 标题到对象的映射
+const NameMap = {
+  KL: "KL",
+  Wasserstein: "WDis",
+  DTW: "DTW",
+  Euclidean: "Euc",
+  PearsonCorrelation: "PCD",
+  NDCG: "NDCG",
+  mAP: "mAP",
+};
+
 const schemes = [
   {
     id: 0,
@@ -64,12 +75,28 @@ const LineupTable = (props) => {
     const tableData = [];
     schemes.forEach((scheme, index) => {
       const record = {};
+      const patterns = {};
+      scheme.pattern.forEach((constraint) => {
+        patterns[constraint.id] = constraint;
+      });
       record.key = "scheme" + index;
       record.id = index;
       record.budget = scheme.metrics.privacy_budget; //为值
       record.statistical = scheme.metrics.statistical_metrics;
       record.detection = scheme.metrics.detection_metrics;
-      record.privacy = scheme.metrics.privacy_metrics;
+      constraints.forEach((constraint) => {
+        record[constraint.id] = {
+          ...(constraint.type === "cluster"
+            ? {
+                KL: { original: 0.85, protected: 0.82 },
+                WDis: { original: 0.74, protected: 0.82 },
+              }
+            : constraint.type === "correlation"
+            ? { DTW: {}, Euc: {}, PCD: {} }
+            : { NDCG: {}, mAP: {} }),
+          ...patterns[constraint.id],
+        };
+      });
       tableData.push(record);
     });
     return tableData;
@@ -127,62 +154,106 @@ const LineupTable = (props) => {
   //   </svg>
   // };
 
-  const totalWidth = 150;
+  const singleWidth = 125;
+  const singleColumnWidth = singleWidth + 32;
   const divHeight = 20;
   const originalColor = "#8ab0d0";
   const risingColor = "#cdf3e4";
   const fallingColor = "#f8d0cb";
   const unselectedColor = "#ced4de";
-  const renderRatingElement = (obj, title) => {
-    const n = selectedConstraint[title].length;
+  const renderMergeConstraintItem = (obj, title) => {
+    const n = selectedMetrics[title].length;
     if (n === 0) return;
-    const divWidth = totalWidth / n;
+    const divWidth = singleWidth * n;
     return (
-      <div
-        style={
-          merge
-            ? { width: totalWidth, height: divHeight, display: "flex" }
-            : {
-                justifyContent: "space-between",
-                height: divHeight,
-                display: "flex",
-              }
-        }
-      >
+      <div style={{ width: divWidth, height: divHeight, display: "flex" }}>
         {selectedMetrics[title].map((kind) => {
-          return (
-            <div
-              style={{
-                width: divWidth * obj[kind],
-                height: divHeight,
-                backgroundColor: originalColor,
-                marginRight: 3,
-              }}
-            ></div>
-          );
+          if (!obj[NameMap[kind]].protected) {
+            return (
+              <div
+                style={{
+                  width: singleWidth,
+                  height: divHeight,
+                  backgroundColor: unselectedColor,
+                  marginRight: 3,
+                }}
+              ></div>
+            );
+          } else
+            return (
+              <div
+                style={{
+                  width: singleWidth * obj[NameMap[kind]].protected,
+                  height: divHeight,
+                  backgroundColor: originalColor,
+                  marginRight: 3,
+                }}
+              ></div>
+            );
         })}
       </div>
+    );
+  };
+  const renderSingleConstraintItem = (obj) => {
+    const original_rate = obj.original;
+    const protected_rate = obj.protected;
+    if (!original_rate || !protected_rate) {
+      return (
+        <div style={{ width: singleWidth, height: divHeight, display: "flex" }}>
+          <div
+            style={{
+              width: singleWidth,
+              height: divHeight,
+              backgroundColor: unselectedColor,
+            }}
+          ></div>
+        </div>
+      );
+    }
+    const originalWidth = singleWidth * Math.min(original_rate, protected_rate);
+    const ratingWidth =
+      singleWidth * Math.max(original_rate, protected_rate) - originalWidth;
+    return (
+      <div style={{ width: singleWidth, height: divHeight, display: "flex" }}>
+        <div
+          style={{
+            width: originalWidth,
+            height: divHeight,
+            backgroundColor: originalColor,
+          }}
+        ></div>
+        <div
+          style={{
+            width: Math.abs(ratingWidth),
+            height: divHeight,
+            backgroundColor:
+              original_rate < protected_rate ? risingColor : fallingColor,
+          }}
+        ></div>
+      </div>
+    );
+  };
+  const renderSingleMetricItem = (num) => {
+    return (
+      <div
+        style={{
+          width: singleWidth * num,
+          height: divHeight,
+          backgroundColor: "#8ab0d0",
+          marginRight: 3,
+        }}
+      ></div>
     );
   };
   // obj: {CAP: 0.5, MLP: 0.6}
   // title: privacy
   // selectedMetrics {privacy: ['CAP]}
-  const renderItem = (obj, title) => {
+  const renderMergeMetricItem = (obj, title) => {
     const n = selectedMetrics[title].length;
     if (n === 0) return;
-    const divWidth = totalWidth / n;
+    const divWidth = singleWidth * n;
     return (
-      <div
-        style={
-          merge
-            ? { width: totalWidth, height: divHeight, display: "flex" }
-            : {
-                justifyContent: "space-between",
-                height: divHeight,
-                display: "flex",
-              }
-        }
-      >
+      <div style={{ width: divWidth, height: divHeight, display: "flex" }}>
         {selectedMetrics[title].map((kind) => {
           return (
             <div
@@ -206,46 +277,96 @@ const LineupTable = (props) => {
     });
     return sum;
   };
+  const calcConstraintSum = (constraint) => {
+    let sum = 0;
+    (selectedMetrics[constraint.type] || []).forEach((kind) => {
+      sum += constraint[NameMap[kind]].protected;
+    });
+    return sum;
+  };
   const constraintColumns = constraints.map((constraint) => {
     const patternColor = {
       cluster: "#9cb0a2",
       correlation: "#c39b83",
       order: "#bbafd1",
     };
-    return {
-      title: (
-        <div>
-          <Button
-            size="small"
-            key={"scheme-constraint-" + constraint.id}
-            style={{
-              borderColor: patternColor[constraint.type],
-              color: patternColor[constraint.type],
-            }}
-            className="validation-constraint-select-button"
-            onClick={() => {
-              selectConstraint(constraint);
-            }}
-          >
-            {constraint.id}
-          </Button>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              fontWeight: "normal",
-            }}
-          >
-            {(selectedMetrics[constraint.type] || []).map((name) => (
-              <div>{name}</div>
-            ))}
-          </div>
-        </div>
-      ),
-      dataIndex: constraint.id,
-      key: constraint.id,
-      width: 200,
-    };
+    return merge
+      ? {
+          title: (
+            <>
+              <div style={{ textAlign: "center" }}>
+                <Button
+                  size="small"
+                  key={"scheme-constraint-" + constraint.id}
+                  style={{
+                    borderColor: patternColor[constraint.type],
+                    color: patternColor[constraint.type],
+                  }}
+                  className="validation-constraint-select-button"
+                  onClick={() => {
+                    selectConstraint(constraint);
+                  }}
+                >
+                  {constraint.id}
+                </Button>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontWeight: "normal",
+                  paddingTop: 33,
+                }}
+              >
+                {(selectedMetrics[constraint.type] || []).map((name, index) => (
+                  <div>{name}</div>
+                ))}
+              </div>
+            </>
+          ),
+          dataIndex: constraint.id,
+          key: constraint.id,
+          width: singleColumnWidth * selectedMetrics[constraint.type].length,
+          render: (obj) => renderMergeConstraintItem(obj, constraint.type),
+          sorter: (a, b) =>
+            calcConstraintSum(a[constraint.id]) -
+            calcConstraintSum(b[constraint.id]),
+        }
+      : {
+          title: (
+            <div style={{ textAlign: "center" }}>
+              <Button
+                size="small"
+                key={"scheme-constraint-" + constraint.id}
+                style={{
+                  borderColor: patternColor[constraint.type],
+                  color: patternColor[constraint.type],
+                }}
+                className="validation-constraint-select-button"
+                onClick={() => {
+                  selectConstraint(constraint);
+                }}
+              >
+                {constraint.id}
+              </Button>
+            </div>
+          ),
+          dataIndex: constraint.id,
+          key: constraint.id,
+          sorter: (a, b) =>
+            calcConstraintSum(a[constraint.id]) -
+            calcConstraintSum(b[constraint.id]),
+          children: (selectedMetrics[constraint.type] || []).map((name) => {
+            return {
+              title: name,
+              dataIndex: [constraint.id, NameMap[name]],
+              key: constraint.id + ":" + name,
+              width: singleColumnWidth,
+              render: (obj) => renderSingleConstraintItem(obj),
+              sorter: (a, b) => a - b,
+            };
+          }),
+        };
   });
 
   const columns = [
@@ -254,7 +375,7 @@ const LineupTable = (props) => {
       dataIndex: "id",
       key: "id",
       fixed: "left",
-      width: 120,
+      width: singleColumnWidth,
       render: (id) => (
         <div
           style={{
@@ -274,12 +395,12 @@ const LineupTable = (props) => {
       title: "Privacy budget",
       dataIndex: "budget",
       key: "budget",
-      width: 150,
+      width: singleColumnWidth,
       fixed: "left",
       render: (v) => (
         <div
           style={{
-            width: (v / 20) * 120, // 不同于totalWidth
+            width: (v / 20) * singleWidth, // 不同于totalWidth
             height: divHeight,
             backgroundColor: "#8ab0d0",
           }}
@@ -288,55 +409,99 @@ const LineupTable = (props) => {
       sorter: (a, b) => a.budget - b.budget,
     },
     {
-      title: (
-        <div>
-          <div>Statistical metrics</div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              fontWeight: "normal",
-            }}
-          >
-            {(selectedMetrics.statistical || []).map((name) => (
-              <div>{name}</div>
-            ))}
-          </div>
-        </div>
-      ),
       dataIndex: "statistical",
       key: "statistical",
       fixed: "left",
-      width: 200,
-      render: (obj) => renderItem(obj, "statistical"),
+      width: singleColumnWidth * selectedMetrics.statistical.length,
       sorter: (a, b) =>
         calcSum(a.statistical, "statistical") -
         calcSum(b.statistical, "statistical"),
+      ...(merge
+        ? {
+            title: (
+              <div style={{ textAlign: "center" }}>
+                <div style={{}}>Statistical metrics</div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontWeight: "normal",
+                    paddingTop: 35,
+                  }}
+                >
+                  {(selectedMetrics.statistical || []).map((name) => (
+                    <div>{name}</div>
+                  ))}
+                </div>
+              </div>
+            ),
+            render: (obj) => renderMergeMetricItem(obj, "statistical"),
+          }
+        : {
+            title: (
+              <div>
+                <div>Statistical metrics</div>
+              </div>
+            ),
+            children: (selectedMetrics.statistical || []).map((name) => {
+              return {
+                title: name,
+                dataIndex: ["statistical", name],
+                key: "statistical:" + name,
+                width: singleColumnWidth,
+                fixed: "left",
+                render: (num) => renderSingleMetricItem(num),
+                sorter: (a, b) => a.statistical[name] - b.statistical[name],
+              };
+            }),
+          }),
     },
     {
-      title: (
-        <div>
-          <div>Detection metrics</div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              fontWeight: "normal",
-            }}
-          >
-            {(selectedMetrics.detection || []).map((name) => (
-              <div>{name}</div>
-            ))}
-          </div>
-        </div>
-      ),
       dataIndex: "detection",
       key: "detection",
       fixed: "left",
-      width: 200,
-      render: (obj) => renderItem(obj, "detection"),
+      width: singleColumnWidth * selectedMetrics.detection.length,
       sorter: (a, b) =>
         calcSum(a.detection, "detection") - calcSum(b.detection, "detection"),
+      ...(merge
+        ? {
+            title: (
+              <div style={{ textAlign: "center" }}>
+                <div style={{}}>Detection metrics</div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontWeight: "normal",
+                    paddingTop: 35,
+                  }}
+                >
+                  {(selectedMetrics.detection || []).map((name, index) => (
+                    <div>{name}</div>
+                  ))}
+                </div>
+              </div>
+            ),
+            render: (obj) => renderMergeMetricItem(obj, "detection"),
+          }
+        : {
+            title: (
+              <div>
+                <div>Detection metrics</div>
+              </div>
+            ),
+            children: (selectedMetrics.detection || []).map((name) => {
+              return {
+                title: name,
+                dataIndex: "detection",
+                key: "detection:" + name,
+                width: singleColumnWidth,
+                fixed: "left",
+                render: (num) => renderSingleMetricItem(num),
+                sorter: (a, b) => a.detection[name] - b.detection[name],
+              };
+            }),
+          }),
     },
     // {
     //   title: (
