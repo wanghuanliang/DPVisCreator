@@ -512,19 +512,17 @@ export default class DataChart extends Component {
       ry = (ry - cy) * Math.sqrt(vary);
       rx *= 2;
       ry *= 2;
+      const minx = Math.min(...self.brushArea.range[0]);
+      const maxx = Math.max(...self.brushArea.range[0]);
+      const miny = Math.min(...self.brushArea.range[1]);
+      const maxy = Math.max(...self.brushArea.range[1]);
       self.updateParams({
         type,
         area:
           type === "rect"
             ? [
-                self.convertFromPixel([
-                  self.brushArea.range[0][0],
-                  self.brushArea.range[1][0],
-                ]),
-                self.convertFromPixel([
-                  self.brushArea.range[0][1],
-                  self.brushArea.range[1][1],
-                ]),
+                self.convertFromPixel([minx, miny]),
+                self.convertFromPixel([maxx, maxy]),
               ]
             : self.brushArea.range.map((point) => self.convertFromPixel(point)),
         mean: [meanx, meany],

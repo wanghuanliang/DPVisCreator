@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { Table, Tag, Radio, Space, Button } from "antd";
-
+import "./LineupTable.less";
 // const data = [
 //   {
 //     key: '1',
@@ -27,7 +27,7 @@ import { Table, Tag, Radio, Space, Button } from "antd";
 //     order: [5, 6],
 //   },
 // ];
-
+const titleStyle = { fontWeight: "bold", fontSize: 18 };
 // 标题到对象的映射
 const NameMap = {
   KL: "KL",
@@ -76,7 +76,7 @@ const LineupTable = (props) => {
     schemes.forEach((scheme, index) => {
       const record = {};
       const patterns = {};
-      scheme.pattern.forEach((constraint) => {
+      (scheme.pattern || []).forEach((constraint) => {
         patterns[constraint.id] = constraint;
       });
       record.key = "scheme" + index;
@@ -84,7 +84,7 @@ const LineupTable = (props) => {
       record.budget = scheme.metrics.privacy_budget; //为值
       record.statistical = scheme.metrics.statistical_metrics;
       record.detection = scheme.metrics.detection_metrics;
-      constraints.forEach((constraint) => {
+      (constraints || []).forEach((constraint) => {
         record[constraint.id] = {
           ...(constraint.type === "cluster"
             ? {
@@ -168,7 +168,7 @@ const LineupTable = (props) => {
     return (
       <div style={{ width: divWidth, height: divHeight, display: "flex" }}>
         {selectedMetrics[title].map((kind) => {
-          if (!obj[NameMap[kind]].protected) {
+          if (!obj || !obj[NameMap[kind]].protected) {
             return (
               <div
                 style={{
@@ -195,6 +195,19 @@ const LineupTable = (props) => {
     );
   };
   const renderSingleConstraintItem = (obj) => {
+    if (!obj) {
+      return (
+        <div style={{ width: singleWidth, height: divHeight, display: "flex" }}>
+          <div
+            style={{
+              width: singleWidth,
+              height: divHeight,
+              backgroundColor: unselectedColor,
+            }}
+          ></div>
+        </div>
+      );
+    }
     const original_rate = obj.original;
     const protected_rate = obj.protected;
     if (!original_rate || !protected_rate) {
@@ -284,7 +297,7 @@ const LineupTable = (props) => {
     });
     return sum;
   };
-  const constraintColumns = constraints.map((constraint) => {
+  const constraintColumns = (constraints || []).map((constraint) => {
     const patternColor = {
       cluster: "#9cb0a2",
       correlation: "#c39b83",
@@ -295,27 +308,45 @@ const LineupTable = (props) => {
           title: (
             <>
               <div style={{ textAlign: "center" }}>
-                <Button
-                  size="small"
-                  key={"scheme-constraint-" + constraint.id}
-                  style={{
-                    borderColor: patternColor[constraint.type],
-                    color: patternColor[constraint.type],
-                  }}
-                  className="validation-constraint-select-button"
-                  onClick={() => {
-                    selectConstraint(constraint);
-                  }}
-                >
-                  {constraint.id}
-                </Button>
+                {constraint.id === selectedConstraint.id ? (
+                  <Button
+                    size="small"
+                    key={"scheme-constraint-" + constraint.id}
+                    style={{
+                      borderColor: patternColor[constraint.type],
+                      color: "#ffffff",
+                      background: patternColor[constraint.type],
+                    }}
+                    className="validation-constraint-select-button"
+                    onClick={() => {
+                      selectConstraint(constraint);
+                    }}
+                  >
+                    {constraint.id}
+                  </Button>
+                ) : (
+                  <Button
+                    size="small"
+                    key={"scheme-constraint-" + constraint.id}
+                    style={{
+                      borderColor: patternColor[constraint.type],
+                      color: patternColor[constraint.type],
+                    }}
+                    className="validation-constraint-select-button"
+                    onClick={() => {
+                      selectConstraint(constraint);
+                    }}
+                  >
+                    {constraint.id}
+                  </Button>
+                )}
               </div>
               <div
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
                   fontWeight: "normal",
-                  paddingTop: 33,
+                  paddingTop: 35,
                 }}
               >
                 {(selectedMetrics[constraint.type] || []).map((name, index) => (
@@ -371,7 +402,7 @@ const LineupTable = (props) => {
 
   const columns = [
     {
-      title: "Schemes",
+      title: <div style={titleStyle}>Schemes</div>,
       dataIndex: "id",
       key: "id",
       fixed: "left",
@@ -392,7 +423,7 @@ const LineupTable = (props) => {
       sorter: (a, b) => a.id - b.id,
     },
     {
-      title: "Privacy budget",
+      title: <div style={titleStyle}>Privacy budget</div>,
       dataIndex: "budget",
       key: "budget",
       width: singleColumnWidth,
@@ -420,17 +451,16 @@ const LineupTable = (props) => {
         ? {
             title: (
               <div style={{ textAlign: "center" }}>
-                <div style={{}}>Statistical metrics</div>
+                <div style={titleStyle}>Statistical metrics</div>
                 <div
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    fontWeight: "normal",
                     paddingTop: 35,
+                    display: "flex",
+                    justifyContent: "center",
                   }}
                 >
                   {(selectedMetrics.statistical || []).map((name) => (
-                    <div>{name}</div>
+                    <div style={{ marginRight: 12 }}>{name}</div>
                   ))}
                 </div>
               </div>
@@ -440,7 +470,7 @@ const LineupTable = (props) => {
         : {
             title: (
               <div>
-                <div>Statistical metrics</div>
+                <div style={titleStyle}>Statistical metrics</div>
               </div>
             ),
             children: (selectedMetrics.statistical || []).map((name) => {
@@ -467,17 +497,16 @@ const LineupTable = (props) => {
         ? {
             title: (
               <div style={{ textAlign: "center" }}>
-                <div style={{}}>Detection metrics</div>
+                <div style={titleStyle}>Detection metrics</div>
                 <div
                   style={{
                     display: "flex",
-                    justifyContent: "space-between",
-                    fontWeight: "normal",
+                    justifyContent: "center",
                     paddingTop: 35,
                   }}
                 >
                   {(selectedMetrics.detection || []).map((name, index) => (
-                    <div>{name}</div>
+                    <div style={{ marginRight: 12 }}>{name}</div>
                   ))}
                 </div>
               </div>
@@ -487,7 +516,7 @@ const LineupTable = (props) => {
         : {
             title: (
               <div>
-                <div>Detection metrics</div>
+                <div style={titleStyle}>Detection metrics</div>
               </div>
             ),
             children: (selectedMetrics.detection || []).map((name) => {
@@ -533,6 +562,7 @@ const LineupTable = (props) => {
 
   return (
     <Table
+      className="lineup-table"
       columns={columns}
       pagination={false}
       dataSource={tableData}

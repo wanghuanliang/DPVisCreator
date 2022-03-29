@@ -35,8 +35,11 @@ const IndexPage = () => {
   );
   // 过滤条件数据{'age': {attributeType: '1', max: '55', min: '10'}, 'sex': {attributeType: '0', value: ['male', 'female']}}
   const [filterData, setFilterData] = useState({});
-  const [filterOriginalData, setFilterOriginalData] = useState(initialOriginalData);
-  const [filterAttributeCharacter, setFilterAttributeCharacter] = useState(initialAttributeCharacter);
+  const [filterOriginalData, setFilterOriginalData] =
+    useState(initialOriginalData);
+  const [filterAttributeCharacter, setFilterAttributeCharacter] = useState(
+    initialAttributeCharacter
+  );
   // 约束
   const [constraints, setConstraints] = useState(null);
   const [augmentedData, setAugmentedData] = useState(null);
@@ -113,6 +116,10 @@ const IndexPage = () => {
             attributeCharacter={attributeCharacter}
             setAttributeCharacter={setAttributeCharacter}
             filterData={filterData}
+            setBase={(base) => {
+              if (schemes.length > 0) schemes.shift();
+              setSchemes([base, ...schemes]);
+            }}
             setFilterData={setFilterData}
             setFilterOriginalData={setFilterOriginalData}
             setFilterAttributeCharacter={setFilterAttributeCharacter}

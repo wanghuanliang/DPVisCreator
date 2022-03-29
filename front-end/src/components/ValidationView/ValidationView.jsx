@@ -107,7 +107,7 @@ const ValidationView = (props) => {
   };
 
   const scheme = schemes[selectedSchemeId];
-  const patternConstraints = scheme.pattern?.map((patternConstraint) => {
+  const patternConstraints = (scheme.pattern || []).map((patternConstraint) => {
     const search = props.constraints.filter(
       (globalConstraint) => patternConstraint.id === globalConstraint.id
     )?.[0];
@@ -146,7 +146,9 @@ const ValidationView = (props) => {
             originalData={originalData}
             selectedSchemeId={selectedSchemeId}
             protectedData={scheme.protected_data}
-            baselineData={originalData}
+            baselineData={
+              schemes.length > 0 ? schemes[0].protected_data : originalData
+            }
             constraints={patternConstraints || []}
             constraint={selectedConstraint}
           ></ProtectedDataDisplay>

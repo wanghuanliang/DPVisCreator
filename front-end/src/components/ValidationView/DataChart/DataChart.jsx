@@ -403,7 +403,7 @@ export default class DataChart extends Component {
       this.svg
         .append("rect")
         .attr("opacity", "0.4")
-        .attr("fill-opacity", "0.5")
+        .attr("fill-opacity", "0")
         .attr("fill", "#d9d9d9")
         .attr("stroke", "#5D7092")
         .attr("stroke-width", 2)
@@ -415,7 +415,7 @@ export default class DataChart extends Component {
       this.svg
         .append("polygon")
         .attr("opacity", "0.4")
-        .attr("fill-opacity", "0.5")
+        .attr("fill-opacity", "0")
         .attr("fill", "#d9d9d9")
         .attr("stroke", "#5D7092")
         .attr("stroke-width", 2)
@@ -495,6 +495,7 @@ export default class DataChart extends Component {
       .append("path")
       .attr("points", path)
       .attr("fill", "#d9d9d9")
+      .attr("fill-opacity", "0")
       .attr("opacity", 0.2)
       .attr("stroke", "#5D7092")
       .attr("stroke-width", 2)
@@ -526,10 +527,10 @@ export default class DataChart extends Component {
           .attr("value", point[0])
           .attr("width", width)
           .attr("height", chart_height * 0.88 - y)
-          .style("fill", "#d9d9d9")
-          .attr("stroke", "#5D7092")
-          .attr("stroke-width", 1)
-          .attr("opacity", 0.4);
+          .style("fill", "#b3b3b3")
+          // .attr("stroke", "#5D7092")
+          // .attr("stroke-width", 1)
+          .attr("opacity", 0.5);
       });
     }
   }
