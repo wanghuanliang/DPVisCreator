@@ -132,7 +132,11 @@ export default class ProtectedDataDisplay extends Component {
       });
       dataset.push(...dataMap);
     }
-    dataset.sort((a, b) => a[0] - b[0]);
+    if (x.attribute_type === "Measures") {
+      dataset.sort((a, b) => a[0] - b[0]);
+    } else {
+      dataset.sort((a, b) => x.values.indexOf(a[0]) - x.values.indexOf(b[0]));
+    }
     // if (chartType === "line" || chartType === "scatter")
     //   dataset.sort((a, b) => a[0] - b[0]);
     // // 折线图按x值从小到大

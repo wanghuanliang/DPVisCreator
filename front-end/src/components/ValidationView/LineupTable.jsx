@@ -1,32 +1,12 @@
-import React, { useMemo } from "react";
-import { Table, Tag, Radio, Space, Button } from "antd";
+import React, { useMemo, useState } from "react";
+import { Table, Tag, Radio, Space, Button, Popover, Slider } from "antd";
 import "./LineupTable.less";
-// const data = [
-//   {
-//     key: '1',
-//     Schemes: 'Scheme #1',
-//     budget: [4, 5, 6],
-//     cluster: [3, 3, 3, 6],
-//     correlation: [5],
-//     order: [5, 9],
-//   },
-//   {
-//     key: '2',
-//     Schemes: 'Scheme #2',
-//     budget: [4, 5, 6, 8],
-//     cluster: [3, 3, 3, 3],
-//     correlation: [5],
-//     order: [5, 6],
-//   },
-//   {
-//     key: '3',
-//     Schemes: 'Scheme #3',
-//     budget: [4, 5, 6, 1, 1],
-//     cluster: [3, 3, 3, 3],
-//     correlation: [5],
-//     order: [5, 6],
-//   },
-// ];
+import {
+  CaretDownOutlined,
+  CaretUpOutlined,
+  FilterOutlined,
+} from "@ant-design/icons";
+
 const titleStyle = { fontWeight: "bold", fontSize: 18 };
 // 标题到对象的映射
 const NameMap = {
@@ -37,29 +17,11 @@ const NameMap = {
   PearsonCorrelation: "PCD",
   NDCG: "NDCG",
   mAP: "mAP",
+  Diff: "Diff",
 };
-
-const schemes = [
-  {
-    id: 0,
-    key: 0,
-    statistical: {
-      KSTest: 0.9123692077727952,
-      CSTest: 0.9393205745638467,
-    },
-    detection: {
-      LogisticDetection: 0.8124266859712977,
-    },
-    privacy: {
-      MLP: 0.11019587037579194,
-      CAP: 0.7476792585968235,
-    },
-  },
-];
 
 const LineupTable = (props) => {
   const {
-    prevBayes,
     schemes,
     selectedSchemeId,
     setSelectedSchemeId,
@@ -70,10 +32,109 @@ const LineupTable = (props) => {
     merge,
     changeSchemeId,
   } = props;
-
-  // schemes变化后重新计算表格数据
-  const tableData = useMemo(() => {
-    const tableData = [];
+  const constraintsSettings = {};
+  (constraints || []).forEach((constraint) => {
+    constraintsSettings[constraint.id] = {
+      access: (record) => calcConstraintSum(record, constraint),
+      order: "none",
+      range: "all",
+      children:
+        constraint.type === "cluster"
+          ? {
+              KL: {
+                access: (record) => record[constraint.id].KL,
+                order: "none",
+                range: "all",
+              },
+              WDis: {
+                access: (record) => record[constraint.id].WDis,
+                order: "none",
+                range: "all",
+              },
+            }
+          : constraint.type === "correlation"
+          ? {
+              DTW: {
+                access: (record) => record[constraint.id].DTW,
+                order: "none",
+                range: "all",
+              },
+              Euc: {
+                access: (record) => record[constraint.id].Euc,
+                order: "none",
+                range: "all",
+              },
+              PCD: {
+                access: (record) => record[constraint.id].PCD,
+                order: "none",
+                range: "all",
+              },
+            }
+          : {
+              NDCG: {
+                access: (record) => record[constraint.id].NDCG,
+                order: "none",
+                range: "all",
+              },
+              mAP: {
+                access: (record) => record[constraint.id].mAP,
+                order: "none",
+                range: "all",
+              },
+              Diff: {
+                access: (record) => record[constraint.id].Diff,
+                order: "none",
+                range: "all",
+              },
+            },
+    };
+  });
+  const [_, setSettings] = useState({});
+  const { settings, tableData } = useMemo(() => {
+    const settings = {
+      id: {
+        access: (record) => record.id,
+        order: "none",
+        range: "all",
+      },
+      budget: {
+        access: (record) => record.budget,
+        order: "none",
+        range: "all",
+      },
+      statistical: {
+        access: (record) => calcSum(record.statistical, "statistical"),
+        order: "none",
+        range: "all",
+        children: {
+          CSTest: {
+            access: (record) => record.statistical.CSTest,
+            order: "none",
+            range: "all",
+          },
+          KSTest: {
+            access: (record) => record.statistical.KSTest,
+            order: "none",
+            range: "all",
+          },
+        },
+      },
+      detection: {
+        access: (record) => calcSum(record.detection, "detection"),
+        order: "none",
+        range: "all",
+        children: {
+          LogisticDetection: {
+            access: (record) => record.detection.LogisticDetection,
+            order: "none",
+            range: "all",
+          },
+        },
+      },
+      ...constraintsSettings,
+      ..._,
+    };
+    const records = [];
     schemes.forEach((scheme, index) => {
       const record = {};
       const patterns = {};
@@ -89,72 +150,83 @@ const LineupTable = (props) => {
         record[constraint.id] = {
           ...(constraint.type === "cluster"
             ? {
-                KL: { original: 0.85, protected: 0.82 },
-                WDis: { original: 0.74, protected: 0.82 },
+                KL: {},
+                WDis: {},
               }
             : constraint.type === "correlation"
             ? { DTW: {}, Euc: {}, PCD: {} }
-            : { NDCG: {}, mAP: {} }),
+            : { NDCG: {}, mAP: {}, Diff: {} }),
           ...patterns[constraint.id],
         };
       });
-      tableData.push(record);
+      records.push(record);
     });
-    return tableData;
-  }, [schemes]);
-
-  // data数据扩充最大值
-  // data.forEach(obj => {
-  //   obj.budgetSum = obj.budget.reduce((pre, cur) => pre + cur);
-  //   obj.clusterSum = obj.cluster.reduce((pre, cur) => pre + cur);
-  //   obj.correlationSum = obj.correlation.reduce((pre, cur) => pre + cur);
-  //   obj.orderSum = obj.order.reduce((pre, cur) => pre + cur);
-  // })
-
-  // 计算每一项最大值，用于归一化
-  // const calcMax = (data) => {
-  //   const ans = {
-  //     budget: 0,
-  //     cluster: 0,
-  //     correlation: 0,
-  //     order: 0,
-  //   };
-  //   data.forEach(obj => {
-  //     ans.budget = Math.max(ans.budget, obj.budgetSum);
-  //     ans.cluster = Math.max(ans.cluster, obj.clusterSum);
-  //     ans.correlation = Math.max(ans.correlation, obj.correlationSum);
-  //     ans.order = Math.max(ans.order, obj.orderSum);
-  //   })
-  //   return ans;
-  // }
-  // const everyMax = calcMax(data);
-
-  // 列
-  // const renderItem = (array, pattern) => {
-  //   const sum = array.reduce((pre, cur) => pre + cur);
-  //   const newArray = [];
-  //   let nowVal = 0;
-  //   array.forEach(item => {
-  //     nowVal += item;
-  //     newArray.push(nowVal)
-  //   })
-  //   const nowWidth = sum / everyMax[pattern] * 150;
-
-  //   return <svg style={{ backgroundColor: '#82c6e8', height: 20 }} width={nowWidth}>
-  //     {newArray.map((item, index) => {
-  //       return <line
-  //         key={index}
-  //         x1={item * nowWidth / sum}
-  //         y1={0}
-  //         x2={item * nowWidth / sum}
-  //         y2={20}
-  //         strokeWidth={1}
-  //         stroke='#fff'
-  //       ></line>
-  //     })}
-  //   </svg>
-  // };
-
+    let filteredData = records;
+    // 过滤数据
+    for (let metrics in settings) {
+      const range = settings[metrics].range;
+      if (range !== "all") {
+        const access = settings[metrics].access;
+        filteredData = filteredData.filter((record) => {
+          const num = access(record);
+          return num >= range[0] && num <= range[1];
+        });
+      }
+      const children = settings[metrics].children;
+      if (children) {
+        for (let subMetrics in children) {
+          const range = children[subMetrics].range;
+          if (range !== "all") {
+            const access = children[subMetrics].access;
+            filteredData = filteredData.filter((record) => {
+              const num = access(record);
+              return num >= range[0] && num <= range[1];
+            });
+          }
+        }
+      }
+    }
+    // 数据排序
+    for (let metrics in settings) {
+      const order = settings[metrics].order;
+      const access = settings[metrics].access;
+      if (order === "ascending") {
+        filteredData.sort((a, b) => access(b) - access(a));
+      } else if (order === "descending") {
+        filteredData.sort((a, b) => access(a) - access(b));
+      }
+      const children = settings[metrics].children;
+      if (children) {
+        for (let subMetrics in children) {
+          const order = children[subMetrics].order;
+          const access = children[subMetrics].access;
+          if (order === "ascending") {
+            filteredData.sort((a, b) => access(b) - access(a));
+          } else if (order === "descending") {
+            filteredData.sort((a, b) => access(a) - access(b));
+          }
+        }
+      }
+    }
+    return { settings, tableData: filteredData };
+  });
+  const switchOrderState = (state, outer, inner) => {
+    const temp = { ...settings };
+    for (let metrics in settings) {
+      if (!inner && metrics === outer) {
+        temp[metrics].order = state;
+      } else temp[metrics].order = "none";
+      if (settings[metrics].children) {
+        const children = temp[metrics].children;
+        for (let subMetrics in children) {
+          if (inner === subMetrics && outer === metrics) {
+            children[subMetrics].order = state;
+          } else children[subMetrics].order = "none";
+        }
+      }
+    }
+    setSettings(temp);
+  };
   const singleWidth = 125;
   const singleColumnWidth = singleWidth + 32;
   const divHeight = 20;
@@ -211,7 +283,10 @@ const LineupTable = (props) => {
     }
     const original_rate = obj.original;
     const protected_rate = obj.protected;
-    if (!original_rate || !protected_rate) {
+    if (
+      typeof original_rate === "undefined" ||
+      typeof protected_rate === "undefined"
+    ) {
       return (
         <div style={{ width: singleWidth, height: divHeight, display: "flex" }}>
           <div
@@ -291,12 +366,214 @@ const LineupTable = (props) => {
     });
     return sum;
   };
-  const calcConstraintSum = (constraint) => {
+  const calcConstraintSum = (obj, constraint) => {
     let sum = 0;
     (selectedMetrics[constraint.type] || []).forEach((kind) => {
-      sum += constraint[NameMap[kind]].protected;
+      const protected_metrics = obj[constraint.id][NameMap[kind]].protected;
+      if (protected_metrics) sum += protected_metrics;
     });
     return sum;
+  };
+  const createConstraintFilter = (constraint, inner = null) => {
+    const outer = constraint.id;
+    const max = inner
+      ? 1.0
+      : selectedMetrics[constraint.type]
+      ? selectedMetrics[constraint.type].length * 1.0
+      : 1.0;
+    const range = inner
+      ? settings[outer].children[inner].range
+      : settings[outer].range;
+    const order = inner
+      ? settings[outer].children[inner].order
+      : settings[outer].order;
+    return (
+      <>
+        <Popover
+          content={
+            <div>
+              <Slider
+                range
+                min={0.0}
+                max={max}
+                defaultValue={[0.0, max]}
+                step={0.01}
+                onAfterChange={(value) => {
+                  if (inner) settings[outer].children[inner].range = value;
+                  else settings[outer].range = value;
+                  setSettings({ ...settings });
+                }}
+              />
+              <Button
+                size="small"
+                onClick={() => {
+                  if (inner) settings[outer].children[inner].range = "all";
+                  else settings[outer].range = "all";
+                  setSettings({ ...settings });
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          }
+          title={outer}
+          trigger="click"
+        >
+          <FilterOutlined
+            style={{ color: range === "all" ? "#000000" : "#ff9845" }}
+          />
+        </Popover>
+        <CaretUpOutlined
+          style={{ color: order === "ascending" ? "#ff9845" : "#000000" }}
+          onClick={() => {
+            switchOrderState(
+              order === "ascending" ? "none" : "ascending",
+              outer,
+              inner
+            );
+          }}
+        />
+        <CaretDownOutlined
+          style={{ color: order === "descending" ? "#ff9845" : "#000000" }}
+          onClick={() => {
+            switchOrderState(
+              order === "descending" ? "none" : "descending",
+              outer,
+              inner
+            );
+          }}
+        />
+      </>
+    );
+  };
+  const createFilter = (outer, inner = null) => {
+    const max = inner
+      ? 1.0
+      : selectedMetrics[outer]
+      ? selectedMetrics[outer].length * 1.0
+      : 1.0;
+    const range = inner
+      ? settings[outer].children[inner].range
+      : settings[outer].range;
+    const order = inner
+      ? settings[outer].children[inner].order
+      : settings[outer].order;
+    return (
+      <>
+        <Popover
+          content={
+            <div>
+              <Slider
+                range
+                min={0.0}
+                max={max}
+                defaultValue={[0.0, max]}
+                step={0.01}
+                onAfterChange={(value) => {
+                  if (inner) settings[outer].children[inner].range = value;
+                  else settings[outer].range = value;
+                  setSettings({ ...settings });
+                }}
+              />
+              <Button
+                size="small"
+                onClick={() => {
+                  if (inner) settings[outer].children[inner].range = "all";
+                  else settings[outer].range = "all";
+                  setSettings({ ...settings });
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          }
+          title={outer}
+          trigger="click"
+        >
+          <FilterOutlined
+            style={{ color: range === "all" ? "#000000" : "#ff9845" }}
+          />
+        </Popover>
+        <CaretUpOutlined
+          style={{ color: order === "ascending" ? "#ff9845" : "#000000" }}
+          onClick={() => {
+            switchOrderState(
+              order === "ascending" ? "none" : "ascending",
+              outer,
+              inner
+            );
+          }}
+        />
+        <CaretDownOutlined
+          style={{ color: order === "descending" ? "#ff9845" : "#000000" }}
+          onClick={() => {
+            switchOrderState(
+              order === "descending" ? "none" : "descending",
+              outer,
+              inner
+            );
+          }}
+        />
+      </>
+    );
+  };
+  const createMaxFilter = (outer, max = 1.0) => {
+    const range = settings[outer].range;
+    const order = settings[outer].order;
+    return (
+      <>
+        <Popover
+          content={
+            <div>
+              <Slider
+                range
+                min={0.0}
+                max={max}
+                defaultValue={[0.0, max]}
+                step={0.01}
+                onAfterChange={(value) => {
+                  settings[outer].range = value;
+                  setSettings({ ...settings });
+                }}
+              />
+              <Button
+                size="small"
+                onClick={() => {
+                  settings[outer].range = "all";
+                  setSettings({ ...settings });
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          }
+          title={outer}
+          trigger="click"
+        >
+          <FilterOutlined
+            style={{ color: range === "all" ? "#000000" : "#ff9845" }}
+          />
+        </Popover>
+        <CaretUpOutlined
+          style={{ color: order === "ascending" ? "#ff9845" : "#000000" }}
+          onClick={() => {
+            switchOrderState(
+              order === "ascending" ? "none" : "ascending",
+              outer
+            );
+          }}
+        />
+        <CaretDownOutlined
+          style={{ color: order === "descending" ? "#ff9845" : "#000000" }}
+          onClick={() => {
+            switchOrderState(
+              order === "descending" ? "none" : "descending",
+              outer
+            );
+          }}
+        />
+      </>
+    );
   };
   const constraintColumns = (constraints || []).map((constraint) => {
     const patternColor = {
@@ -341,17 +618,17 @@ const LineupTable = (props) => {
                     {constraint.id}
                   </Button>
                 )}
+                {createConstraintFilter(constraint)}
               </div>
               <div
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  fontWeight: "normal",
                   paddingTop: 35,
+                  display: "flex",
+                  justifyContent: "center",
                 }}
               >
                 {(selectedMetrics[constraint.type] || []).map((name, index) => (
-                  <div>{name}</div>
+                  <div style={{ marginRight: 12 }}>{name}</div>
                 ))}
               </div>
             </>
@@ -360,42 +637,59 @@ const LineupTable = (props) => {
           key: constraint.id,
           width: singleColumnWidth * selectedMetrics[constraint.type].length,
           render: (obj) => renderMergeConstraintItem(obj, constraint.type),
-          sorter: (a, b) =>
-            calcConstraintSum(a[constraint.id]) -
-            calcConstraintSum(b[constraint.id]),
         }
       : {
           title: (
             <div style={{ textAlign: "center" }}>
-              <Button
-                size="small"
-                key={"scheme-constraint-" + constraint.id}
-                style={{
-                  borderColor: patternColor[constraint.type],
-                  color: patternColor[constraint.type],
-                }}
-                className="validation-constraint-select-button"
-                onClick={() => {
-                  selectConstraint(constraint);
-                }}
-              >
-                {constraint.id}
-              </Button>
+              {constraint.id === selectedConstraint.id ? (
+                <Button
+                  size="small"
+                  key={"scheme-constraint-" + constraint.id}
+                  style={{
+                    borderColor: patternColor[constraint.type],
+                    color: "#ffffff",
+                    background: patternColor[constraint.type],
+                  }}
+                  className="validation-constraint-select-button"
+                  onClick={() => {
+                    selectConstraint(constraint);
+                  }}
+                >
+                  {constraint.id}
+                </Button>
+              ) : (
+                <Button
+                  size="small"
+                  key={"scheme-constraint-" + constraint.id}
+                  style={{
+                    borderColor: patternColor[constraint.type],
+                    color: patternColor[constraint.type],
+                  }}
+                  className="validation-constraint-select-button"
+                  onClick={() => {
+                    selectConstraint(constraint);
+                  }}
+                >
+                  {constraint.id}
+                </Button>
+              )}
+              {createConstraintFilter(constraint)}
             </div>
           ),
           dataIndex: constraint.id,
           key: constraint.id,
-          sorter: (a, b) =>
-            calcConstraintSum(a[constraint.id]) -
-            calcConstraintSum(b[constraint.id]),
           children: (selectedMetrics[constraint.type] || []).map((name) => {
             return {
-              title: name,
+              title: (
+                <div>
+                  {name}
+                  {createConstraintFilter(constraint, NameMap[name])}
+                </div>
+              ),
               dataIndex: [constraint.id, NameMap[name]],
               key: constraint.id + ":" + name,
               width: singleColumnWidth,
               render: (obj) => renderSingleConstraintItem(obj),
-              sorter: (a, b) => a - b,
             };
           }),
         };
@@ -403,7 +697,7 @@ const LineupTable = (props) => {
 
   const columns = [
     {
-      title: <div style={titleStyle}>Schemes</div>,
+      title: <div style={titleStyle}>Schemes{createFilter("id")}</div>,
       dataIndex: "id",
       key: "id",
       fixed: "left",
@@ -422,13 +716,14 @@ const LineupTable = (props) => {
             }
           }}
         >
-          Scheme #{id}
+          {id === 0 ? "PrivBayes" : "Scheme #" + id}
         </div>
       ),
-      sorter: (a, b) => a.id - b.id,
     },
     {
-      title: <div style={titleStyle}>Privacy budget</div>,
+      title: (
+        <div style={titleStyle}>Privacy budget{createFilter("budget")}</div>
+      ),
       dataIndex: "budget",
       key: "budget",
       width: singleColumnWidth,
@@ -442,21 +737,19 @@ const LineupTable = (props) => {
           }}
         ></div>
       ),
-      sorter: (a, b) => a.budget - b.budget,
     },
     {
       dataIndex: "statistical",
       key: "statistical",
       fixed: "left",
       width: singleColumnWidth * selectedMetrics.statistical.length,
-      sorter: (a, b) =>
-        calcSum(a.statistical, "statistical") -
-        calcSum(b.statistical, "statistical"),
       ...(merge
         ? {
             title: (
               <div style={{ textAlign: "center" }}>
-                <div style={titleStyle}>Statistical metrics</div>
+                <div style={titleStyle}>
+                  Statistical metrics{createFilter("statistical")}
+                </div>
                 <div
                   style={{
                     paddingTop: 35,
@@ -475,18 +768,24 @@ const LineupTable = (props) => {
         : {
             title: (
               <div>
-                <div style={titleStyle}>Statistical metrics</div>
+                <div style={titleStyle}>
+                  Statistical metrics{createFilter("statistical")}
+                </div>
               </div>
             ),
             children: (selectedMetrics.statistical || []).map((name) => {
               return {
-                title: name,
+                title: (
+                  <div>
+                    {name}
+                    {createFilter("statistical", name)}
+                  </div>
+                ),
                 dataIndex: ["statistical", name],
                 key: "statistical:" + name,
                 width: singleColumnWidth,
                 fixed: "left",
                 render: (num) => renderSingleMetricItem(num),
-                sorter: (a, b) => a.statistical[name] - b.statistical[name],
               };
             }),
           }),
@@ -496,13 +795,13 @@ const LineupTable = (props) => {
       key: "detection",
       fixed: "left",
       width: singleColumnWidth * selectedMetrics.detection.length,
-      sorter: (a, b) =>
-        calcSum(a.detection, "detection") - calcSum(b.detection, "detection"),
       ...(merge
         ? {
             title: (
               <div style={{ textAlign: "center" }}>
-                <div style={titleStyle}>Detection metrics</div>
+                <div style={titleStyle}>
+                  Detection metrics{createFilter("detection")}
+                </div>
                 <div
                   style={{
                     display: "flex",
@@ -521,18 +820,24 @@ const LineupTable = (props) => {
         : {
             title: (
               <div>
-                <div style={titleStyle}>Detection metrics</div>
+                <div style={titleStyle}>
+                  Detection metrics{createFilter("detection")}
+                </div>
               </div>
             ),
             children: (selectedMetrics.detection || []).map((name) => {
               return {
-                title: name,
+                title: (
+                  <div style={{ textAlign: "center" }}>
+                    {name}
+                    {createFilter("detection", name)}
+                  </div>
+                ),
                 dataIndex: "detection",
                 key: "detection:" + name,
                 width: singleColumnWidth,
                 fixed: "left",
                 render: (num) => renderSingleMetricItem(num),
-                sorter: (a, b) => a.detection[name] - b.detection[name],
               };
             }),
           }),

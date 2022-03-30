@@ -156,7 +156,11 @@ class ChartsView extends Component {
       });
       dataset.push(...dataMap);
     }
-    dataset.sort((a, b) => a[0] - b[0]);
+    if (x.attribute_type === "Measures") {
+      dataset.sort((a, b) => a[0] - b[0]);
+    } else {
+      dataset.sort((a, b) => x.values.indexOf(a[0]) - x.values.indexOf(b[0]));
+    }
     // if (chartType === "line" || chartType === "scatter")
     //   dataset.sort((a, b) => a[0] - b[0]);
     // // 折线图按x值从小到大
@@ -351,8 +355,10 @@ class ChartsView extends Component {
                       self.props.setWeightsData(null);
                       // 为提高渲染效果，获取modelData后请求贝叶斯网络数据
                       getNetwork()
-                        .then(res => self.props.setNetworkData(res.data.data.network))
-                        .catch(e => console.log(e));
+                        .then((res) =>
+                          self.props.setNetworkData(res.data.data.network)
+                        )
+                        .catch((e) => console.log(e));
                     })
                     .catch((e) => {
                       console.log(e);
