@@ -266,17 +266,18 @@ const SankeyPlot = (props) => {
               const { source, target, pattern } = obj;
               if (selectedId.length === 0) return null;
               if (pattern.length === 0) return null;
-              let text = '';
+              let text = '', length = 0; // length表示能显示的个数
               pattern.forEach(id => {
                 if (selectedId.indexOf(id) !== -1) {
                   text += String(id + ' ');
+                  length++;
                 }
               })
               if (text === '') return null;
               const x = (xScale(source) + lineWidth + xScale(target)) / 2;
               return <g key={source + '-' + target}>
                 {/* <foreignObject></foreignObject> */}
-                {pattern.length >=2 && <g transform={`translate(${x-12.5}, -40)`}>
+                {length >=2 && <g transform={`translate(${x-12.5}, -40)`}>
                   <FocusIcon></FocusIcon>
                 </g>}
                 <text

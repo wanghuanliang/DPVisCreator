@@ -351,7 +351,16 @@ class ChartsView extends Component {
                   }
                   getModelData({ constraints: cts })
                     .then((res) => {
-                      self.props.setModelData(res.data.data);
+                      // 直接将原市坐标加偏移
+                      const modelData = res.data.data;
+                      modelData.constraints.forEach((constraint, index) => {
+                        if (index % 2 === 0) {
+                          modelData.constraints[index].pos[0] += 10;
+                        } else {
+                          modelData.constraints[index].pos[0] -= 10;
+                        }
+                      })
+                      self.props.setModelData(modelData);
                       self.props.setWeightsData(null);
                       // 为提高渲染效果，获取modelData后请求贝叶斯网络数据
                       getNetwork()
