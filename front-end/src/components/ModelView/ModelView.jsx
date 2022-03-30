@@ -48,6 +48,7 @@ const ModelView = (props) => {
     setModelViewData,
     weightsData,
     setWeightsData,
+    globalConstraints,
   } = props;
   const {
     total_num: totalNum,
@@ -200,6 +201,7 @@ const ModelView = (props) => {
                 patternColor={patternColor}
                 selectedId={selectedId}
                 setSelectedId={setSelectedId}
+                globalConstraints={globalConstraints}
               ></WeightsTable>
             )}
           </foreignObject>

@@ -184,6 +184,7 @@ const IndexPage = () => {
                   setModelViewData={setModelViewData}
                   weightsData={weightsData}
                   setWeightsData={setWeightsData}
+                  globalConstraints={constraints}
                 ></ModelView>
               )}
             </div>

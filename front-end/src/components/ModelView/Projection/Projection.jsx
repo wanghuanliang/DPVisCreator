@@ -36,7 +36,6 @@ const Projection = (props) => {
       }
       patternPos[constraint.id] = constraint.pos;
     })
-    console.log(patternPos);
     return patternPos;
   }, [constraints]);
 

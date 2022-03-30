@@ -119,7 +119,7 @@ const SankeyPlot = (props) => {
         (obj.constraints?.[constraintId] || []).sort((a, b) => b.num - a.num);
         // modelData.constraints内可能缺失桑基？（好像不可能）
         (obj.constraints?.[constraintId] || []).forEach((sankey, index) => {
-          if (index >= n) return;
+          // if (index >= n) return;
           // 计算每个点坐标
           const sankeyHeight = sankey.num / totalNum * lineTotalHeight; // 一条sankey高度
           // const x1 = x1;

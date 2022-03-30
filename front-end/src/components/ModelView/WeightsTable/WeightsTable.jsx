@@ -48,15 +48,18 @@ const WeightsTable = (props) => {
     patternColor,
     selectedId,
     setSelectedId,
+    globalConstraints,
   } = props;
   
   // 表格数据
   const tableData = useMemo(() => {
     const tableData = [];
     Object.keys(patternWeights).forEach(constraint => {
+      const idIndex = Number(constraint.replace(/[^\d]/g, ''));
       tableData.push({
         key: constraint,
         id: constraint,
+        records: globalConstraints[idIndex].data.length,
         weights: patternWeights[constraint]
       })
     })
@@ -111,7 +114,7 @@ const WeightsTable = (props) => {
     {
       title: 'Data patterns',
       dataIndex: 'id',
-      width: 100,
+      width: 80,
       render: (id, record) => {
         return <BorderText
           text={id}
@@ -131,9 +134,14 @@ const WeightsTable = (props) => {
       }
     },
     {
+      title: '#Records',
+      dataIndex: 'records',
+      width: 80,
+    },
+    {
       title: 'Importance weights',
       dataIndex: 'weights',
-      width: 100,
+      // width: 80,
       render: (value, record) => {
         return <InputNumber
           size='small'
@@ -153,7 +161,7 @@ const WeightsTable = (props) => {
 
   return <div className='model-left-top'>
     <div style={{display: 'flex'}}>
-      <div className='table-box' style={{ marginBottom: 10, width: 250 }}>
+      <div className='table-box' style={{ marginBottom: 10, width: 260 }}>
         <Table
           size='small'
           columns={columns}
