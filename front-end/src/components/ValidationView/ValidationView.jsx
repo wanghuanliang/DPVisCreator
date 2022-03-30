@@ -37,7 +37,7 @@ const staticMetrics = {
 };
 
 const ValidationView = (props) => {
-  const { attributeCharacter, originalData, constraints, schemes } = props;
+  const { attributeCharacter, originalData, constraints, schemes, changeSchemeId } = props;
   const [selectedSchemeId, setSelectedSchemeId] = useState(0);
 
   const [selectedMetrics, setSelectedMetrics] = useState({
@@ -137,6 +137,7 @@ const ValidationView = (props) => {
               setSelectedConstraint(constraint);
             }}
             merge={shouldMerge}
+            changeSchemeId={changeSchemeId}
           ></LineupTable>
         </div>
         {/* 保护后的视图放这里 */}

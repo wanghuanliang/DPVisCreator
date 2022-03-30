@@ -68,6 +68,7 @@ const LineupTable = (props) => {
     selectedConstraint,
     selectConstraint,
     merge,
+    changeSchemeId,
   } = props;
 
   // schemes变化后重新计算表格数据
@@ -413,9 +414,13 @@ const LineupTable = (props) => {
             color: id === selectedSchemeId ? "#f0943d" : "#000",
             cursor: "pointer",
           }}
-          onClick={() =>
-            id === selectedSchemeId ? null : setSelectedSchemeId(id)
-          }
+          onClick={() => {
+            if (id !== selectedSchemeId) {
+              setSelectedSchemeId(id);
+              // 需要同时更新modelViewData
+              changeSchemeId(id);
+            }
+          }}
         >
           Scheme #{id}
         </div>

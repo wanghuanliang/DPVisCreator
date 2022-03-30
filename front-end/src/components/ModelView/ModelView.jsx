@@ -18,6 +18,7 @@ import AlluvialPlot from "./AlluvialPlot/AlluvialPlot";
 import WeightsTable from "./WeightsTable/WeightsTable";
 import Projection from "./Projection/Projection";
 import { setWeights, getNetwork, getMetrics } from "../../services/api";
+import { cloneDeep } from "lodash";
 
 const [svgWidth, svgHeight] = [1118, 550];
 const margin = {
@@ -43,6 +44,10 @@ const ModelView = (props) => {
     setSchemes,
     networkData,
     setNetworkData,
+    modelViewData,
+    setModelViewData,
+    weightsData,
+    setWeightsData,
   } = props;
   const {
     total_num: totalNum,
@@ -75,10 +80,22 @@ const ModelView = (props) => {
     return [initial, patternType];
   }, [constraints]);
   useEffect(() => {
-    setPatternWeights(initialPatternWeight);
+    if (weightsData === null) {
+      setPrivacyBudget(10);
+      setPatternWeights(initialPatternWeight);
+    } else {
+      // 有weightsData值，根据传过来的值初始化
+      setPrivacyBudget(weightsData.bayes_budget);
+      const initial = {};
+      weightsData.weights.forEach(obj => {
+        initial[obj.id] = obj.weight;
+      });
+      setPatternWeights(initial);
+    }
+    
     // setConstraintsPos(constraints);
     setSelectedId([]);
-  }, [constraints, initialPatternWeight]);
+  }, [constraints, initialPatternWeight, weightsData]);
 
   // 点击update，更新constraintsPos, 更新matrixData, 再发送getNetwork请求
   const handleUpdateClick = () => {
@@ -99,8 +116,19 @@ const ModelView = (props) => {
       .catch((e) => console.log("e", e));
   };
 
-  // 点击record，发送请求, 并且需要记录下这一份model view数据
+  // 点击record，发送请求, 并且需要记录下这一份scheme和modelViewData数据
   const handleRecordClick = () => {
+    const currentModelViewData = {};
+    const weightsData = {};
+    weightsData.bayes_budget = privacyBudgetValue;
+    weightsData.weights = [];
+    Object.entries(patternWeights).forEach(([key, value]) => {
+      weightsData.weights.push({ id: key, weight: value });
+    });
+    currentModelViewData.modelData = cloneDeep(modelData);
+    currentModelViewData.networkData = cloneDeep(networkData);
+    currentModelViewData.weightsData = cloneDeep(weightsData);
+    setModelViewData([...modelViewData, currentModelViewData])
     getMetrics()
       .then((res) => {
         setSchemes([...schemes, res.data.scheme]);

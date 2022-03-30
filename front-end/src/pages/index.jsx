@@ -42,14 +42,22 @@ const IndexPage = () => {
     initialAttributeCharacter
   );
   // 约束
-  const [constraints, setConstraints] = useState(null);
+  const [constraints, setConstraints] = useState(null); // 全局constraints
   const [augmentedData, setAugmentedData] = useState(null);
   const [protectedData, setProtectedData] = useState(null);
   // model 开关，是否使用临时数据
   const [modelData, setModelData] = useState(tempModelData); // null
-  const [networkData, setNetworkData] = useState(initialNetworkData);
+  const [networkData, setNetworkData] = useState(initialNetworkData); // 贝叶斯网络数据
+  const [weightsData, setWeightsData] = useState(null); // pattern权重
+  const [modelViewData, setModelViewData] = useState([null]); // model view相关数据前端存起来，包括modelData、networkData，weightData
   // 指标
   const [schemes, setSchemes] = useState([]); // 初始化为数组，否则会出现iterable问题
+  const changeSchemeId = (id) => {
+    setModelData(modelViewData[id].modelData);
+    setNetworkData(modelViewData[id].networkData);
+    setWeightsData(modelViewData[id].weightsData);
+  }
+  
   const handleNextClick = () => {
     const jcts = JSON.parse(JSON.stringify(constraints));
     const cts = [];
@@ -99,6 +107,7 @@ const IndexPage = () => {
   // console.log("protectedData", protectedData);
   console.log("modelData", modelData);
   console.log("networkData", networkData);
+  console.log("modelViewData", modelViewData);
 
   return (
     <>
@@ -153,6 +162,7 @@ const IndexPage = () => {
                 setConstraints={setConstraints}
                 setModelData={setModelData}
                 setNetworkData={setNetworkData}
+                setWeightsData={setWeightsData}
               ></ChartsView>
             </div>
             {/* model view */}
@@ -170,6 +180,10 @@ const IndexPage = () => {
                   setSchemes={setSchemes}
                   networkData={networkData}
                   setNetworkData={setNetworkData}
+                  modelViewData={modelViewData}
+                  setModelViewData={setModelViewData}
+                  weightsData={weightsData}
+                  setWeightsData={setWeightsData}
                 ></ModelView>
               )}
             </div>
@@ -189,6 +203,7 @@ const IndexPage = () => {
                 constraints={constraints}
                 schemes={schemes}
                 setSchemes={setSchemes}
+                changeSchemeId={changeSchemeId}
               ></Validation>
             )}
             {/* <LineupTable></LineupTable> */}
