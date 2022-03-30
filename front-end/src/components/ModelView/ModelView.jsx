@@ -198,6 +198,8 @@ const ModelView = (props) => {
                 handleUpdateClick={handleUpdateClick}
                 patternType={patternType}
                 patternColor={patternColor}
+                selectedId={selectedId}
+                setSelectedId={setSelectedId}
               ></WeightsTable>
             )}
           </foreignObject>

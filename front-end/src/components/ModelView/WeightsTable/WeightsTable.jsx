@@ -46,6 +46,8 @@ const WeightsTable = (props) => {
     handleUpdateClick,
     patternType,
     patternColor,
+    selectedId,
+    setSelectedId,
   } = props;
   
   // 表格数据
@@ -114,6 +116,17 @@ const WeightsTable = (props) => {
         return <BorderText
           text={id}
           type={patternType[id]} //后面写一个函数获取类型
+          selected={selectedId.indexOf(id) !== -1}
+          handleClick={() => {
+            const index = selectedId.indexOf(id);
+            if (index === -1) {
+              selectedId.push(id);
+              setSelectedId([...selectedId]);
+            } else {
+              selectedId.splice(index, 1);
+              setSelectedId([...selectedId]);
+            }
+          }}
         ></BorderText>
       }
     },

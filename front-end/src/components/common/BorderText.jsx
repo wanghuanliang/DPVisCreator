@@ -12,6 +12,8 @@ const BorderText = (props) => {
   const {
     text,
     type,
+    selected,
+    handleClick,
   } = props;
 
   const color = patternColor?.[type];
@@ -19,13 +21,16 @@ const BorderText = (props) => {
   return <div
     style={{
       textAlign: 'center',
-      color: color,
+      color: selected ? '#fff' : color,
+      backgroundColor: selected ? color : '#fff',
       border: `1px solid ${color}`,
       borderRadius: '3px',
       width: 50,
+      cursor: 'pointer',
       // height: 20,
       // lineHeight: 20,
     }}
+    onClick={handleClick}
   >{text}</div>
 }
 
