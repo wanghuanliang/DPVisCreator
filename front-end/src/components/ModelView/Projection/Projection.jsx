@@ -235,9 +235,9 @@ const Projection = (props) => {
                 cy={yScale(y)}
                 r={18}
                 fill={patternColor[type]}
-                stroke='#f0943d'
-                strokeWidth={2}
-                strokeOpacity={selectedId.indexOf(id) === -1 ? 0 : 1}
+                // stroke='#f0943d'
+                // strokeWidth={2}
+                // strokeOpacity={selectedId.indexOf(id) === -1 ? 0 : 1}
               ></circle>
               {/* 内圈 */}
               <circle

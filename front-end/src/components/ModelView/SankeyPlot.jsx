@@ -1,8 +1,9 @@
 import React, { memo, useMemo } from 'react';
 import * as d3 from 'd3';
+import { ReactComponent as FocusIcon } from "../../assets/focus.svg";
 
 const svgWidth = 700, svgHeight = 540;
-const margin = { top: 30, right: 50, bottom: 30, left: 60 };
+const margin = { top: 60, right: 50, bottom: 30, left: 60 };
 const width = svgWidth - margin.left - margin.right,
   height = svgHeight - margin.top - margin.bottom;
 
@@ -62,15 +63,19 @@ const SankeyPlot = (props) => {
 
   // backgroundSankeyPos: [d, d, d, d, d......]
   // constraintsSankeyPos: {c1: [d, d, d, d......], c2: [d, d, d, d......]}
-  const [backgroundSankeyPos, constraintsSankeyPos] = useMemo(() => {
+  // constraintsSankeyPos: {c1: [{d: d, gather: true}, d, d, d......], c2: [d, d, d, d......]} 
+  // 新增需求，显示聚焦pattern文字，focusPattern=[{source: '',target: '', pattern: [P1、P2]}]
+  const [backgroundSankeyPos, constraintsSankeyPos, focusPattern] = useMemo(() => {
     const backgroundSankeyPos = [];
     const constraintsSankeyPos = {};
+    const focusPattern = [];
     constraints.forEach(constraint => {
       const constraintId = constraint.id;
       constraintsSankeyPos[constraintId] = []
     });
     // 遍历每一个间隔
     sankeyData.forEach(obj => {
+      const currentFocusPattern = []; // 当前间隔的聚焦pattern
       const x1 = xScale(obj.source_attr) + lineWidth; // source x坐标
       const x2 = xScale(obj.target_attr); // target x坐标
       // 当前每根小柱子起点坐标 [, , ,] [, , ,], 每个间隔初始化为0, 深拷贝
@@ -115,8 +120,14 @@ const SankeyPlot = (props) => {
       constraints.forEach(constraint => {
         const constraintId = constraint.id;
         // 新增需求，一个间隔内的约束桑基，只绘制topN的, 对约束进行原地排序
-        const n = 2;
-        (obj.constraints?.[constraintId] || []).sort((a, b) => b.num - a.num);
+        // const n = 2;
+        // (obj.constraints?.[constraintId] || []).sort((a, b) => b.num - a.num);
+        // 新增需求，同一个source，判断流向的target。计算一下每一个source的总和num, [20, 50];
+        const sourceTotalNum = new Array(10).fill(0);
+        (obj.constraints?.[constraintId] || []).forEach((sankey, i) => {
+          const index = sankey.source;
+          sourceTotalNum[index] += sankey.num;
+        });
         // modelData.constraints内可能缺失桑基？（好像不可能）
         (obj.constraints?.[constraintId] || []).forEach((sankey, index) => {
           // if (index >= n) return;
@@ -140,13 +151,30 @@ const SankeyPlot = (props) => {
           // 二次贝塞尔
           p.bezierCurveTo((x3 + x4) / 2, y3, (x3 + x4) / 2, y4, x4, y4);
           p.closePath();
-          constraintsSankeyPos[constraintId].push(p._);
+          let gather = false;
+          if (sankey.num / sourceTotalNum[sankey.source] > 0.8) { // 调整占比
+            gather = true;
+            // 还没有则加入currentFocusPattern
+            if (currentFocusPattern.indexOf(constraintId) === -1) {
+              currentFocusPattern.push(constraintId);
+            }
+          }
+          // constraintsSankeyPos[constraintId].push(p._);
+          constraintsSankeyPos[constraintId].push({
+            d: p._,
+            gather: gather,
+          });
         })
+      })
+      focusPattern.push({
+        source: obj.source_attr,
+        target: obj.target_attr,
+        pattern: currentFocusPattern,
       })
     })
 
-    return [backgroundSankeyPos, constraintsSankeyPos];
-  }, [sankeyData, proportionData, currentStartPos, totalNum, xScale])
+    return [backgroundSankeyPos, constraintsSankeyPos, focusPattern];
+  }, [sankeyData, proportionData, currentStartPos, totalNum, xScale]);
 
   return (
     <svg width={svgWidth} height={svgHeight}>
@@ -174,15 +202,19 @@ const SankeyPlot = (props) => {
             // let color = colorArray[i];
             return <g key={constraintId}>
               {
-                constraintsSankeyPos[constraintId].map((d, i) => {
+                constraintsSankeyPos[constraintId].map((obj, i) => {
                   // let color = "#000";
+                  const d = obj.d,
+                    gather = obj.gather;
+                  const selected = selectedId.indexOf(constraintId) !== -1;
                   return <path
                     key={i}
                     d={d}
                     fill={patternColor[patternType[constraintId]]}
-                    fillOpacity={selectedId.indexOf(constraintId) === -1 ? 0 : 0.6}
-                    // stroke="#333"
-                    strokeOpacity={0.3}
+                    fillOpacity={selected ? 0.6 : 0}
+                    stroke="#FF9845"
+                    strokeOpacity={selected && gather ? 1 : 0}
+                    // strokeOpacity={0}
                   ></path>
                 })
               }
@@ -221,6 +253,42 @@ const SankeyPlot = (props) => {
             </g>
           })
         }
+        {/* 绘制focus */}
+        <g transform='translate(0, -8)'>
+          {/* <text
+            x={-25}
+            y={0}
+            // alignmentBaseline='central'
+            textAnchor='middle'
+          >focus</text> */}
+          {
+            focusPattern.map((obj, index) => {
+              const { source, target, pattern } = obj;
+              if (selectedId.length === 0) return null;
+              if (pattern.length === 0) return null;
+              let text = '';
+              pattern.forEach(id => {
+                if (selectedId.indexOf(id) !== -1) {
+                  text += String(id + ' ');
+                }
+              })
+              if (text === '') return null;
+              const x = (xScale(source) + lineWidth + xScale(target)) / 2;
+              return <g key={source + '-' + target}>
+                {/* <foreignObject></foreignObject> */}
+                {pattern.length >=2 && <g transform={`translate(${x-12.5}, -40)`}>
+                  <FocusIcon></FocusIcon>
+                </g>}
+                <text
+                  x={x}
+                  y={0}
+                  textAnchor='middle'
+                  fill='#333'
+                >{text}</text>
+              </g>
+            })
+          }
+        </g>
       </g>
     </svg>
   )

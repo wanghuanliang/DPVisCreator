@@ -59,7 +59,7 @@ const WeightsTable = (props) => {
       tableData.push({
         key: constraint,
         id: constraint,
-        records: globalConstraints[idIndex].data.length,
+        records: globalConstraints ? globalConstraints[idIndex].data.length : 0,
         weights: patternWeights[constraint]
       })
     })
