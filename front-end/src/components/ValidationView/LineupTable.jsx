@@ -30,6 +30,7 @@ const LineupTable = (props) => {
     selectedConstraint,
     selectConstraint,
     merge,
+    changeSchemeId,
   } = props;
   const constraintsSettings = {};
   (constraints || []).forEach((constraint) => {
@@ -707,9 +708,13 @@ const LineupTable = (props) => {
             color: id === selectedSchemeId ? "#f0943d" : "#000",
             cursor: "pointer",
           }}
-          onClick={() =>
-            id === selectedSchemeId ? null : setSelectedSchemeId(id)
-          }
+          onClick={() => {
+            if (id !== selectedSchemeId) {
+              setSelectedSchemeId(id);
+              // 需要同时更新modelViewData
+              changeSchemeId(id);
+            }
+          }}
         >
           {id === 0 ? "PrivBayes" : "Scheme #" + id}
         </div>

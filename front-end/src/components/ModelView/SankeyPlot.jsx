@@ -7,7 +7,7 @@ const width = svgWidth - margin.left - margin.right,
   height = svgHeight - margin.top - margin.bottom;
 
 const lineTotalHeight = height - 20;
-const lineWidth = 20; // 每根柱子的宽度
+const lineWidth = 10; // 每根柱子的宽度
 const intervalTotalHeight = 20; // 柱子间总间隔相同
 
 const constraints = [{
@@ -119,7 +119,7 @@ const SankeyPlot = (props) => {
         (obj.constraints?.[constraintId] || []).sort((a, b) => b.num - a.num);
         // modelData.constraints内可能缺失桑基？（好像不可能）
         (obj.constraints?.[constraintId] || []).forEach((sankey, index) => {
-          if (index >= n) return;
+          // if (index >= n) return;
           // 计算每个点坐标
           const sankeyHeight = sankey.num / totalNum * lineTotalHeight; // 一条sankey高度
           // const x1 = x1;
@@ -214,7 +214,7 @@ const SankeyPlot = (props) => {
                     width={lineWidth}
                     height={height}
                     fill='#fff'
-                    stroke='#333'
+                    stroke='#999'
                   ></rect>
                 })
               }

@@ -352,6 +352,7 @@ class ChartsView extends Component {
                   getModelData({ constraints: cts })
                     .then((res) => {
                       self.props.setModelData(res.data.data);
+                      self.props.setWeightsData(null);
                       // 为提高渲染效果，获取modelData后请求贝叶斯网络数据
                       getNetwork()
                         .then((res) =>

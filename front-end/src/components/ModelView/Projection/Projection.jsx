@@ -24,10 +24,16 @@ const Projection = (props) => {
     matrixData,
   } = props;
 
-  // 暂存点坐标，画边用
+  // 暂存点坐标，画边用{pattern: [20,30], },加上错位，加5， -5
   const patternPos = useMemo(() => {
     const patternPos = {};
-    constraints.forEach(constraint => {
+    constraints.forEach((constraint, index) => {
+      // 错位, 直接改constraint，但是地址没变不触发更新
+      if (index % 2 === 0) {
+        constraint.pos[0] += 10;
+      } else {
+        constraint.pos[0] -= 10;
+      }
       patternPos[constraint.id] = constraint.pos;
     })
     return patternPos;
@@ -216,27 +222,39 @@ const Projection = (props) => {
       {/* 圆点 */}
       <g className='circle'>
         {
-          constraints.map(constraint => {
-            const x = constraint.pos[0],
+          constraints.map((constraint,index) => {
+            let x = constraint.pos[0],
               y = constraint.pos[1];
             const id = constraint.id;
             const type = constraint.type;
+            const selected = selectedId.indexOf(id) !== -1;
             return <g key={constraint.id}>
+              {/* 外圈 */}
               <circle
                 cx={xScale(x)}
                 cy={yScale(y)}
-                r={rScale(constraint.r)}
+                r={18}
                 fill={patternColor[type]}
                 stroke='#f0943d'
                 strokeWidth={2}
                 strokeOpacity={selectedId.indexOf(id) === -1 ? 0 : 1}
+              ></circle>
+              {/* 内圈 */}
+              <circle
+                cx={xScale(x)}
+                cy={yScale(y)}
+                r={12}
+                fill={selected ? patternColor[type] : '#fff'}
               ></circle>
               <text
                 x={xScale(x)}
                 y={yScale(y)}
                 textAnchor='middle'
                 alignmentBaseline='central'
-                fill='#333'
+                fill={selected ? '#fff' : patternColor[type]}
+                // fill='#000'
+                fontSize={14}
+                fontWeight={600}
               >{constraint.id}</text>
               {/* 点击区域 */}
               <circle
