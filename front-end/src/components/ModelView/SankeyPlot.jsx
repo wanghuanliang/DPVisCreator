@@ -7,7 +7,7 @@ const width = svgWidth - margin.left - margin.right,
   height = svgHeight - margin.top - margin.bottom;
 
 const lineTotalHeight = height - 20;
-const lineWidth = 20; // 每根柱子的宽度
+const lineWidth = 10; // 每根柱子的宽度
 const intervalTotalHeight = 20; // 柱子间总间隔相同
 
 const constraints = [{
@@ -214,7 +214,7 @@ const SankeyPlot = (props) => {
                     width={lineWidth}
                     height={height}
                     fill='#fff'
-                    stroke='#333'
+                    stroke='#999'
                   ></rect>
                 })
               }

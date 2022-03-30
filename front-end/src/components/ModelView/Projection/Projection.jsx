@@ -24,12 +24,19 @@ const Projection = (props) => {
     matrixData,
   } = props;
 
-  // 暂存点坐标，画边用
+  // 暂存点坐标，画边用{pattern: [20,30], },加上错位，加5， -5
   const patternPos = useMemo(() => {
     const patternPos = {};
-    constraints.forEach(constraint => {
+    constraints.forEach((constraint, index) => {
+      // 错位, 直接改constraint，但是地址没变不触发更新
+      if (index % 2 === 0) {
+        constraint.pos[0] += 10;
+      } else {
+        constraint.pos[0] -= 10;
+      }
       patternPos[constraint.id] = constraint.pos;
     })
+    console.log(patternPos);
     return patternPos;
   }, [constraints]);
 
@@ -216,11 +223,18 @@ const Projection = (props) => {
       {/* 圆点 */}
       <g className='circle'>
         {
-          constraints.map(constraint => {
-            const x = constraint.pos[0],
+          constraints.map((constraint,index) => {
+            let x = constraint.pos[0],
               y = constraint.pos[1];
             const id = constraint.id;
             const type = constraint.type;
+            // 错位
+            // if (index % 2 === 0) {
+            //   x += 5;
+            // } else {
+            //   x -= 5;
+            // }
+            console.log(x);
             return <g key={constraint.id}>
               <circle
                 cx={xScale(x)}
