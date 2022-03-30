@@ -39,7 +39,7 @@ const patternColor = {
 const ModelView = (props) => {
   const {
     modelData,
-    setProtectedData,
+    setModelData,
     schemes,
     setSchemes,
     networkData,
@@ -58,7 +58,6 @@ const ModelView = (props) => {
     sankey_data: sankeyData,
     matrix_data: matrixData, //绘制边用
   } = modelData;
-  console.log('networkData', networkData);
 
   const [privacyBudgetValue, setPrivacyBudget] = useState(10); // 整体隐私预算,0-20,默认10
   const [patternWeights, setPatternWeights] = useState(null); // 权重{'c1': 1, 'c2': 1}
@@ -108,7 +107,11 @@ const ModelView = (props) => {
     setWeights(data)
       .then((res) => {
         // setConstraintsPos(res.data.constraints)
-        console.log('res', res);
+        // 修改modelData内的matrix_data, 即修改边
+        modelData.matrix_data = res.data.matrix_data;
+        setModelData({...modelData})
+        console.log('res', res.data.matrix_data);
+
         getNetwork()
           .then(res => setNetworkData(res.data.data.network))
           .catch(e => console.log(e));

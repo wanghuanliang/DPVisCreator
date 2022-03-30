@@ -175,7 +175,7 @@ const IndexPage = () => {
               {modelData && (
                 <ModelView
                   modelData={modelData}
-                  setProtectedData={setProtectedData}
+                  setModelData={setModelData}
                   schemes={schemes}
                   setSchemes={setSchemes}
                   networkData={networkData}
