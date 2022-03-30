@@ -102,7 +102,7 @@ export default class ChartMenu extends Component {
       return select;
     }
     function getColorSelect() {
-      if (self && chart_type[self.state.typeIndex] === "bar") return [];
+      // if (self && chart_type[self.state.typeIndex] === "bar") return [];
       const attributes = getSpecificTypeOfAttributes("Dimensions");
       return attributes;
     }
@@ -303,12 +303,12 @@ export default class ChartMenu extends Component {
                 onChange={(value) => {
                   self.setState({ colorIndex: value }, self.checkState);
                 }}
-                disabled={
-                  self.state.typeIndex < 0 ||
-                  chart_type[self.state.typeIndex] === "bar"
-                    ? true
-                    : false
-                }
+                // disabled={
+                //   self.state.typeIndex < 0 ||
+                //   chart_type[self.state.typeIndex] === "bar"
+                //     ? true
+                //     : false
+                // }
               >
                 {getColorSelect().map((select) => (
                   <Option value={select.index} key={"color" + select.index}>
