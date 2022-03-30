@@ -46,8 +46,8 @@ const IndexPage = () => {
   const [augmentedData, setAugmentedData] = useState(null);
   const [protectedData, setProtectedData] = useState(null);
   // model 开关，是否使用临时数据
-  const [modelData, setModelData] = useState(tempModelData); // null
-  const [networkData, setNetworkData] = useState(initialNetworkData); // 贝叶斯网络数据
+  const [modelData, setModelData] = useState(null); // null
+  const [networkData, setNetworkData] = useState(null); // 贝叶斯网络数据
   const [weightsData, setWeightsData] = useState(null); // pattern权重
   const [modelViewData, setModelViewData] = useState([null]); // model view相关数据前端存起来，包括modelData、networkData，weightData
   // 指标

@@ -28,12 +28,12 @@ const Projection = (props) => {
   const patternPos = useMemo(() => {
     const patternPos = {};
     constraints.forEach((constraint, index) => {
-      // 错位, 直接改constraint，但是地址没变不触发更新
-      if (index % 2 === 0) {
-        constraint.pos[0] += 10;
-      } else {
-        constraint.pos[0] -= 10;
-      }
+      // // 错位, 直接改constraint，但是地址没变不触发更新
+      // if (index % 2 === 0) {
+      //   constraint.pos[0] += 10;
+      // } else {
+      //   constraint.pos[0] -= 10;
+      // }
       patternPos[constraint.id] = constraint.pos;
     })
     return patternPos;
