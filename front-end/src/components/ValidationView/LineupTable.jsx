@@ -42,12 +42,12 @@ const LineupTable = (props) => {
         constraint.type === "cluster"
           ? {
               KL: {
-                access: (record) => record[constraint.id].KL,
+                access: (record) => record[constraint.id].KL.protected,
                 order: "none",
                 range: "all",
               },
               WDis: {
-                access: (record) => record[constraint.id].WDis,
+                access: (record) => record[constraint.id].WDis.protected,
                 order: "none",
                 range: "all",
               },
@@ -55,34 +55,34 @@ const LineupTable = (props) => {
           : constraint.type === "correlation"
           ? {
               DTW: {
-                access: (record) => record[constraint.id].DTW,
+                access: (record) => record[constraint.id].DTW.protected,
                 order: "none",
                 range: "all",
               },
               Euc: {
-                access: (record) => record[constraint.id].Euc,
+                access: (record) => record[constraint.id].Euc.protected,
                 order: "none",
                 range: "all",
               },
               PCD: {
-                access: (record) => record[constraint.id].PCD,
+                access: (record) => record[constraint.id].PCD.protected,
                 order: "none",
                 range: "all",
               },
             }
           : {
               NDCG: {
-                access: (record) => record[constraint.id].NDCG,
+                access: (record) => record[constraint.id].NDCG.protected,
                 order: "none",
                 range: "all",
               },
               mAP: {
-                access: (record) => record[constraint.id].mAP,
+                access: (record) => record[constraint.id].mAP.protected,
                 order: "none",
                 range: "all",
               },
               Diff: {
-                access: (record) => record[constraint.id].Diff,
+                access: (record) => record[constraint.id].Diff.protected,
                 order: "none",
                 range: "all",
               },
