@@ -103,8 +103,8 @@ def calculate_k(num_attributes, num_tuples, target_usefulness=4, epsilon=0.1):
 
 
 def worker_mutual(paras):
-    axis1, axis2, dataset = paras
-    mi = mutual_information(dataset[axis1], dataset[[axis2]], None)
+    axis1, axis2, dataset, weights = paras
+    mi = mutual_information(dataset[axis1], dataset[[axis2]], weights)
     return axis1, axis2, mi
 
 def worker(paras):
@@ -124,7 +124,7 @@ def worker(paras):
     return parents_pair_list, mutual_info_list
 
 
-def get_mutual_info_list(dataset, k=2):
+def get_mutual_info_list(dataset, weights, k=2):
     """
     计算在当前pattern对应的数据下，任意两个维度的互信息
     Parameters
@@ -138,7 +138,7 @@ def get_mutual_info_list(dataset, k=2):
     """
     axes = dataset.columns.tolist()
     with Pool() as pool:
-        res_list = pool.map(worker_mutual, [(axis1, axis2, dataset) for axis1, axis2 in product(axes, axes) if axis1 != axis2])
+        res_list = pool.map(worker_mutual, [(axis1, axis2, dataset, weights) for axis1, axis2 in product(axes, axes) if axis1 != axis2])
 
     return res_list
 

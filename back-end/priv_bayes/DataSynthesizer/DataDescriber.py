@@ -212,10 +212,10 @@ class DataDescriber:
         if self.df_encoded.shape[1] < 2:
             raise Exception("Correlated Attribute Mode requires at least 2 attributes(i.e., columns) in dataset.")
 
-    def get_mutual_info_list(self, cur_ids):
+    def get_mutual_info_list(self, weights):
         # cur_ids: 当前pattern选取的数据下标
 
-        return get_mutual_info_list(self.df_encoded.iloc[cur_ids])
+        return get_mutual_info_list(self.df_encoded, weights)
 
     def read_dataset_from_csv(self, file_name=None):
         try:
