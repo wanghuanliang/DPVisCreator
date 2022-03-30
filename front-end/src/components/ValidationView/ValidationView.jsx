@@ -32,7 +32,7 @@ const staticMetrics = {
   },
   order: {
     title: "Order",
-    options: ["NDCG", "mAP"],
+    options: ["NDCG", "mAP", "Diff"],
   },
 };
 

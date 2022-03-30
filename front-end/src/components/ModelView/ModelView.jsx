@@ -32,7 +32,7 @@ const patternColor = {
   cluster: "#9cb0a2",
   correlation: "#c39b83",
   order: "#bbafd1",
-  others: '#ccc',
+  others: "#ccc",
 };
 
 const ModelView = (props) => {
@@ -43,6 +43,7 @@ const ModelView = (props) => {
     setSchemes,
     networkData,
     setNetworkData,
+    setBase,
   } = props;
   const {
     total_num: totalNum,
@@ -53,7 +54,7 @@ const ModelView = (props) => {
     sankey_data: sankeyData,
     matrix_data: matrixData, //绘制边用
   } = modelData;
-  console.log('networkData', networkData);
+  console.log("networkData", networkData);
 
   const [privacyBudgetValue, setPrivacyBudget] = useState(10); // 整体隐私预算,0-20,默认10
   const [patternWeights, setPatternWeights] = useState(null); // 权重{'c1': 1, 'c2': 1}
@@ -62,7 +63,7 @@ const ModelView = (props) => {
   const [showSankey, setShowSankey] = useState(true); //是否展示桑基图
 
   // modelData修改，更新patternWeights、constraintsPos, 清空selectedId
-  // 用于绘制weightsTable，initialPatternWeight, patternType, 
+  // 用于绘制weightsTable，initialPatternWeight, patternType,
   const [initialPatternWeight, patternType] = useMemo(() => {
     const initial = {},
       patternType = {};
@@ -91,10 +92,10 @@ const ModelView = (props) => {
     setWeights(data)
       .then((res) => {
         // setConstraintsPos(res.data.constraints)
-        console.log('res', res);
+        console.log("res", res);
         getNetwork()
-          .then(res => setNetworkData(res.data.data.network))
-          .catch(e => console.log(e));
+          .then((res) => setNetworkData(res.data.data.network))
+          .catch((e) => console.log(e));
       })
       .catch((e) => console.log("e", e));
   };
@@ -103,7 +104,8 @@ const ModelView = (props) => {
   const handleRecordClick = () => {
     getMetrics()
       .then((res) => {
-        setSchemes([...schemes, res.data.scheme]);
+        schemes.shift();
+        setSchemes([res.data.base, ...schemes, res.data.scheme]);
       })
       .catch((e) => console.log(e));
   };
@@ -132,18 +134,22 @@ const ModelView = (props) => {
             onChange={(value) => setPrivacyBudget(value)}
           ></InputNumber>
           <div style={{ display: "inline-block", width: 20 }}></div>
-          <div style={{display: 'flex', justifyContent: 'flex-end'}}>
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <div
               className="exchange-button"
               onClick={() => setShowSankey(true)}
-              style={{borderColor: showSankey ? '#FF9845' : '#F5F5F5'}}
-            >Sankey diagram</div>
+              style={{ borderColor: showSankey ? "#FF9845" : "#F5F5F5" }}
+            >
+              Sankey diagram
+            </div>
             <div
               className="exchange-button"
               onClick={() => setShowSankey(false)}
-              style={{borderColor: showSankey ? '#F5F5F5' : '#FF9845'}}
-            >Bayesian network</div>
+              style={{ borderColor: showSankey ? "#F5F5F5" : "#FF9845" }}
+            >
+              Bayesian network
             </div>
+          </div>
           <div style={{ display: "inline-block", width: 20 }}></div>
           <Button size="small" onClick={handleRecordClick}>
             Record
@@ -182,7 +188,7 @@ const ModelView = (props) => {
             ></Projection>
           </g>
           <g transform="translate(400,0)">
-            {showSankey ?
+            {showSankey ? (
               <SankeyPlot
                 totalNum={totalNum}
                 axisOrder={axisOrder}
@@ -192,11 +198,10 @@ const ModelView = (props) => {
                 patternColor={patternColor}
                 patternType={patternType}
                 selectedId={selectedId}
-              ></SankeyPlot> :
-              <BayesianNetwork
-                networkData={networkData}
-              ></BayesianNetwork>
-            }
+              ></SankeyPlot>
+            ) : (
+              <BayesianNetwork networkData={networkData}></BayesianNetwork>
+            )}
           </g>
 
           {/* <ClockBlock></ClockBlock> */}
