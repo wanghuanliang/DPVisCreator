@@ -209,7 +209,7 @@ const LineupTable = (props) => {
       }
     }
     return { settings, tableData: filteredData };
-  });
+  }, [_, constraints, schemes, selectedMetrics]);
   const switchOrderState = (state, outer, inner) => {
     const temp = { ...settings };
     for (let metrics in settings) {

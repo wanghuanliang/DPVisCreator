@@ -102,6 +102,19 @@ function getYAxisOption(attribute) {
   };
 }
 function getSeriesOption(type, attribute, data, pointSize) {
+  if (type === "bar") {
+    return attribute.values.map((name) => {
+      return {
+        name,
+        stack: "total",
+        type: type,
+        symbolSize: pointSize,
+        data: data
+          .filter((data) => data[2] === name)
+          .map((data) => [data[0], data[1]]),
+      };
+    });
+  }
   return attribute.values.map((name) => {
     return {
       name,
