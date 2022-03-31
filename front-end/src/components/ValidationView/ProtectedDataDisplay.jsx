@@ -90,6 +90,7 @@ export default class ProtectedDataDisplay extends Component {
           );
           arr.forEach((element) => (sum += element[constraint.y_axis]));
           if (
+            constraint.type === "order" &&
             constraint.x_axis === "region" &&
             constraint.y_axis === "charges" &&
             constraint.computation === "average" &&
