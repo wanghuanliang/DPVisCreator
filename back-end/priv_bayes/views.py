@@ -243,6 +243,7 @@ def getFilteredData(request):
             "err_msg": "disconnected with the server"
         }))
     filters = json.loads(request.body).get('filter')
+    drops = json.loads(request.body).get('drops')
     cur_df = tmp_data_storage[session_id]['RAW_DATA']
     for filter_axis in filters:
         if filters[filter_axis]['attribute_type'] == "Dimensions":
@@ -252,6 +253,9 @@ def getFilteredData(request):
             minn = filters[filter_axis]['min']
             maxx = filters[filter_axis]['max']
             cur_df = cur_df[(cur_df[filter_axis] >= minn) & (cur_df[filter_axis] <= maxx)]
+
+    for it in drops:
+        del cur_df[it]
     tmp_data_storage[session_id]['ORI_DATA'] = cur_df
     ret = solveOriginalData(session_id)
     return HttpResponse(json.dumps(ret))
