@@ -87,6 +87,10 @@ function getYAxisOption(attribute) {
     type: "value",
     id: attribute.name,
     name: attribute.name,
+    min: function (value) {
+      const parsed = parseInt(value.min - (value.max - value.min) * 0.2);
+      return parsed >= 0 ? parsed : 0;
+    },
     nameGap: "45",
     axisLine: {
       show: true,
