@@ -70,6 +70,7 @@ function getXAxisOption(attribute, step = NaN, width = 0) {
     nameGap: "18",
     axisLabel: {
       padding: isNaN(step) ? [0, 0, 0, 0] : [0, 0, 0, -width],
+      fontSize: 10,
     },
     axisPointer: {
       show: true,

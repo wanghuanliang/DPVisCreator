@@ -32,65 +32,65 @@ const LineupTable = (props) => {
     merge,
     changeSchemeId,
   } = props;
-  const constraintsSettings = {};
-  (constraints || []).forEach((constraint) => {
-    constraintsSettings[constraint.id] = {
-      access: (record) => calcConstraintSum(record, constraint),
-      order: "none",
-      range: "all",
-      children:
-        constraint.type === "cluster"
-          ? {
-              KL: {
-                access: (record) => record[constraint.id].KL.protected,
-                order: "none",
-                range: "all",
-              },
-              WDis: {
-                access: (record) => record[constraint.id].WDis.protected,
-                order: "none",
-                range: "all",
-              },
-            }
-          : constraint.type === "correlation"
-          ? {
-              DTW: {
-                access: (record) => record[constraint.id].DTW.protected,
-                order: "none",
-                range: "all",
-              },
-              Euc: {
-                access: (record) => record[constraint.id].Euc.protected,
-                order: "none",
-                range: "all",
-              },
-              PCD: {
-                access: (record) => record[constraint.id].PCD.protected,
-                order: "none",
-                range: "all",
-              },
-            }
-          : {
-              NDCG: {
-                access: (record) => record[constraint.id].NDCG.protected,
-                order: "none",
-                range: "all",
-              },
-              mAP: {
-                access: (record) => record[constraint.id].mAP.protected,
-                order: "none",
-                range: "all",
-              },
-              Diff: {
-                access: (record) => record[constraint.id].Diff.protected,
-                order: "none",
-                range: "all",
-              },
-            },
-    };
-  });
   const [_, setSettings] = useState({});
   const { settings, tableData } = useMemo(() => {
+    const constraintsSettings = {};
+    (constraints || []).forEach((constraint) => {
+      constraintsSettings[constraint.id] = {
+        access: (record) => calcConstraintSum(record, constraint),
+        order: "none",
+        range: "all",
+        children:
+          constraint.type === "cluster"
+            ? {
+                KL: {
+                  access: (record) => record[constraint.id].KL.protected,
+                  order: "none",
+                  range: "all",
+                },
+                WDis: {
+                  access: (record) => record[constraint.id].WDis.protected,
+                  order: "none",
+                  range: "all",
+                },
+              }
+            : constraint.type === "correlation"
+            ? {
+                DTW: {
+                  access: (record) => record[constraint.id].DTW.protected,
+                  order: "none",
+                  range: "all",
+                },
+                Euc: {
+                  access: (record) => record[constraint.id].Euc.protected,
+                  order: "none",
+                  range: "all",
+                },
+                PCD: {
+                  access: (record) => record[constraint.id].PCD.protected,
+                  order: "none",
+                  range: "all",
+                },
+              }
+            : {
+                NDCG: {
+                  access: (record) => record[constraint.id].NDCG.protected,
+                  order: "none",
+                  range: "all",
+                },
+                mAP: {
+                  access: (record) => record[constraint.id].mAP.protected,
+                  order: "none",
+                  range: "all",
+                },
+                Diff: {
+                  access: (record) => record[constraint.id].Diff.protected,
+                  order: "none",
+                  range: "all",
+                },
+              },
+      };
+    });
     const settings = {
       id: {
         access: (record) => record.id,
@@ -209,7 +209,7 @@ const LineupTable = (props) => {
       }
     }
     return { settings, tableData: filteredData };
-  }, [_, constraints, schemes, selectedMetrics]);
+  });
   const switchOrderState = (state, outer, inner) => {
     const temp = { ...settings };
     for (let metrics in settings) {
@@ -424,20 +424,20 @@ const LineupTable = (props) => {
           />
         </Popover>
         <CaretUpOutlined
-          style={{ color: order === "ascending" ? "#ff9845" : "#000000" }}
+          style={{ color: order === "descending" ? "#ff9845" : "#000000" }}
           onClick={() => {
             switchOrderState(
-              order === "ascending" ? "none" : "ascending",
+              order === "descending" ? "none" : "descending",
               outer,
               inner
             );
           }}
         />
         <CaretDownOutlined
-          style={{ color: order === "descending" ? "#ff9845" : "#000000" }}
+          style={{ color: order === "ascending" ? "#ff9845" : "#000000" }}
           onClick={() => {
             switchOrderState(
-              order === "descending" ? "none" : "descending",
+              order === "ascending" ? "none" : "ascending",
               outer,
               inner
             );
@@ -495,20 +495,20 @@ const LineupTable = (props) => {
           />
         </Popover>
         <CaretUpOutlined
-          style={{ color: order === "ascending" ? "#ff9845" : "#000000" }}
+          style={{ color: order === "descending" ? "#ff9845" : "#000000" }}
           onClick={() => {
             switchOrderState(
-              order === "ascending" ? "none" : "ascending",
+              order === "descending" ? "none" : "descending",
               outer,
               inner
             );
           }}
         />
         <CaretDownOutlined
-          style={{ color: order === "descending" ? "#ff9845" : "#000000" }}
+          style={{ color: order === "ascending" ? "#ff9845" : "#000000" }}
           onClick={() => {
             switchOrderState(
-              order === "descending" ? "none" : "descending",
+              order === "ascending" ? "none" : "ascending",
               outer,
               inner
             );
@@ -555,19 +555,19 @@ const LineupTable = (props) => {
           />
         </Popover>
         <CaretUpOutlined
-          style={{ color: order === "ascending" ? "#ff9845" : "#000000" }}
+          style={{ color: order === "descending" ? "#ff9845" : "#000000" }}
           onClick={() => {
             switchOrderState(
-              order === "ascending" ? "none" : "ascending",
+              order === "descending" ? "none" : "descending",
               outer
             );
           }}
         />
         <CaretDownOutlined
-          style={{ color: order === "descending" ? "#ff9845" : "#000000" }}
+          style={{ color: order === "ascending" ? "#ff9845" : "#000000" }}
           onClick={() => {
             switchOrderState(
-              order === "descending" ? "none" : "descending",
+              order === "ascending" ? "none" : "ascending",
               outer
             );
           }}
