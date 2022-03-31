@@ -20,9 +20,9 @@ const AttributeBlock = (props) => {
 
   return (
     <div style={{margin: '5px 0px 20px 0px'}}>
-      <div className='attribute-block-title'>
+      {title !== 'Computations' && <div className='attribute-block-title'>
         <span>{`${title} (${num})`}</span>
-      </div>
+      </div>}
       {
         data.map((attr) => {
           return (
