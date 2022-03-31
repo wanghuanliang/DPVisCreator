@@ -32,7 +32,8 @@ const DataView = (props) => {
   const attributeNum = Object.keys(attributeCharacter).length;
 
   const prop = {
-    action: "http://101.43.188.187:30010/api/getOriginalData",
+    // action: "http://101.43.188.187:30010/api/getOriginalData",
+    action: "http://localhost:8000/api/getOriginalData",
     data: { session_id: session },
     maxCount: 1,
     onChange({ file, fileList }) {
