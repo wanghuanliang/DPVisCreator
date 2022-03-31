@@ -83,33 +83,6 @@ function getXAxisOption(attribute, step = NaN, width = 0) {
     ...axisOption,
   };
 }
-function getYAxisOption(attribute, computation = "count") {
-  return {
-    type: "value",
-    id: attribute.name,
-    name: attribute.name,
-    min: function (value) {
-      const parsed =
-        computation === "count"
-          ? parseInt(value.min - (value.max - value.min) * 0.2)
-          : value.min - (value.max - value.min) * 0.2;
-      return value.min >= 0 ? (parsed >= 0 ? parsed : 0) : parsed;
-    },
-    nameGap: "45",
-    axisLine: {
-      show: true,
-    },
-    axisTick: {
-      show: true,
-    },
-    axisLabel: {
-      formatter: function (value, index) {
-        return isInteger(value) ? value : value.toPrecision(4);
-      },
-    },
-    ...axisOption,
-  };
-}
 function getSeriesOption(type, attribute, data, pointSize) {
   if (type === "bar") {
     return attribute.values.map((name) => {
@@ -145,6 +118,7 @@ export default class DataChart extends Component {
     this.selectBar = {};
     this.selectedLegend = {};
     this.brushArea = {};
+    this.YAxisMin = 0;
   }
   updateParams(params) {
     this.params = { ...this.params, ...params };
@@ -387,6 +361,35 @@ export default class DataChart extends Component {
     };
     return option;
   }
+  getYAxisOption(attribute, computation = "count") {
+    const self = this;
+    return {
+      type: "value",
+      id: attribute.name,
+      name: attribute.name,
+      min: function (value) {
+        const parsed =
+          computation === "count"
+            ? parseInt(value.min - (value.max - value.min) * 0.2)
+            : value.min - (value.max - value.min) * 0.2;
+        self.YAxisMin = value.min >= 0 ? (parsed >= 0 ? parsed : 0) : parsed;
+        return self.YAxisMin;
+      },
+      nameGap: "45",
+      axisLine: {
+        show: true,
+      },
+      axisTick: {
+        show: true,
+      },
+      axisLabel: {
+        formatter: function (value, index) {
+          return isInteger(value) ? value : value.toPrecision(4);
+        },
+      },
+      ...axisOption,
+    };
+  }
   getLineChartOption() {
     const option = {
       tooltip: {
@@ -455,7 +458,7 @@ export default class DataChart extends Component {
         this.props.constraint.x_step,
         (this.width * 0.78) / Object.keys(this.mapper).length
       ),
-      yAxis: getYAxisOption(
+      yAxis: this.getYAxisOption(
         this.props.attributes[1],
         this.props.constraint.computation
       ),
@@ -786,17 +789,23 @@ export default class DataChart extends Component {
     const data = Object.values(self.selectBar);
     if (data) {
       data.forEach((point) => {
-        const [x, y] = self.convertToPixel(point);
+        const [x, y1] = self.convertToPixel(point);
+        const [, y0] = self.convertToPixel([
+          point[0],
+          Math.max(self.YAxisMin, 0),
+        ]);
         let width = (self.width * 0.78) / Object.keys(self.mapper).length;
         width *= 0.9;
         width = width > 48 ? 48 : width;
+        const y = Math.min(y0, y1);
+        const height = Math.max(y0, y1) - y;
         self.svg
           .append("rect")
           .attr("x", x - width / 2)
           .attr("y", y)
           .attr("value", point[0])
           .attr("width", width)
-          .attr("height", chart_height * 0.88 - y)
+          .attr("height", height)
           .style("fill", "#d9d9d9")
           .attr("stroke", "#5D7092")
           .attr("stroke-width", 1)
