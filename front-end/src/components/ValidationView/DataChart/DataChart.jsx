@@ -2,8 +2,13 @@ import * as echarts from "echarts";
 import { Component } from "react";
 import * as ecStat from "echarts-stat";
 import * as d3 from "d3";
-import { chart_constraint } from "../../ChartsView/constants";
+import {
+  chart_constraint,
+  constraint_chart,
+  RENDER_MODE,
+} from "../../ChartsView/constants";
 import { isArray, mean } from "lodash";
+const renderMode = RENDER_MODE;
 const globalColor = [
   "#d9d9d9",
   "#74cbed",
@@ -85,16 +90,17 @@ function getXAxisOption(attribute, step = NaN, width = 0) {
     ...axisOption,
   };
 }
-function getYAxisOption(attribute, min = null) {
+function getYAxisOption(attribute, min = null, computation = "count") {
   return {
     type: "value",
     id: attribute.name,
     name: attribute.name,
     nameGap: "45",
     min: function (value) {
-      const parsed = parseInt(value.min - (value.max - value.min) * 0.2);
-      const axisMin = min ? Math.min(parsed, min) : parsed;
-      return axisMin >= 0 ? axisMin : 0;
+      const axisMin = min ? Math.min(value.min, min) : value.min;
+      let parse = axisMin - (value.max - axisMin) * 0.2;
+      if (computation === "count") parse = parseInt(parse);
+      return axisMin >= 0 ? (parse >= 0 ? parse : 0) : parse;
     },
     axisLine: {
       show: true,
@@ -177,7 +183,10 @@ export default class DataChart extends Component {
   componentDidMount() {
     let self = this;
     const chartDom = document.getElementById("canvas-" + this.props.name);
-    this.chart = echarts.init(chartDom);
+    this.chart =
+      renderMode === "canvas"
+        ? echarts.init(chartDom)
+        : echarts.init(chartDom, "", { renderer: "svg" });
     this.svg = d3
       .select("#container-" + this.props.name)
       .append("svg")
@@ -370,7 +379,11 @@ export default class DataChart extends Component {
         this.props.constraint.x_step,
         (this.width * 0.78) / Object.keys(this.mapper).length
       ),
-      yAxis: getYAxisOption(this.props.attributes[1], axisYMin),
+      yAxis: getYAxisOption(
+        this.props.attributes[1],
+        axisYMin,
+        this.props.constraint.computation
+      ),
       series: [
         ...getSeriesOption("bar", this.props.attributes[2], this.props.data),
       ],
@@ -580,11 +593,19 @@ export default class DataChart extends Component {
   render() {
     return (
       <div id={"container-" + this.props.name}>
-        <canvas
-          width={"100%"}
-          height={chart_height}
-          id={"canvas-" + this.props.name}
-        ></canvas>
+        {renderMode === "canvas" ? (
+          <canvas
+            width={"100%"}
+            height={chart_height}
+            id={"canvas-" + this.props.name}
+          ></canvas>
+        ) : (
+          <div
+            width={"100%"}
+            height={chart_height}
+            id={"canvas-" + this.props.name}
+          ></div>
+        )}
       </div>
     );
   }

@@ -2,8 +2,9 @@ import * as echarts from "echarts";
 import { Component } from "react";
 import * as ecStat from "echarts-stat";
 import * as d3 from "d3";
-import { chart_constraint } from "../constants";
+import { chart_constraint, constraint_chart, RENDER_MODE } from "../constants";
 import { isArray, mean } from "lodash";
+const renderMode = RENDER_MODE;
 const globalColor = [
   "#74cbed",
   "#f6bd17",
@@ -82,14 +83,17 @@ function getXAxisOption(attribute, step = NaN, width = 0) {
     ...axisOption,
   };
 }
-function getYAxisOption(attribute) {
+function getYAxisOption(attribute, computation = "count") {
   return {
     type: "value",
     id: attribute.name,
     name: attribute.name,
     min: function (value) {
-      const parsed = parseInt(value.min - (value.max - value.min) * 0.2);
-      return parsed >= 0 ? parsed : 0;
+      const parsed =
+        computation === "count"
+          ? parseInt(value.min - (value.max - value.min) * 0.2)
+          : value.min - (value.max - value.min) * 0.2;
+      return value.min >= 0 ? (parsed >= 0 ? parsed : 0) : parsed;
     },
     nameGap: "45",
     axisLine: {
@@ -198,10 +202,21 @@ export default class DataChart extends Component {
     }
     const canvas = document.getElementById("canvas-" + this.props.name);
     const canvasImage = new Image();
-    canvasImage.src = canvas.toDataURL("image/png");
-    canvasImage.width = this.width / 6;
-    canvasImage.height = thumbnailHeight;
-    canvasImage.style = "margin:-" + this.width / 6 + "px";
+    if (renderMode === "canvas") {
+      canvasImage.src = canvas.toDataURL("image/png");
+      canvasImage.width = this.width / 6;
+      canvasImage.height = thumbnailHeight;
+      canvasImage.style = "margin:-" + this.width / 6 + "px";
+    } else {
+      const serializer = new XMLSerializer();
+      const canvasSource = serializer.serializeToString(this.svg.node());
+      canvasImage.setAttribute(
+        "src",
+        "data:image/svg+xml;base64," + btoa(reEncode(canvasSource))
+      );
+      canvasImage.width = this.width / 6;
+      canvasImage.height = thumbnailHeight;
+    }
     const serializer = new XMLSerializer();
     const svgSource = serializer.serializeToString(this.svg.node());
     const svgImage = new Image();
@@ -217,7 +232,10 @@ export default class DataChart extends Component {
   componentDidMount() {
     let self = this;
     const chartDom = document.getElementById("canvas-" + this.props.name);
-    this.chart = echarts.init(chartDom);
+    this.chart =
+      renderMode === "canvas"
+        ? echarts.init(chartDom)
+        : echarts.init(chartDom, "", { renderer: "svg" });
     this.svg = d3
       .select("#container-" + this.props.name)
       .append("svg")
@@ -437,7 +455,10 @@ export default class DataChart extends Component {
         this.props.constraint.x_step,
         (this.width * 0.78) / Object.keys(this.mapper).length
       ),
-      yAxis: getYAxisOption(this.props.attributes[1], "y"),
+      yAxis: getYAxisOption(
+        this.props.attributes[1],
+        this.props.constraint.computation
+      ),
       series: getSeriesOption("bar", this.props.attributes[2], this.props.data),
     };
     return option;
@@ -819,11 +840,19 @@ export default class DataChart extends Component {
   render() {
     return (
       <div id={"container-" + this.props.name}>
-        <canvas
-          width={"100%"}
-          height={chart_height}
-          id={"canvas-" + this.props.name}
-        ></canvas>
+        {renderMode === "canvas" ? (
+          <canvas
+            width={"100%"}
+            height={chart_height}
+            id={"canvas-" + this.props.name}
+          ></canvas>
+        ) : (
+          <div
+            width={"100%"}
+            height={chart_height}
+            id={"canvas-" + this.props.name}
+          ></div>
+        )}
       </div>
     );
   }

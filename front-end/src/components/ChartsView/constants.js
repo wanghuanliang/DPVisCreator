@@ -10,3 +10,4 @@ export const constraint_chart = {
   correlation: "line",
   order: "bar",
 };
+export const RENDER_MODE = "canvas";
