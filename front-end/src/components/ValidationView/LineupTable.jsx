@@ -9,14 +9,12 @@ import {
 
 // 标题到对象的映射
 const NameMap = {
-  KL: "KL",
-  Wasserstein: "WDis",
+  Concentration: "Concentration",
+  "Dots stability": "dots_stab",
   DTW: "DTW",
   Euclidean: "Euc",
-  PearsonCorrelation: "PCD",
+  "Pearson Correlation Diff": "PCD",
   NDCG: "NDCG",
-  mAP: "mAP",
-  Diff: "Diff",
 };
 
 const LineupTable = (props) => {
@@ -42,13 +40,14 @@ const LineupTable = (props) => {
         children:
           constraint.type === "cluster"
             ? {
-                KL: {
-                  access: (record) => record[constraint.id].KL.protected,
+                Concentration: {
+                  access: (record) =>
+                    record[constraint.id].Concentration.protected,
                   order: "none",
                   range: "all",
                 },
-                WDis: {
-                  access: (record) => record[constraint.id].WDis.protected,
+                dots_stab: {
+                  access: (record) => record[constraint.id].dots_stab.protected,
                   order: "none",
                   range: "all",
                 },
@@ -70,6 +69,11 @@ const LineupTable = (props) => {
                   order: "none",
                   range: "all",
                 },
+                dots_stab: {
+                  access: (record) => record[constraint.id].dots_stab.protected,
+                  order: "none",
+                  range: "all",
+                },
               }
             : {
                 NDCG: {
@@ -77,13 +81,13 @@ const LineupTable = (props) => {
                   order: "none",
                   range: "all",
                 },
-                mAP: {
-                  access: (record) => record[constraint.id].mAP.protected,
+                Euc: {
+                  access: (record) => record[constraint.id].Euc.protected,
                   order: "none",
                   range: "all",
                 },
-                Diff: {
-                  access: (record) => record[constraint.id].Diff.protected,
+                dots_stab: {
+                  access: (record) => record[constraint.id].dots_stab.protected,
                   order: "none",
                   range: "all",
                 },
@@ -118,18 +122,18 @@ const LineupTable = (props) => {
           },
         },
       },
-      detection: {
-        access: (record) => calcSum(record.detection, "detection"),
-        order: "none",
-        range: "all",
-        children: {
-          LogisticDetection: {
-            access: (record) => record.detection.LogisticDetection,
-            order: "none",
-            range: "all",
-          },
-        },
-      },
+      // detection: {
+      //   access: (record) => calcSum(record.detection, "detection"),
+      //   order: "none",
+      //   range: "all",
+      //   children: {
+      //     LogisticDetection: {
+      //       access: (record) => record.detection.LogisticDetection,
+      //       order: "none",
+      //       range: "all",
+      //     },
+      //   },
+      // },
       ...constraintsSettings,
       ..._,
     };
@@ -144,17 +148,17 @@ const LineupTable = (props) => {
       record.id = index;
       record.budget = scheme.metrics.privacy_budget; //为值
       record.statistical = scheme.metrics.statistical_metrics;
-      record.detection = scheme.metrics.detection_metrics;
+      // record.detection = scheme.metrics.detection_metrics;
       (constraints || []).forEach((constraint) => {
         record[constraint.id] = {
           ...(constraint.type === "cluster"
             ? {
-                KL: {},
-                WDis: {},
+                Concentration: {},
+                dots_stab: {},
               }
             : constraint.type === "correlation"
-            ? { DTW: {}, Euc: {}, PCD: {} }
-            : { NDCG: {}, mAP: {}, Diff: {} }),
+            ? { DTW: {}, Euc: {}, PCD: {}, dots_stab: {} }
+            : { NDCG: {}, Euc: {}, dots_stab: {} }),
           ...patterns[constraint.id],
         };
       });
@@ -804,61 +808,61 @@ const LineupTable = (props) => {
             }),
           }),
     },
-    {
-      dataIndex: "detection",
-      key: "detection",
-      fixed: "left",
-      width: singleColumnWidth * selectedMetrics.detection.length,
-      ...(merge
-        ? {
-            title: (
-              <div style={{ textAlign: "center" }}>
-                <Space direction="horizontal" className="lineup-table-main">
-                  Detection metrics{createFilter("detection")}
-                </Space>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    paddingTop: 15,
-                  }}
-                >
-                  {(selectedMetrics.detection || []).map((name, index) => (
-                    <div style={{ marginRight: 12 }}>{name}</div>
-                  ))}
-                </div>
-              </div>
-            ),
-            render: (obj) => renderMergeMetricItem(obj, "detection"),
-          }
-        : {
-            title: (
-              <div>
-                <Space direction="horizontal" className="lineup-table-main">
-                  Detection metrics{createFilter("detection")}
-                </Space>
-              </div>
-            ),
-            children: (selectedMetrics.detection || []).map((name) => {
-              return {
-                title: (
-                  <Space
-                    direction="horizontal"
-                    className="lineup-table-children"
-                  >
-                    {name}
-                    {createFilter("detection", name)}
-                  </Space>
-                ),
-                dataIndex: "detection",
-                key: "detection:" + name,
-                width: singleColumnWidth,
-                fixed: "left",
-                render: (num) => renderSingleMetricItem(num),
-              };
-            }),
-          }),
-    },
+    // {
+    //   dataIndex: "detection",
+    //   key: "detection",
+    //   fixed: "left",
+    //   width: singleColumnWidth * selectedMetrics.detection.length,
+    //   ...(merge
+    //     ? {
+    //         title: (
+    //           <div style={{ textAlign: "center" }}>
+    //             <Space direction="horizontal" className="lineup-table-main">
+    //               Detection metrics{createFilter("detection")}
+    //             </Space>
+    //             <div
+    //               style={{
+    //                 display: "flex",
+    //                 justifyContent: "center",
+    //                 paddingTop: 15,
+    //               }}
+    //             >
+    //               {(selectedMetrics.detection || []).map((name, index) => (
+    //                 <div style={{ marginRight: 12 }}>{name}</div>
+    //               ))}
+    //             </div>
+    //           </div>
+    //         ),
+    //         render: (obj) => renderMergeMetricItem(obj, "detection"),
+    //       }
+    //     : {
+    //         title: (
+    //           <div>
+    //             <Space direction="horizontal" className="lineup-table-main">
+    //               Detection metrics{createFilter("detection")}
+    //             </Space>
+    //           </div>
+    //         ),
+    //         children: (selectedMetrics.detection || []).map((name) => {
+    //           return {
+    //             title: (
+    //               <Space
+    //                 direction="horizontal"
+    //                 className="lineup-table-children"
+    //               >
+    //                 {name}
+    //                 {createFilter("detection", name)}
+    //               </Space>
+    //             ),
+    //             dataIndex: "detection",
+    //             key: "detection:" + name,
+    //             width: singleColumnWidth,
+    //             fixed: "left",
+    //             render: (num) => renderSingleMetricItem(num),
+    //           };
+    //         }),
+    //       }),
+    // },
     // {
     //   title: (
     //     <div>

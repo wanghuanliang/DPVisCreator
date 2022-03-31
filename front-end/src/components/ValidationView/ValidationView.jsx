@@ -14,39 +14,43 @@ const staticMetrics = {
     title: "Statistical",
     options: ["KSTest", "CSTest"],
   },
-  detection: {
-    title: "Detection",
-    options: ["LogisticDetection"],
-  },
+  // detection: {
+  //   title: "Detection",
+  //   options: ["LogisticDetection"],
+  // },
   // privacy: {
   //   title: "Privacy",
   //   options: ["CAP", "MLP"],
   // },
   cluster: {
     title: "Cluster",
-    options: ["KL", "Wasserstein"],
+    options: ["Concentration ", "Dots stability"],
   },
   correlation: {
     title: "Correlation",
-    options: ["DTW", "Euclidean", "PearsonCorrelation"],
+    options: ["DTW", "Euclidean", "Pearson Correlation Diff", "Dots stability"],
   },
   order: {
     title: "Order",
-    options: ["NDCG", "mAP", "Diff"],
+    options: ["NDCG", "Euclidean", "Dots stability"],
   },
 };
 
 const ValidationView = (props) => {
-  const { attributeCharacter, originalData, constraints, schemes, changeSchemeId } = props;
+  const {
+    attributeCharacter,
+    originalData,
+    constraints,
+    schemes,
+    changeSchemeId,
+  } = props;
   const [selectedSchemeId, setSelectedSchemeId] = useState(0);
 
   const [selectedMetrics, setSelectedMetrics] = useState({
     statistical: ["KSTest"],
-    detection: ["LogisticDetection"],
-    privacy: ["CAP", "MLP"],
-    cluster: ["KL"],
-    correlation: ["DTW", "PearsonCorrelation"],
-    order: ["NDCG", "mAP"],
+    cluster: ["Concentration"],
+    correlation: ["DTW", "Euclidean"],
+    order: ["NDCG", "Euclidean"],
   }); // 选中的展示指标
 
   // schemes变化时候，默认选中schemes最后一项
