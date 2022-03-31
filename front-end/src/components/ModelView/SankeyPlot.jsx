@@ -197,9 +197,10 @@ const SankeyPlot = (props) => {
         </g>
         {/* 约束桑基 */}
         {
-          Object.keys(constraintsSankeyPos).map((constraintId, i) => {
+          Object.keys(constraintsSankeyPos).map((constraintId, index) => {
             // let colorArray = ['#d0c7df', '#e0cdc1'];
             // let color = colorArray[i];
+            const opacityArray = [1, 0.6, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4];
             return <g key={constraintId}>
               {
                 constraintsSankeyPos[constraintId].map((obj, i) => {
@@ -211,7 +212,7 @@ const SankeyPlot = (props) => {
                     key={i}
                     d={d}
                     fill={patternColor[patternType[constraintId]]}
-                    fillOpacity={selected ? 0.6 : 0}
+                    fillOpacity={selected ? opacityArray[index] : 0}
                     stroke="#FF9845"
                     strokeOpacity={selected && gather ? 1 : 0}
                     // strokeOpacity={0}
