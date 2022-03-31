@@ -24,7 +24,7 @@ const staticMetrics = {
   // },
   cluster: {
     title: "Cluster",
-    options: ["Concentration ", "Dots stability"],
+    options: ["Concentration", "Dots stability"],
   },
   correlation: {
     title: "Correlation",
