@@ -109,6 +109,7 @@ const DensityPlot = (props) => {
           [sliderValue[0]]: sliderValue[0],
           [sliderValue[1]]: sliderValue[1],
         }}
+        tooltipVisible={false}
       ></Slider>
     )
   }
