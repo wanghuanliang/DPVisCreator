@@ -129,7 +129,7 @@ const ValidationView = (props) => {
     <div style={{ position: "relative" }}>
       {renderSolutionControlPanel()}
       <div style={{ display: "flex" }}>
-        <div style={{ width: "75%", margin: 10 }}>
+        <div style={{ width: 1200, margin: 10 }}>
           <LineupTable
             schemes={schemes}
             selectedSchemeId={selectedSchemeId}
@@ -145,7 +145,7 @@ const ValidationView = (props) => {
           ></LineupTable>
         </div>
         {/* 保护后的视图放这里 */}
-        <div style={{ width: "25%" }}>
+        <div style={{ width: 380 }}>
           <ProtectedDataDisplay
             attribute_character={attributeCharacter}
             originalData={originalData}
