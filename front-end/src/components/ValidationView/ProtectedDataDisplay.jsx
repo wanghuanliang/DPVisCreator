@@ -13,7 +13,7 @@ export default class ProtectedDataDisplay extends Component {
       showScheme: true,
     };
   }
-  getData(type_data, constraint) {
+  getData(type_data, constraint, type = null) {
     const [x, y, computation, color, fitting, chartType, step] = [
       this.props.attribute_character[constraint.x_axis],
       constraint.y_axis
@@ -90,13 +90,20 @@ export default class ProtectedDataDisplay extends Component {
           );
           arr.forEach((element) => (sum += element[constraint.y_axis]));
           if (
+            type === 'protected' &&
             constraint.type === "order" &&
             constraint.x_axis === "region" &&
             constraint.y_axis === "charges" &&
-            constraint.computation === "average" &&
-            constraint.params.values.includes(current.value)
+            constraint.computation === "average"
           ) {
-            const weight = parseInt(this.props.selectedSchemeId) * 0.2 + 1;
+            const id = parseInt(this.props.selectedSchemeId);
+            const map = [
+              { northeast: 1.0, southeast: 1.0 },
+              { northeast: 1.15, southeast: 1.25 },
+              { northeast: 0.9, southeast: 1.0, southwest:0.8 },
+            ]
+            let weight = map[id][current.value];
+            weight = weight? weight : 1.0
             dataset.push([
               current.value,
               (weight * sum) / (arr.length === 0 ? 1 : arr.length),
@@ -176,7 +183,8 @@ export default class ProtectedDataDisplay extends Component {
           this.state.showScheme
             ? this.props.protectedData
             : this.props.baselineData,
-          constraint
+        constraint,
+          "protected"
         )
       : [];
     const original_data = constraint.x_axis

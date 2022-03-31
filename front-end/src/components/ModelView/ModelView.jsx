@@ -61,7 +61,7 @@ const ModelView = (props) => {
     matrix_data: matrixData, //绘制边用
   } = modelData;
 
-  const [privacyBudgetValue, setPrivacyBudget] = useState(10); // 整体隐私预算,0-20,默认10
+  const [privacyBudgetValue, setPrivacyBudget] = useState(5); // 整体隐私预算,0-20,默认10
   const [patternWeights, setPatternWeights] = useState(null); // 权重{'c1': 1, 'c2': 1}
   // const [constraintsPos, setConstraintsPos] = useState(null); // 约束坐标，改成坐标不变，边权重matrix_data改变
   const [selectedId, setSelectedId] = useState([]); // 选中点亮的约束
