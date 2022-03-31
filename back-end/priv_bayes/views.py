@@ -127,6 +127,7 @@ def solveOriginalData(session_id):
 
 def getOriginalData(request):  # 获取原始数据
     global tmp_data_storage
+    BAYES_EPS = 5
     data = request.FILES['file']
     session_id = request.POST.get("session_id")
     if not check_session_id(session_id):
@@ -139,8 +140,8 @@ def getOriginalData(request):  # 获取原始数据
     tmp_data_storage[session_id] = {
         "DATA_PATH": DATA_PATH,
         "constraints": None,
-        "threshold_value": 10,  # 离散型和数值型分界点
-        "bayes_epsilon": 10,  # 贝叶斯网络的隐私预算
+        "threshold_value": 20,  # 离散型和数值型分界点
+        "bayes_epsilon": BAYES_EPS,  # 贝叶斯网络的隐私预算
         "weights": None,
         "Dimensions": [],
         "Measures": [],
@@ -164,12 +165,14 @@ def cnt_poly(x, params):  # 根据x和多项式系数params计算返回值
 
 def initialize(request):
     global tmp_data_storage
+    BAYES_EPS = 5
+
     session_id = json.loads(request.body).get('session_id')
     tmp_data_storage[session_id] = {
-        "DATA_PATH": 'priv_bayes/data/insurance.csv',
+        "DATA_PATH": 'priv_bayes/data/bank_processed.csv',
         "constraints": None,
-        "threshold_value": 10,  # 离散型和数值型分界点
-        "bayes_epsilon": 10,  # 贝叶斯网络的隐私预算
+        "threshold_value": 20,  # 离散型和数值型分界点
+        "bayes_epsilon": BAYES_EPS,  # 贝叶斯网络的隐私预算
         "weights": None,
         "Dimensions": [],
         "Measures": [],
@@ -242,6 +245,7 @@ def getFilteredData(request):
             "status": "failed",
             "err_msg": "disconnected with the server"
         }))
+    drops = json.loads(request.body).get('drops')
     filters = json.loads(request.body).get('filter')
     drops = json.loads(request.body).get('drops')
     cur_df = tmp_data_storage[session_id]['RAW_DATA']
@@ -253,7 +257,6 @@ def getFilteredData(request):
             minn = filters[filter_axis]['min']
             maxx = filters[filter_axis]['max']
             cur_df = cur_df[(cur_df[filter_axis] >= minn) & (cur_df[filter_axis] <= maxx)]
-
     for it in drops:
         del cur_df[it]
     tmp_data_storage[session_id]['ORI_DATA'] = cur_df
@@ -312,19 +315,27 @@ def getModelData(request):
 
     for constraint in constraints:
         cur_df.loc[cur_df['index'].isin(constraint['data']), 'constraint_' + constraint['id']] = True
-
+    print("111111")
     new_df['count'] = 1
     constraint_axis_list = []
     for constraint in constraints:
         cur_cons = 'constraint_' + constraint['id']
         constraint_axis_list.append(cur_cons)
         new_df[cur_cons] = cur_df[cur_cons]
+    print("222222")
+
     data_df = new_df.groupby(axis_order + constraint_axis_list).agg('count')
+    print("222222-2")
+
     c_df = pd.DataFrame(data_df)
     c_df.reset_index(inplace=True)
-    raw_data = json.loads(c_df.to_json(orient="records"))
-    filtered_data = [dt for dt in raw_data if dt['count'] != 0]
+    print("222222")
+    c_df = c_df[c_df['count'] != 0]
+    filtered_data = json.loads(c_df.to_json(orient="records"))
+    # raw_data = json.loads(c_df.to_json(orient="records"))
+    # filtered_data = [dt for dt in raw_data if dt['count'] != 0]  # 千万不要用for去循环10w以上的数据
     proportion_data = {}
+    print("222222")
 
     for axis in axis_order:
         tmp_df = pd.DataFrame()
@@ -349,6 +360,7 @@ def getModelData(request):
                 cur_proportiondata.append(cur_bin)
 
         proportion_data[axis] = cur_proportiondata
+    print("333333")
 
     flow_data = []
     for_background_flow_data = []
@@ -384,6 +396,8 @@ def getModelData(request):
             flow_data.append(cur_flow)
             idx = idx + 1
         for_background_flow_data.append(cur_bk_flow)
+    print("555555")
+
     sankey_data = []
     conses_ret = [{"id": constraint['id'], "type": constraint['type'], "pos": matrix_data[idx].tolist()
                       , "r": weights[idx]} for idx, constraint in enumerate(constraints)]
@@ -427,11 +441,13 @@ def getModelData(request):
             "constraints": cur_conses
         }
         sankey_data.append(cur_data)
-    DATA_PATH = tmp_data_storage[session_id]['DATA_PATH']
-    threshold_value = tmp_data_storage[session_id]['threshold_value']
+    print("666666")
 
+    threshold_value = tmp_data_storage[session_id]['threshold_value']
+    print(threshold_value)
     weights = tmp_data_storage[session_id]['weights']
-    matrix_data = get_matrix_data(threshold_value, DATA_PATH, constraints, weights, ORI_DATA, DataDescriber)
+    tmp_file_path = "priv_bayes/data/1" + session_id + ".csv"   # 为了用筛选后的数据建贝叶斯网络
+    matrix_data = get_matrix_data(threshold_value, tmp_file_path, constraints, weights, ORI_DATA, DataDescriber)
     # matrix_data = None
     ret = {
         "status": "success",
@@ -460,7 +476,8 @@ def setWeights(request):
     threshold_value = tmp_data_storage[session_id]['threshold_value']
     DATA_PATH = tmp_data_storage[session_id]['DATA_PATH']
     ORI_DATA = tmp_data_storage[session_id]['ORI_DATA']
-    matrix_data = get_matrix_data(threshold_value, DATA_PATH, constraints, weights, ORI_DATA, DataDescriber)
+    tmp_file_path = "priv_bayes/data/1" + session_id + ".csv"   # 为了用筛选后的数据建贝叶斯网络
+    matrix_data = get_matrix_data(threshold_value, tmp_file_path, constraints, weights, ORI_DATA, DataDescriber)
     # c_weights = [w["weight"] for w in weights if w["id"] != "others"]
     # if np.max(c_weights) != np.min(c_weights):
     #     c_weights = (c_weights - np.min(c_weights)) / (np.max(c_weights) - np.min(c_weights)) * 5 + 5
@@ -491,6 +508,7 @@ def get_bayes_with_weights(session_id):
     constraints = tmp_data_storage[session_id]['constraints']
     weights = tmp_data_storage[session_id]['weights']
     threshold_value = tmp_data_storage[session_id]['threshold_value']
+    print(threshold_value)
     bayes_epsilon = tmp_data_storage[session_id]['bayes_epsilon']
     cur_scheme_weights = None
     if weights is not None:
@@ -520,10 +538,13 @@ def get_bayes_with_weights(session_id):
         cur_scheme_weights = {}
         dtdt = json.loads(weight_df.to_json(orient="records"))
         for idx, dt in enumerate(dtdt):
+            if idx not in cur_ids:
+                continue
             cur_scheme_weights[idx] = dt
-
+    tmp_file_path = "priv_bayes/data/1" + session_id + ".csv"
+    ORI_DATA.to_csv(tmp_file_path)
     describer = DataDescriber(histogram_bins=15, category_threshold=threshold_value)
-    describer.describe_dataset_in_correlated_attribute_mode(dataset_file=DATA_PATH,
+    describer.describe_dataset_in_correlated_attribute_mode(dataset_file=tmp_file_path,
                                                             epsilon=bayes_epsilon,
                                                             k=2,
                                                             attribute_to_is_categorical={},
@@ -805,9 +826,19 @@ def getMetrics(request):
                 ori_selected_data['index'] = len(ori_selected_data)
                 ori_data = ori_selected_data.groupby(cons["x_axis"]).count().sort_index().values
             elif cons['computation'] == 'average':
+                cut_points = np.arange(cons['params']['range'][0], cons['params']['range'][1] + 1e-6, cons['x_step'])
+                cut_points[-1] += 1e-6
                 pcbayes_selected_data = pcbayes_df[cond11 & cond12][[cons["x_axis"], cons["y_axis"]]]
+                pcbayes_selected_data[cons["x_axis"]] = pd.cut(pcbayes_selected_data[cons['x_axis']], cut_points,
+                                                               right=False)
+
                 privbayes_selected_data = privbayes_df[cond21 & cond22][[cons["x_axis"], cons["y_axis"]]]
+                privbayes_selected_data[cons["x_axis"]] = pd.cut(privbayes_selected_data[cons['x_axis']], cut_points,
+                                                                 right=False)
+
                 ori_selected_data = ORI_DATA[cond31 & cond32][[cons["x_axis"], cons["y_axis"]]]
+                ori_selected_data[cons["x_axis"]] = pd.cut(ori_selected_data[cons['x_axis']], cut_points,
+                                                           right=False)
                 pcbayes_data = pcbayes_selected_data.groupby(cons["x_axis"]).mean().sort_index().values
                 privbayes_data = privbayes_selected_data.groupby(cons["x_axis"]).mean().sort_index().values
                 ori_data = ori_selected_data.groupby(cons["x_axis"]).mean().sort_index().values
@@ -815,14 +846,14 @@ def getMetrics(request):
             pcbayes_DTW, cost_matrix, acc_cost_matrix, path = dtw(pcbayes_data, ori_data, dist=manhattan_distance)
             privbayes_DTW, cost_matrix, acc_cost_matrix, path = dtw(privbayes_data, ori_data, dist=manhattan_distance)
             maxDTW = max(pcbayes_DTW, privbayes_DTW) * 1.1
-            pcbayes_DTW = 1 - pcbayes_DTW / maxDTW
-            privbayes_DTW = 1 - privbayes_DTW / maxDTW
+            # pcbayes_DTW = 1 - pcbayes_DTW / maxDTW
+            # privbayes_DTW = 1 - privbayes_DTW / maxDTW
 
             pcbayes_Euc = np.sqrt(np.sum(np.square(pcbayes_data - ori_data)))
             privbayes_Euc = np.sqrt(np.sum(np.square(privbayes_data - ori_data)))
             maxEuc = max(pcbayes_Euc, privbayes_Euc) * 1.1
-            pcbayes_Euc = 1 - pcbayes_Euc / maxEuc
-            privbayes_Euc = 1 - privbayes_Euc / maxEuc
+            # pcbayes_Euc = 1 - pcbayes_Euc / maxEuc
+            # privbayes_Euc = 1 - privbayes_Euc / maxEuc
             if cons['computation'] == 'count':
                 ori_coef_data = ori_selected_data.groupby(cons['x_axis']).count().sort_index().reset_index()
                 ori_coef_data[cons['x_axis']] = range(1, len(ori_coef_data) + 1)
@@ -836,9 +867,16 @@ def getMetrics(request):
                 privbayes_coef_data[cons['x_axis']] = range(1, len(privbayes_coef_data) + 1)
                 privbayes_coef_data = privbayes_coef_data.values
             elif cons['computation'] == 'average':
-                ori_coef_data = ori_selected_data.groupby(cons['x_axis']).mean().sort_index().reset_index().values
-                pcbayes_coef_data = pcbayes_selected_data.groupby(cons['x_axis']).mean().sort_index().reset_index().values
-                privbayes_coef_data = privbayes_selected_data.groupby(cons['x_axis']).mean().sort_index().reset_index().values
+                ori_coef_data = ori_selected_data.groupby(cons['x_axis']).mean().sort_index().reset_index()
+                ori_coef_data[cons['x_axis']] = range(1, len(ori_coef_data) + 1)
+                ori_coef_data = ori_coef_data.values
+                pcbayes_coef_data = pcbayes_selected_data.groupby(cons['x_axis']).mean().sort_index().reset_index()
+                pcbayes_coef_data[cons['x_axis']] = range(1, len(pcbayes_coef_data) + 1)
+                pcbayes_coef_data = pcbayes_coef_data.values
+                privbayes_coef_data = privbayes_selected_data.groupby(cons['x_axis']).mean().sort_index().reset_index()
+                privbayes_coef_data[cons['x_axis']] = range(1, len(privbayes_coef_data) + 1)
+                privbayes_coef_data = privbayes_coef_data.values
+
             ori_coef = np.corrcoef(ori_coef_data[:, 0], ori_coef_data[:, 1])
             pcbayes_PCD = abs(np.corrcoef(pcbayes_coef_data[:, 0], pcbayes_coef_data[:, 1]) - ori_coef)[0][1]
             privbayes_PCD = abs(np.corrcoef(privbayes_coef_data[:, 0], privbayes_coef_data[:, 1]) - ori_coef)[0][1]
@@ -883,6 +921,8 @@ def getMetrics(request):
                 },
                 "dot_sim": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ORI_DATA)
             })
+            pcbayes_patterns = [pcbayes_DTW, pcbayes_Euc, pcbayes_PCD, 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ORI_DATA)]
+            privbayes_patterns = [privbayes_DTW, privbayes_Euc, privbayes_PCD, 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ORI_DATA)]
         if cons["type"] == "order":
             raw_pcbayes_df = pd.read_csv(synthetic_data)
             raw_privbayes_df = pd.DataFrame(base_scheme['protected_data'])

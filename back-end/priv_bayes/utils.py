@@ -158,6 +158,8 @@ def get_matrix_data(threshold_value, DATA_PATH, constraints, weights, ORI_DATA, 
             weight_df[axis] = arr[:, axis2id[axis]]
         dtdt = json.loads(weight_df.to_json(orient="records"))
         for idx, dt in enumerate(dtdt):
+            if idx not in cur_ids:
+                continue
             cur_scheme_weight[idx] = dt
         cur_scheme_weights.append(cur_scheme_weight)
 
