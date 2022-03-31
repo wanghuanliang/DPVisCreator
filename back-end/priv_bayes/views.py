@@ -751,7 +751,11 @@ def getMetrics(request):
                     "original": 1,
                     "protected": pcbayes_WDis
                 },
-                "dot_sim": 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ORI_DATA)
+                "dots": {
+                    "original": len(ori_selected_data),
+                    "protected": len(pcbayes_selected_data)
+                },
+                "dot_sim": 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ORI_DATA),
             })
             privbayes_patterns.append({
                 "id": cons["id"],
@@ -762,6 +766,10 @@ def getMetrics(request):
                 "WDis": {
                     "original": 1,
                     "protected": privbayes_WDis
+                },
+                "dots": {
+                    "original": len(ori_selected_data),
+                    "protected": len(privbayes_selected_data)
                 },
                 "dot_sim": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ORI_DATA)
             })
@@ -845,6 +853,10 @@ def getMetrics(request):
                     "original": 0,
                     "protected": pcbayes_PCD
                 },
+                "dots": {
+                    "original": len(ori_selected_data),
+                    "protected": len(pcbayes_selected_data)
+                },
                 "dot_sim": 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ORI_DATA)
             })
             privbayes_patterns.append({
@@ -860,6 +872,10 @@ def getMetrics(request):
                 "PCD": {
                     "original": 0,
                     "protected": privbayes_PCD
+                },
+                "dots": {
+                    "original": len(ori_selected_data),
+                    "protected": len(privbayes_selected_data)
                 },
                 "dot_sim": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ORI_DATA)
             })
@@ -890,6 +906,10 @@ def getMetrics(request):
                     "original": 0,
                     "protected": int(np.sum(np.abs(ori_arr - pcbayes_arr)))
                 },
+                "dots": {
+                    "original": len(ori_selected_data),
+                    "protected": len(pcbayes_selected_data)
+                },
                 "dot_sim": 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ORI_DATA)
             })
             privbayes_patterns.append({
@@ -901,6 +921,10 @@ def getMetrics(request):
                 "mAP": {
                     "original": 0,
                     "protected": int(np.sum(np.abs(ori_arr - privbayes_arr)))
+                },
+                "dots": {
+                    "original": len(ori_selected_data),
+                    "protected": len(privbayes_selected_data)
                 },
                 "dot_sim": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ORI_DATA)
             })
