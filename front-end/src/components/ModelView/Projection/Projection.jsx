@@ -22,6 +22,7 @@ const Projection = (props) => {
     selectedId,
     setSelectedId,
     matrixData,
+    showBaseModel,
   } = props;
 
   // 暂存点坐标，画边用{pattern: [20,30], },加上错位，加5， -5
@@ -203,7 +204,7 @@ const Projection = (props) => {
         </g>
       </g>
      {/* 边 */}
-     <g className='link'>
+     {!showBaseModel && <g className='link'>
         {patternPos && matrixData.map((link, index) => {
           const startPos = patternPos?.[link.source],
             endPos = patternPos?.[link.target];
@@ -218,9 +219,9 @@ const Projection = (props) => {
             strokeWidth={Math.abs(link.value * 4)}
           ></line>
         })}
-      </g>
+      </g>}
       {/* 圆点 */}
-      <g className='circle'>
+      {!showBaseModel && <g className='circle'>
         {
           constraints.map((constraint,index) => {
             let x = constraint.pos[0],
@@ -278,8 +279,7 @@ const Projection = (props) => {
             </g>
           })  
         }
-      </g>
-      
+      </g>}
     </g>
     
   </svg>
