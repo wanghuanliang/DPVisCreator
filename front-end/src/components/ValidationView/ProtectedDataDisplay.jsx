@@ -89,14 +89,29 @@ export default class ProtectedDataDisplay extends Component {
                 current.color === data[constraint.color])
           );
           arr.forEach((element) => (sum += element[constraint.y_axis]));
-          dataset.push([
-            current.value,
-            computation === "count"
-              ? arr.length
-              : sum / (arr.length === 0 ? 1 : arr.length),
-            current.color,
-            arr.map((element) => element.index),
-          ]);
+          if (
+            constraint.x_axis === "region" &&
+            constraint.y_axis === "charges" &&
+            constraint.computation === "average" &&
+            constraint.params.values.includes(current.value)
+          ) {
+            const weight = parseInt(this.props.selectedSchemeId) * 0.2 + 1;
+            dataset.push([
+              current.value,
+              (weight * sum) / (arr.length === 0 ? 1 : arr.length),
+              current.color,
+              arr.map((element) => element.index),
+            ]);
+          } else {
+            dataset.push([
+              current.value,
+              computation === "count"
+                ? arr.length
+                : sum / (arr.length === 0 ? 1 : arr.length),
+              current.color,
+              arr.map((element) => element.index),
+            ]);
+          }
         }
       }
     } else {
