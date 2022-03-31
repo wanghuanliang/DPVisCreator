@@ -13,7 +13,7 @@ from dtw import dtw
 import itertools
 from sklearn.metrics import ndcg_score, average_precision_score
 # from sdv.evaluation import evaluate
-# from sdv.metrics.tabular import KSTest, CSTest, LogisticDetection, CategoricalCAP, NumericalMLP
+from sdv.metrics.tabular import KSTest, CSTest, LogisticDetection, CategoricalCAP, NumericalMLP
 # 隐私保护相关包
 
 from priv_bayes.DataSynthesizer.DataDescriber import DataDescriber
@@ -542,7 +542,7 @@ def get_bayes_with_weights(session_id):
                 continue
             cur_scheme_weights[idx] = dt
     tmp_file_path = "priv_bayes/data/1" + session_id + ".csv"
-    ORI_DATA.to_csv(tmp_file_path)
+    ORI_DATA.to_csv(tmp_file_path, index=False)
     describer = DataDescriber(histogram_bins=15, category_threshold=threshold_value)
     describer.describe_dataset_in_correlated_attribute_mode(dataset_file=tmp_file_path,
                                                             epsilon=bayes_epsilon,
@@ -608,10 +608,10 @@ def getBaseData(request):
         "metrics": {
             "privacy_budget": bayes_epsilon,
             "statistical_metrics": {
-                "KSTest": 0.85,
-                "CSTest": 0.85,
-                # "KSTest": KSTest.compute(ORI_DATA, synthetic_df),
-                # "CSTest": CSTest.compute(ORI_DATA, synthetic_df)
+                # "KSTest": 0.85,
+                # "CSTest": 0.85,
+                "KSTest": KSTest.compute(ORI_DATA, synthetic_df),
+                "CSTest": CSTest.compute(ORI_DATA, synthetic_df)
             },
             "detection_metrics": {
                 # "LogisticDetection": LogisticDetection.compute(ORI_DATA, synthetic_df)
@@ -619,8 +619,8 @@ def getBaseData(request):
             "privacy_metrics": {
                 # "MLP": NumericalMLP.compute(ORI_DATA, synthetic_df, key_fields=list(set(Measures).difference(['charges'])), sensitive_fields=['charges']),
                 # "CAP": CategoricalCAP.compute(ORI_DATA, synthetic_df, key_fields=list(set(Dimensions).difference(['children'])), sensitive_fields=['children'])
-                "MLP": 0.85,
-                "CAP": 0.85
+                # "MLP": 0.85,
+                # "CAP": 0.85
             }
         },
         "protected_data": synthetic_df,
@@ -683,7 +683,8 @@ def getMetrics(request):
         privbayes_selected_data = None
         selected_legends = None
         if cons['color']:
-            selected_legends = [item for item in cons['selectedLegend'] if cons['selectedLegend'][item]]
+            # selected_legends = [item for item in cons['selectedLegend'] if cons['selectedLegend'][item]]
+            selected_legends = None
             print(selected_legends)
         if cons["type"] == "cluster":
             area = cons["params"]["area"]
@@ -772,35 +773,25 @@ def getMetrics(request):
             privbayes_WDis = 1 - privbayes_WDis / maxWDis
             pcbayes_patterns.append({
                 "id": cons["id"],
-                "KL": {
+                "Concentration": {
                     "original": 1,
                     "protected": pcbayes_KL
                 },
-                "WDis": {
+                "dots_stab": {
                     "original": 1,
-                    "protected": pcbayes_WDis
+                    "protected": 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)
                 },
-                "dots": {
-                    "original": len(ori_selected_data),
-                    "protected": len(pcbayes_selected_data)
-                },
-                "dot_sim": 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ORI_DATA),
             })
             privbayes_patterns.append({
                 "id": cons["id"],
-                "KL": {
+                "Concentration": {
                     "original": 1,
                     "protected": privbayes_KL
                 },
-                "WDis": {
+                "dots_stab": {
                     "original": 1,
-                    "protected": privbayes_WDis
+                    "protected": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)
                 },
-                "dots": {
-                    "original": len(ori_selected_data),
-                    "protected": len(privbayes_selected_data)
-                },
-                "dot_sim": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ORI_DATA)
             })
         if cons["type"] == "correlation":
             cond11 = pcbayes_df[cons['x_axis']] <= cons['params']['range'][1]
@@ -916,11 +907,10 @@ def getMetrics(request):
                     "original": 0,
                     "protected": pcbayes_PCD
                 },
-                "dots": {
-                    "original": len(ori_selected_data),
-                    "protected": len(pcbayes_selected_data)
+                "dots_stab": {
+                    "original": 1,
+                    "protected": 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)
                 },
-                "dot_sim": 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ORI_DATA)
             })
             privbayes_patterns.append({
                 "id": cons["id"],
@@ -936,14 +926,11 @@ def getMetrics(request):
                     "original": 0,
                     "protected": privbayes_PCD
                 },
-                "dots": {
-                    "original": len(ori_selected_data),
-                    "protected": len(privbayes_selected_data)
+                "dots_stab": {
+                    "original": 1,
+                    "protected": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)
                 },
-                "dot_sim": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ORI_DATA)
             })
-            # pcbayes_patterns = [pcbayes_DTW, pcbayes_Euc, pcbayes_PCD, 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ORI_DATA)]
-            # privbayes_patterns = [privbayes_DTW, privbayes_Euc, privbayes_PCD, 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ORI_DATA)]
         if cons["type"] == "order":
             raw_pcbayes_df = pd.read_csv(synthetic_data)
             raw_privbayes_df = pd.DataFrame(base_scheme['protected_data'])
@@ -959,39 +946,37 @@ def getMetrics(request):
             ori_arr = ori_selected_data[[cons['x_axis'], 'index']].groupby(cons['x_axis']).count().sort_index().values.flatten()
             pcbayes_arr = pcbayes_selected_data[[cons['x_axis'], 'index']].groupby(cons['x_axis']).count().sort_index().values.flatten()
             privbayes_arr = privbayes_selected_data[[cons['x_axis'], 'index']].groupby(cons['x_axis']).count().sort_index().values.flatten()
-            ori_ndcg = ndcg_score([ori_arr], [ori_arr])
+            # ori_ndcg = ndcg_score([ori_arr], [ori_arr])
 
             pcbayes_patterns.append({
                 "id": cons["id"],
                 "NDCG": {
-                    "original": ori_ndcg,
-                    "protected": ndcg_score([ori_arr], [pcbayes_arr])
+                    # "original": ori_ndcg,
+                    # "protected": ndcg_score([ori_arr], [pcbayes_arr])
                 },
-                "mAP": {
+                "Euc": {
                     "original": 0,
                     "protected": int(np.sum(np.abs(ori_arr - pcbayes_arr)))
                 },
-                "dots": {
-                    "original": len(ori_selected_data),
-                    "protected": len(pcbayes_selected_data)
+                "dots_stab": {
+                    "original": 1,
+                    "protected": 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)
                 },
-                "dot_sim": 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ORI_DATA)
             })
             privbayes_patterns.append({
                 "id": cons["id"],
                 "NDCG": {
-                    "original": ori_ndcg,
-                    "protected": ndcg_score([ori_arr], [privbayes_arr])
+                    # "original": ori_ndcg,
+                    # "protected": ndcg_score([ori_arr], [privbayes_arr])
                 },
-                "mAP": {
+                "Euc": {
                     "original": 0,
                     "protected": int(np.sum(np.abs(ori_arr - privbayes_arr)))
                 },
-                "dots": {
-                    "original": len(ori_selected_data),
-                    "protected": len(privbayes_selected_data)
+                "dots_stab": {
+                    "original": 1,
+                    "protected": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)
                 },
-                "dot_sim": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ORI_DATA)
             })
     baseret = copy.deepcopy(tmp_data_storage[session_id]['BASE_SCHEME'])
     baseret['pattern'] = privbayes_patterns
@@ -1002,10 +987,10 @@ def getMetrics(request):
             "metrics": {
                 "privacy_budget": bayes_epsilon,
                 "statistical_metrics": {
-                    "KSTest": 0.85,
-                    "CSTest": 0.85,
-                    # "KSTest": KSTest.compute(ORI_DATA, pcbayes_df),
-                    # "CSTest": CSTest.compute(ORI_DATA, pcbayes_df)
+                    # "KSTest": 0.85,
+                    # "CSTest": 0.85,
+                    "KSTest": KSTest.compute(ORI_DATA, pcbayes_df),
+                    "CSTest": CSTest.compute(ORI_DATA, pcbayes_df)
                 },
                 "detection_metrics": {
                     # "LogisticDetection": LogisticDetection.compute(ORI_DATA, pcbayes_df)
@@ -1013,8 +998,8 @@ def getMetrics(request):
                 "privacy_metrics": {
                     # "MLP": NumericalMLP.compute(ORI_DATA, pcbayes_df, key_fields=list(set(Measures).difference(['charges'])), sensitive_fields=['charges']),
                     # "CAP": CategoricalCAP.compute(ORI_DATA, pcbayes_df, key_fields=list(set(Dimensions).difference(['children'])), sensitive_fields=['children'])
-                    "MLP": 0.85,
-                    "CAP": 0.85
+                    # "MLP": 0.85,
+                    # "CAP": 0.85
                 }
             },
             "protected_data": json.loads(raw_pcbayes_df.to_json(orient="records")),
