@@ -42,7 +42,7 @@ const DataView = (props) => {
         setOriginalData(data.original_data);
         setAttributeData(data.attribute_data);
         setAttributeCharacter(data.attribute_character);
-        setFilterData(data.attribute_character);
+        setFilterData({});
       }
     },
     defaultFileList: [
