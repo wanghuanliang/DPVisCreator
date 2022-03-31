@@ -3,13 +3,16 @@ import copy
 import pandas as pd
 import numpy as np
 from sklearn.manifold import MDS
+from sklearn import metrics
 from priv_bayes.kl import get_w_distance, KLdivergence
 from django.http import HttpResponse
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import networkx as nx
 from dtw import dtw
+import itertools
 from sklearn.metrics import ndcg_score, average_precision_score
+# from sdv.evaluation import evaluate
 # from sdv.metrics.tabular import KSTest, CSTest, LogisticDetection, CategoricalCAP, NumericalMLP
 # 隐私保护相关包
 
@@ -89,7 +92,7 @@ def solveOriginalData(session_id):
             continue
         if df[col].dtype == int or df[col].dtype == np.int64:  # 记录整型数据
             tmp_data_storage[session_id]['INT_TYPE'].append(col)
-        if len(df[col].value_counts()) > threshold_value:  # 数值型
+        if len(df[col].value_counts()) > threshold_value and df[col].dtype != object:  # 需要类别多，同时不能是数值型
             tmp_data_storage[session_id]['Measures'].append(col)
             minn = min(df[col])
             maxx = max(df[col])
@@ -133,8 +136,19 @@ def getOriginalData(request):  # 获取原始数据
         }))
     DATA_PATH = default_storage.save('priv_bayes/data/1.csv', ContentFile(data.read()))
     df = pd.read_csv(DATA_PATH)
-    tmp_data_storage[session_id]['DATA_PATH'] = DATA_PATH
-    tmp_data_storage[session_id]['ORI_DATA'] = df
+    tmp_data_storage[session_id] = {
+        "DATA_PATH": DATA_PATH,
+        "constraints": None,
+        "threshold_value": 10,  # 离散型和数值型分界点
+        "bayes_epsilon": 10,  # 贝叶斯网络的隐私预算
+        "weights": None,
+        "Dimensions": [],
+        "Measures": [],
+        "INT_TYPE": [],
+        "ORI_DATA": df,
+        "RAW_DATA": copy.deepcopy(df),
+        "BASE_SCHEME": None
+    }
     ret = solveOriginalData(session_id)
 
     return HttpResponse(json.dumps(ret))
@@ -216,7 +230,7 @@ def get_mds_result(session_id):
 
     embedding = MDS(n_components=2, dissimilarity='precomputed', random_state=9)
     D2_MDS_data = embedding.fit_transform(matrix_data)
-    D2_MDS_data = (D2_MDS_data - np.min(D2_MDS_data)) / (np.max(D2_MDS_data) - np.min(D2_MDS_data)) * 80 + 10
+    D2_MDS_data = (D2_MDS_data - np.min(D2_MDS_data)) / (np.max(D2_MDS_data) - np.min(D2_MDS_data)) * 60 + 20
     return D2_MDS_data
 
 
@@ -262,13 +276,13 @@ def getModelData(request):
     weights = np.ones((len(constraints))) * 5
     # slice_methods = json.loads(request.body).get('slice_methods')
     slice_methods = {}  # 暂无slice_methods
-    axis_order = []
+    axis_order = ORI_DATA.columns.tolist()
     # 补全所有需要处理的坐标轴
-    for constraint in constraints:
-        if constraint['x_axis'] is not None and constraint['x_axis'] not in axis_order:
-            axis_order.append(constraint['x_axis'])
-        if constraint['y_axis'] is not None and constraint['y_axis'] not in axis_order:
-            axis_order.append(constraint['y_axis'])
+    # for constraint in constraints:
+    #     if constraint['x_axis'] is not None and constraint['x_axis'] not in axis_order:
+    #         axis_order.append(constraint['x_axis'])
+    #     if constraint['y_axis'] is not None and constraint['y_axis'] not in axis_order:
+    #         axis_order.append(constraint['y_axis'])
 
     # 对每个坐标轴，如果是Measures类型数据，则做一个分位数分段
     new_df = pd.DataFrame()
@@ -284,6 +298,7 @@ def getModelData(request):
         cut_points = [100 / categories * item for item in range(0, categories + 1)]
         cut_points = [np.percentile(ORI_DATA[axis], item) for item in cut_points]
         cut_points[-1] += 1e-10  # 最后一个分位点加一个微小的偏移量
+        cut_points = np.unique(cut_points)
         new_df[axis] = pd.cut(ORI_DATA[axis], cut_points, right=False)
     cur_df['index'] = range(len(cur_df))
     for constraint in constraints:
@@ -511,6 +526,7 @@ def get_bayes_with_weights(session_id):
                                                             attribute_to_is_candidate_key={},
                                                             weights=cur_scheme_weights)
 
+
     describer.save_dataset_description_to_file(description_file)
 
     display_bayesian_network(describer.bayesian_network)
@@ -623,6 +639,8 @@ def getMetrics(request):
     generator.generate_dataset_in_correlated_attribute_mode(len(ORI_DATA), description_file)
     generator.save_synthetic_data(synthetic_data)
     pcbayes_df = pd.read_csv(synthetic_data)
+    raw_pcbayes_df = pd.read_csv(synthetic_data)
+
     privbayes_df = pd.DataFrame(base_scheme['protected_data'])
 
     # 对类别型数据做个离散化记录
@@ -674,11 +692,49 @@ def getMetrics(request):
             privbayes_selected_data = privbayes_selected_data[[cons["x_axis"], cons["y_axis"]]]
             ori_selected_data = ori_selected_data[[cons["x_axis"], cons["y_axis"]]]
             # 处理KL
-            pcbayes_KL = KLdivergence(pcbayes_selected_data.values, ori_selected_data.values)
-            privbayes_KL = KLdivergence(privbayes_selected_data.values, ori_selected_data.values)
-            maxKL = max(pcbayes_KL, privbayes_KL) * 1.1
+            # pcbayes_KL = KLdivergence(pcbayes_selected_data.values, ori_selected_data.values)
+            # privbayes_KL = KLdivergence(privbayes_selected_data.values, ori_selected_data.values)
+            # maxKL = max(pcbayes_KL, privbayes_KL) * 1.1
+            # pcbayes_KL = 1 - pcbayes_KL / maxKL
+            # privbayes_KL = 1 - privbayes_KL / maxKL
+
+            # 处理KL sdv逻辑
+            # pcbayes_KL = evaluate(pcbayes_selected_data, ori_selected_data, metrics=['ContinuousKLDivergence'])
+            # privbayes_KL = evaluate(privbayes_selected_data, ori_selected_data, metrics=['ContinuousKLDivergence'])
+            # pcbayes_KL = 1 - pcbayes_KL
+            # privbayes_KL = 1 - privbayes_KL
+
+            # 占用KL的接口去返回一个轮廓系数
+            # labels_0 = np.ones((len(ori_selected_data), 1)) * 0
+            # labels_1 = np.ones((len(pcbayes_selected_data), 1))
+            # labels_2 = np.ones((len(privbayes_selected_data), 1)) * 2
+            # con_labels_pc = np.vstack((labels_0, labels_1))
+            # con_labels_priv = np.vstack((labels_0, labels_2))
+            # print(len(ori_selected_data))
+            # print(len(pd.concat([ori_selected_data, pcbayes_selected_data])))
+            # pc_eff = metrics.silhouette_score(pd.concat([ori_selected_data, pcbayes_selected_data]), con_labels_pc.tolist(), metric='euclidean')
+            # priv_eff = metrics.silhouette_score(pd.concat([ori_selected_data, privbayes_selected_data]), con_labels_priv.tolist(), metric='euclidean')
+            # pc_eff = 1 - abs(pc_eff)
+            # priv_eff = 1 - abs(priv_eff)
+
+            # 新数据中每个点到原始数据 均值点的距离 => 再除以点数算个均值
+
+            ori_center = ori_selected_data.values.mean(axis=0)
+            diff1 = pcbayes_selected_data.values - ori_center
+            diff2 = privbayes_selected_data.values - ori_center
+
+            pcbayes_KL = np.sum([np.sqrt(item ** 2) for item in diff1]) / len(pcbayes_selected_data)
+            privbayes_KL = np.sum([np.sqrt(item ** 2) for item in diff2]) / len(privbayes_selected_data)
+
+            area_arr = np.array(cons['params']['area'])
+            x_edge = [min(area_arr[:, 0]), max(area_arr[:, 0])]
+            y_edge = [min(area_arr[:, 1]), max(area_arr[:, 1])]
+            margin_nodes = np.array(list(itertools.product(x_edge, y_edge)))
+            diff = margin_nodes - ori_center
+            maxKL = min(np.array([np.sqrt(sum(item ** 2)) for item in diff]))
             pcbayes_KL = 1 - pcbayes_KL / maxKL
             privbayes_KL = 1 - privbayes_KL / maxKL
+
             # 处理WDis
             pcbayes_WDis = get_w_distance(pcbayes_selected_data.values, ori_selected_data.values)
             privbayes_WDis = get_w_distance(privbayes_selected_data.values, ori_selected_data.values)
@@ -694,7 +750,8 @@ def getMetrics(request):
                 "WDis": {
                     "original": 1,
                     "protected": pcbayes_WDis
-                }
+                },
+                "dot_sim": 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ORI_DATA)
             })
             privbayes_patterns.append({
                 "id": cons["id"],
@@ -705,7 +762,8 @@ def getMetrics(request):
                 "WDis": {
                     "original": 1,
                     "protected": privbayes_WDis
-                }
+                },
+                "dot_sim": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ORI_DATA)
             })
         if cons["type"] == "correlation":
             cond11 = pcbayes_df[cons['x_axis']] <= cons['params']['range'][1]
@@ -714,13 +772,34 @@ def getMetrics(request):
             cond22 = privbayes_df[cons['x_axis']] >= cons['params']['range'][0]
             cond31 = ORI_DATA[cons['x_axis']] <= cons['params']['range'][1]
             cond32 = ORI_DATA[cons['x_axis']] >= cons['params']['range'][0]
-            pcbayes_selected_data = pcbayes_df[cond11 & cond12][[cons["x_axis"], cons["y_axis"]]]
-            privbayes_selected_data = privbayes_df[cond21 & cond22][[cons["x_axis"], cons["y_axis"]]]
-            ori_selected_data = ORI_DATA[cond31 & cond32][[cons["x_axis"], cons["y_axis"]]]
+            if cons['computation'] == 'count':
+                pcbayes_selected_data = pcbayes_df[cond11 & cond12][[cons["x_axis"]]]
+                privbayes_selected_data = privbayes_df[cond21 & cond22][[cons["x_axis"]]]
+                ori_selected_data = ORI_DATA[cond31 & cond32][[cons["x_axis"]]]
+                cut_points = np.arange(cons['params']['range'][0], cons['params']['range'][1] + 1e-6, cons['x_step'])
+                cut_points[-1] += 1e-6
+                pcbayes_selected_data[cons["x_axis"]] = pd.cut(pcbayes_selected_data[cons['x_axis']], cut_points,
+                                                           right=False)
+                pcbayes_selected_data['index'] = len(pcbayes_selected_data)
+                pcbayes_data = pcbayes_selected_data.groupby(cons["x_axis"]).count().sort_index().values
+
+                privbayes_selected_data[cons["x_axis"]] = pd.cut(privbayes_selected_data[cons['x_axis']], cut_points,
+                                                               right=False)
+                privbayes_selected_data['index'] = len(privbayes_selected_data)
+                privbayes_data = privbayes_selected_data.groupby(cons["x_axis"]).count().sort_index().values
+
+                ori_selected_data[cons["x_axis"]] = pd.cut(ori_selected_data[cons['x_axis']], cut_points,
+                                                               right=False)
+                ori_selected_data['index'] = len(ori_selected_data)
+                ori_data = ori_selected_data.groupby(cons["x_axis"]).count().sort_index().values
+            elif cons['computation'] == 'average':
+                pcbayes_selected_data = pcbayes_df[cond11 & cond12][[cons["x_axis"], cons["y_axis"]]]
+                privbayes_selected_data = privbayes_df[cond21 & cond22][[cons["x_axis"], cons["y_axis"]]]
+                ori_selected_data = ORI_DATA[cond31 & cond32][[cons["x_axis"], cons["y_axis"]]]
+                pcbayes_data = pcbayes_selected_data.groupby(cons["x_axis"]).mean().sort_index().values
+                privbayes_data = privbayes_selected_data.groupby(cons["x_axis"]).mean().sort_index().values
+                ori_data = ori_selected_data.groupby(cons["x_axis"]).mean().sort_index().values
             manhattan_distance = lambda x, y: np.abs(x - y)
-            pcbayes_data = pcbayes_selected_data.groupby("age").mean().sort_index().values
-            privbayes_data = privbayes_selected_data.groupby("age").mean().sort_index().values
-            ori_data = ori_selected_data.groupby("age").mean().sort_index().values
             pcbayes_DTW, cost_matrix, acc_cost_matrix, path = dtw(pcbayes_data, ori_data, dist=manhattan_distance)
             privbayes_DTW, cost_matrix, acc_cost_matrix, path = dtw(privbayes_data, ori_data, dist=manhattan_distance)
             maxDTW = max(pcbayes_DTW, privbayes_DTW) * 1.1
@@ -729,9 +808,25 @@ def getMetrics(request):
 
             pcbayes_Euc = np.sqrt(np.sum(np.square(pcbayes_data - ori_data)))
             privbayes_Euc = np.sqrt(np.sum(np.square(privbayes_data - ori_data)))
-            ori_coef_data = ori_selected_data.groupby("age").mean().sort_index().reset_index().values
-            pcbayes_coef_data = pcbayes_selected_data.groupby("age").mean().sort_index().reset_index().values
-            privbayes_coef_data = privbayes_selected_data.groupby("age").mean().sort_index().reset_index().values
+            maxEuc = max(pcbayes_Euc, privbayes_Euc) * 1.1
+            pcbayes_Euc = 1 - pcbayes_Euc / maxEuc
+            privbayes_Euc = 1 - privbayes_Euc / maxEuc
+            if cons['computation'] == 'count':
+                ori_coef_data = ori_selected_data.groupby(cons['x_axis']).count().sort_index().reset_index()
+                ori_coef_data[cons['x_axis']] = range(1, len(ori_coef_data) + 1)
+                ori_coef_data = ori_coef_data.values
+
+                pcbayes_coef_data = pcbayes_selected_data.groupby(cons['x_axis']).count().sort_index().reset_index()
+                pcbayes_coef_data[cons['x_axis']] = range(1, len(pcbayes_coef_data) + 1)
+                pcbayes_coef_data = pcbayes_coef_data.values
+
+                privbayes_coef_data = privbayes_selected_data.groupby(cons['x_axis']).count().sort_index().reset_index()
+                privbayes_coef_data[cons['x_axis']] = range(1, len(privbayes_coef_data) + 1)
+                privbayes_coef_data = privbayes_coef_data.values
+            elif cons['computation'] == 'average':
+                ori_coef_data = ori_selected_data.groupby(cons['x_axis']).mean().sort_index().reset_index().values
+                pcbayes_coef_data = pcbayes_selected_data.groupby(cons['x_axis']).mean().sort_index().reset_index().values
+                privbayes_coef_data = privbayes_selected_data.groupby(cons['x_axis']).mean().sort_index().reset_index().values
             ori_coef = np.corrcoef(ori_coef_data[:, 0], ori_coef_data[:, 1])
             pcbayes_PCD = abs(np.corrcoef(pcbayes_coef_data[:, 0], pcbayes_coef_data[:, 1]) - ori_coef)[0][1]
             privbayes_PCD = abs(np.corrcoef(privbayes_coef_data[:, 0], privbayes_coef_data[:, 1]) - ori_coef)[0][1]
@@ -749,7 +844,8 @@ def getMetrics(request):
                 "PCD": {
                     "original": 0,
                     "protected": pcbayes_PCD
-                }
+                },
+                "dot_sim": 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ORI_DATA)
             })
             privbayes_patterns.append({
                 "id": cons["id"],
@@ -764,23 +860,25 @@ def getMetrics(request):
                 "PCD": {
                     "original": 0,
                     "protected": privbayes_PCD
-                }
+                },
+                "dot_sim": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ORI_DATA)
             })
         if cons["type"] == "order":
             raw_pcbayes_df = pd.read_csv(synthetic_data)
             raw_privbayes_df = pd.DataFrame(base_scheme['protected_data'])
             ORI_DATA = tmp_data_storage[session_id]['ORI_DATA']
+            if ORI_DATA[cons['x_axis']].dtype != object:
+                cons['params']['values'] = [int(item) for item in cons["params"]["values"]]
             ori_selected_data = ORI_DATA[ORI_DATA[cons['x_axis']].isin(cons["params"]["values"])]
             pcbayes_selected_data = raw_pcbayes_df[raw_pcbayes_df[cons['x_axis']].isin(cons["params"]["values"])]
             privbayes_selected_data = raw_privbayes_df[raw_privbayes_df[cons['x_axis']].isin(cons["params"]["values"])]
             pcbayes_selected_data['index'] = range(len(pcbayes_selected_data))
             privbayes_selected_data['index'] = range(len(privbayes_selected_data))
             ori_selected_data['index'] = range(len(ori_selected_data))
-            ori_arr = ori_selected_data[[cons['x_axis'], 'index']].groupby(cons['x_axis']).count().values()
-            pcbayes_arr = pcbayes_selected_data[[cons['x_axis'], 'index']].groupby(cons['x_axis']).count().values()
-            privbayes_arr = privbayes_selected_data[[cons['x_axis'], 'index']].groupby(cons['x_axis']).count().values()
+            ori_arr = ori_selected_data[[cons['x_axis'], 'index']].groupby(cons['x_axis']).count().sort_index().values.flatten()
+            pcbayes_arr = pcbayes_selected_data[[cons['x_axis'], 'index']].groupby(cons['x_axis']).count().sort_index().values.flatten()
+            privbayes_arr = privbayes_selected_data[[cons['x_axis'], 'index']].groupby(cons['x_axis']).count().sort_index().values.flatten()
             ori_ndcg = ndcg_score([ori_arr], [ori_arr])
-
 
             pcbayes_patterns.append({
                 "id": cons["id"],
@@ -789,9 +887,10 @@ def getMetrics(request):
                     "protected": ndcg_score([ori_arr], [pcbayes_arr])
                 },
                 "mAP": {
-                    # "original": average_precision_score(ori_arr, ori_arr),
-                    # "protected": average_precision_score(ori_arr, pcbayes_arr)
-                }
+                    "original": 0,
+                    "protected": int(np.sum(np.abs(ori_arr - pcbayes_arr)))
+                },
+                "dot_sim": 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ORI_DATA)
             })
             privbayes_patterns.append({
                 "id": cons["id"],
@@ -800,13 +899,14 @@ def getMetrics(request):
                     "protected": ndcg_score([ori_arr], [privbayes_arr])
                 },
                 "mAP": {
-                    # "original": average_precision_score(ori_arr, ori_arr),
-                    # "protected": average_precision_score(ori_arr, privbayes_arr)
-                }
+                    "original": 0,
+                    "protected": int(np.sum(np.abs(ori_arr - privbayes_arr)))
+                },
+                "dot_sim": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ORI_DATA)
             })
     baseret = copy.deepcopy(tmp_data_storage[session_id]['BASE_SCHEME'])
     baseret['pattern'] = privbayes_patterns
-    baseret['protected_data'] = json.loads(privbayes_df.to_json(orient="records")),
+    # baseret['protected_data'] = json.loads(privbayes_df.to_json(orient="records")),
     ret = {
         "status": "success",
         "scheme": {
@@ -828,7 +928,7 @@ def getMetrics(request):
                     "CAP": 0.85
                 }
             },
-            "protected_data": json.loads(pcbayes_df.to_json(orient="records")),
+            "protected_data": json.loads(raw_pcbayes_df.to_json(orient="records")),
             "pattern": pcbayes_patterns
         },
         "base": baseret

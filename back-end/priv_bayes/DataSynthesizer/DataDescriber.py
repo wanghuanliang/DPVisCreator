@@ -340,5 +340,8 @@ class DataDescriber:
         with open(file_name, 'w') as outfile:
             json.dump(self.data_description, outfile, indent=4)
 
+    def get_json_description_file(self):
+        return self.data_description
+
     def display_dataset_description(self):
         print(json.dumps(self.data_description, indent=4))
