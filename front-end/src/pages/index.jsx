@@ -49,13 +49,21 @@ const IndexPage = () => {
   const [modelData, setModelData] = useState(null); // null
   const [networkData, setNetworkData] = useState(null); // 贝叶斯网络数据
   const [weightsData, setWeightsData] = useState(null); // pattern权重
+  const [baseNetworkData, setBaseNetworkData] = useState(null); //初始贝叶斯网络数据
+  const [showBaseModel, setShowBaseModel] = useState(false); // model view是否切换成base
   const [modelViewData, setModelViewData] = useState([null]); // model view相关数据前端存起来，包括modelData、networkData，weightData
   // 指标
   const [schemes, setSchemes] = useState([]); // 初始化为数组，否则会出现iterable问题
   const changeSchemeId = (id) => {
-    setModelData(modelViewData[id].modelData);
-    setNetworkData(modelViewData[id].networkData);
-    setWeightsData(modelViewData[id].weightsData);
+    if (id !== 0) {
+      setModelData(modelViewData[id]?.modelData);
+      setNetworkData(modelViewData[id]?.networkData);
+      setWeightsData(modelViewData[id]?.weightsData);
+      setShowBaseModel(false);
+    } else {
+      setNetworkData(baseNetworkData);
+      setShowBaseModel(true);
+    }
   }
   
   const handleNextClick = () => {
@@ -135,6 +143,7 @@ const IndexPage = () => {
             setFilterData={setFilterData}
             setFilterOriginalData={setFilterOriginalData}
             setFilterAttributeCharacter={setFilterAttributeCharacter}
+            setBaseNetworkData={setBaseNetworkData}
           ></DataView>
         </div>
 
@@ -185,6 +194,7 @@ const IndexPage = () => {
                   weightsData={weightsData}
                   setWeightsData={setWeightsData}
                   globalConstraints={constraints}
+                  showBaseModel={showBaseModel}
                 ></ModelView>
               )}
             </div>

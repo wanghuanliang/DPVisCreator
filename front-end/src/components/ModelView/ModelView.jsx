@@ -49,6 +49,7 @@ const ModelView = (props) => {
     weightsData,
     setWeightsData,
     globalConstraints,
+    showBaseModel,
   } = props;
   const {
     total_num: totalNum,
@@ -146,25 +147,27 @@ const ModelView = (props) => {
     return (
       <div className="model-control-panel">
         <Space>
-          <span>Privacy Budget</span>
-          <Slider
-            min={0}
-            max={20}
-            step={0.1}
-            style={{ width: 100 }}
-            value={privacyBudgetValue}
-            onChange={(value) => setPrivacyBudget(value)}
-          ></Slider>
-          <InputNumber
-            size="small"
-            min={0}
-            max={20}
-            step={0.1}
-            style={{ width: 60 }}
-            value={privacyBudgetValue}
-            onChange={(value) => setPrivacyBudget(value)}
-          ></InputNumber>
-          <div style={{ display: "inline-block", width: 20 }}></div>
+          {!showBaseModel && <>
+            <span>Privacy Budget</span>
+            <Slider
+              min={0}
+              max={20}
+              step={0.1}
+              style={{ width: 100 }}
+              value={privacyBudgetValue}
+              onChange={(value) => setPrivacyBudget(value)}
+            ></Slider>
+            <InputNumber
+              size="small"
+              min={0}
+              max={20}
+              step={0.1}
+              style={{ width: 60 }}
+              value={privacyBudgetValue}
+              onChange={(value) => setPrivacyBudget(value)}
+            ></InputNumber>
+          </>}
+          <div style={{ display: "inline-block", width: 100 }}></div>
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <div
               className="exchange-button"
@@ -181,7 +184,7 @@ const ModelView = (props) => {
               Bayesian network
             </div>
           </div>
-          <div style={{ display: "inline-block", width: 20 }}></div>
+          <div style={{ display: "inline-block", width: 100 }}></div>
           <Button size="small" onClick={handleRecordClick}>
             Record
           </Button>
@@ -219,6 +222,7 @@ const ModelView = (props) => {
               setSelectedId={setSelectedId}
               matrixData={matrixData}
               patternWeights={patternWeights}
+              showBaseModel={showBaseModel}
             ></Projection>
           </g>
           <g transform="translate(400,0)">
@@ -242,6 +246,23 @@ const ModelView = (props) => {
           {/* <BayesianNetwork></BayesianNetwork> */}
           {/* <SankeyPlot></SankeyPlot> */}
           {/* <ParallelPlot></ParallelPlot> */}
+          {/* 白板遮罩 */}
+          {showBaseModel && <g>
+            <rect
+              x={10}
+              y={55}
+              width={380}
+              height={125}
+              fill='#fff'
+            ></rect>
+            <rect
+              x={280}
+              y={10}
+              width={100}
+              height={150}
+              fill='#fff'
+            ></rect>
+          </g>}
         </svg>
       )}
     </div>

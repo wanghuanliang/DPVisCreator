@@ -22,6 +22,7 @@ const DataView = (props) => {
     setFilterData,
     setFilterOriginalData,
     setFilterAttributeCharacter,
+    setBaseNetworkData,
   } = props;
 
   const [drops, setDrops] = useState([]); //去掉的属性
@@ -60,13 +61,12 @@ const DataView = (props) => {
   const handleConfirmClick = () => {
     getFilteredData({ filter: filterData, drops: drops })
       .then((res) => {
-        console.log("123", res);
         setFilterOriginalData(res.data.data.original_data);
         setFilterAttributeCharacter(res.data.data.attribute_character);
         // 完成后，再发送getBaseData请求
         getBaseData()
           .then((res) => {
-            console.log("res", res);
+            setBaseNetworkData(res.data.data.network);
             const base = res.data.data.base;
             setBase(base);
           })
