@@ -85,12 +85,17 @@ function getXAxisOption(attribute, step = NaN, width = 0) {
     ...axisOption,
   };
 }
-function getYAxisOption(attribute) {
+function getYAxisOption(attribute, min = null) {
   return {
     type: "value",
     id: attribute.name,
     name: attribute.name,
     nameGap: "45",
+    min: function (value) {
+      const parsed = parseInt(value.min - (value.max - value.min) * 0.2);
+      const axisMin = min ? Math.min(parsed, min) : parsed;
+      return axisMin >= 0 ? axisMin : 0;
+    },
     axisLine: {
       show: true,
     },
@@ -327,6 +332,10 @@ export default class DataChart extends Component {
     return option;
   }
   getBarChartOption() {
+    const originalDataY = this.props.originalData.map((d) => d[1]);
+    const dataMin = Math.min(...originalDataY);
+    const dataMax = Math.max(...originalDataY);
+    const axisYMin = parseInt(dataMin - (dataMax - dataMin) * 0.2);
     const option = {
       color: [
         "#74cbed",
@@ -361,7 +370,7 @@ export default class DataChart extends Component {
         this.props.constraint.x_step,
         (this.width * 0.78) / Object.keys(this.mapper).length
       ),
-      yAxis: getYAxisOption(this.props.attributes[1], "y"),
+      yAxis: getYAxisOption(this.props.attributes[1], axisYMin),
       series: [
         ...getSeriesOption("bar", this.props.attributes[2], this.props.data),
       ],

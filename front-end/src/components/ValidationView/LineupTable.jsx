@@ -7,7 +7,6 @@ import {
   FilterOutlined,
 } from "@ant-design/icons";
 
-const titleStyle = { fontWeight: "bold", fontSize: 18 };
 // 标题到对象的映射
 const NameMap = {
   KL: "KL",
@@ -423,26 +422,28 @@ const LineupTable = (props) => {
             style={{ color: range === "all" ? "#000000" : "#ff9845" }}
           />
         </Popover>
-        <CaretUpOutlined
-          style={{ color: order === "descending" ? "#ff9845" : "#000000" }}
-          onClick={() => {
-            switchOrderState(
-              order === "descending" ? "none" : "descending",
-              outer,
-              inner
-            );
-          }}
-        />
-        <CaretDownOutlined
-          style={{ color: order === "ascending" ? "#ff9845" : "#000000" }}
-          onClick={() => {
-            switchOrderState(
-              order === "ascending" ? "none" : "ascending",
-              outer,
-              inner
-            );
-          }}
-        />
+        <div className="sorter-buttons">
+          <CaretUpOutlined
+            style={{ color: order === "descending" ? "#ff9845" : "#000000" }}
+            onClick={() => {
+              switchOrderState(
+                order === "descending" ? "none" : "descending",
+                outer,
+                inner
+              );
+            }}
+          />
+          <CaretDownOutlined
+            style={{ color: order === "ascending" ? "#ff9845" : "#000000" }}
+            onClick={() => {
+              switchOrderState(
+                order === "ascending" ? "none" : "ascending",
+                outer,
+                inner
+              );
+            }}
+          />
+        </div>
       </>
     );
   };
@@ -494,26 +495,28 @@ const LineupTable = (props) => {
             style={{ color: range === "all" ? "#000000" : "#ff9845" }}
           />
         </Popover>
-        <CaretUpOutlined
-          style={{ color: order === "descending" ? "#ff9845" : "#000000" }}
-          onClick={() => {
-            switchOrderState(
-              order === "descending" ? "none" : "descending",
-              outer,
-              inner
-            );
-          }}
-        />
-        <CaretDownOutlined
-          style={{ color: order === "ascending" ? "#ff9845" : "#000000" }}
-          onClick={() => {
-            switchOrderState(
-              order === "ascending" ? "none" : "ascending",
-              outer,
-              inner
-            );
-          }}
-        />
+        <div className="sorter-buttons">
+          <CaretUpOutlined
+            style={{ color: order === "descending" ? "#ff9845" : "#000000" }}
+            onClick={() => {
+              switchOrderState(
+                order === "descending" ? "none" : "descending",
+                outer,
+                inner
+              );
+            }}
+          />
+          <CaretDownOutlined
+            style={{ color: order === "ascending" ? "#ff9845" : "#000000" }}
+            onClick={() => {
+              switchOrderState(
+                order === "ascending" ? "none" : "ascending",
+                outer,
+                inner
+              );
+            }}
+          />
+        </div>
       </>
     );
   };
@@ -584,8 +587,8 @@ const LineupTable = (props) => {
     return merge
       ? {
           title: (
-            <>
-              <div style={{ textAlign: "center" }}>
+            <div style={{ textAlign: "center" }}>
+              <Space direction="horizontal" className="lineup-table-main">
                 {constraint.id === selectedConstraint.id ? (
                   <Button
                     size="small"
@@ -619,10 +622,10 @@ const LineupTable = (props) => {
                   </Button>
                 )}
                 {createConstraintFilter(constraint)}
-              </div>
+              </Space>
               <div
                 style={{
-                  paddingTop: 35,
+                  paddingTop: 15,
                   display: "flex",
                   justifyContent: "center",
                 }}
@@ -631,7 +634,7 @@ const LineupTable = (props) => {
                   <div style={{ marginRight: 12 }}>{name}</div>
                 ))}
               </div>
-            </>
+            </div>
           ),
           dataIndex: constraint.id,
           key: constraint.id,
@@ -641,39 +644,41 @@ const LineupTable = (props) => {
       : {
           title: (
             <div style={{ textAlign: "center" }}>
-              {constraint.id === selectedConstraint.id ? (
-                <Button
-                  size="small"
-                  key={"scheme-constraint-" + constraint.id}
-                  style={{
-                    borderColor: patternColor[constraint.type],
-                    color: "#ffffff",
-                    background: patternColor[constraint.type],
-                  }}
-                  className="validation-constraint-select-button"
-                  onClick={() => {
-                    selectConstraint(constraint);
-                  }}
-                >
-                  {constraint.id}
-                </Button>
-              ) : (
-                <Button
-                  size="small"
-                  key={"scheme-constraint-" + constraint.id}
-                  style={{
-                    borderColor: patternColor[constraint.type],
-                    color: patternColor[constraint.type],
-                  }}
-                  className="validation-constraint-select-button"
-                  onClick={() => {
-                    selectConstraint(constraint);
-                  }}
-                >
-                  {constraint.id}
-                </Button>
-              )}
-              {createConstraintFilter(constraint)}
+              <Space direction="horizontal" className="lineup-table-main">
+                {constraint.id === selectedConstraint.id ? (
+                  <Button
+                    size="small"
+                    key={"scheme-constraint-" + constraint.id}
+                    style={{
+                      borderColor: patternColor[constraint.type],
+                      color: "#ffffff",
+                      background: patternColor[constraint.type],
+                    }}
+                    className="validation-constraint-select-button"
+                    onClick={() => {
+                      selectConstraint(constraint);
+                    }}
+                  >
+                    {constraint.id}
+                  </Button>
+                ) : (
+                  <Button
+                    size="small"
+                    key={"scheme-constraint-" + constraint.id}
+                    style={{
+                      borderColor: patternColor[constraint.type],
+                      color: patternColor[constraint.type],
+                    }}
+                    className="validation-constraint-select-button"
+                    onClick={() => {
+                      selectConstraint(constraint);
+                    }}
+                  >
+                    {constraint.id}
+                  </Button>
+                )}
+                {createConstraintFilter(constraint)}
+              </Space>
             </div>
           ),
           dataIndex: constraint.id,
@@ -681,10 +686,10 @@ const LineupTable = (props) => {
           children: (selectedMetrics[constraint.type] || []).map((name) => {
             return {
               title: (
-                <div>
+                <Space direction="horizontal" className="lineup-table-children">
                   {name}
                   {createConstraintFilter(constraint, NameMap[name])}
-                </div>
+                </Space>
               ),
               dataIndex: [constraint.id, NameMap[name]],
               key: constraint.id + ":" + name,
@@ -697,7 +702,11 @@ const LineupTable = (props) => {
 
   const columns = [
     {
-      title: <div style={titleStyle}>Schemes{createFilter("id")}</div>,
+      title: (
+        <Space direction="horizontal" className="lineup-table-main">
+          Schemes{createFilter("id")}
+        </Space>
+      ),
       dataIndex: "id",
       key: "id",
       fixed: "left",
@@ -722,7 +731,9 @@ const LineupTable = (props) => {
     },
     {
       title: (
-        <div style={titleStyle}>Privacy budget{createFilter("budget")}</div>
+        <Space direction="horizontal" className="lineup-table-main">
+          Privacy budget{createFilter("budget")}
+        </Space>
       ),
       dataIndex: "budget",
       key: "budget",
@@ -747,12 +758,12 @@ const LineupTable = (props) => {
         ? {
             title: (
               <div style={{ textAlign: "center" }}>
-                <div style={titleStyle}>
+                <Space direction="horizontal" className="lineup-table-main">
                   Statistical metrics{createFilter("statistical")}
-                </div>
+                </Space>
                 <div
                   style={{
-                    paddingTop: 35,
+                    paddingTop: 15,
                     display: "flex",
                     justifyContent: "center",
                   }}
@@ -768,18 +779,21 @@ const LineupTable = (props) => {
         : {
             title: (
               <div>
-                <div style={titleStyle}>
+                <Space direction="horizontal" className="lineup-table-main">
                   Statistical metrics{createFilter("statistical")}
-                </div>
+                </Space>
               </div>
             ),
             children: (selectedMetrics.statistical || []).map((name) => {
               return {
                 title: (
-                  <div>
+                  <Space
+                    direction="horizontal"
+                    className="lineup-table-children"
+                  >
                     {name}
                     {createFilter("statistical", name)}
-                  </div>
+                  </Space>
                 ),
                 dataIndex: ["statistical", name],
                 key: "statistical:" + name,
@@ -799,14 +813,14 @@ const LineupTable = (props) => {
         ? {
             title: (
               <div style={{ textAlign: "center" }}>
-                <div style={titleStyle}>
+                <Space direction="horizontal" className="lineup-table-main">
                   Detection metrics{createFilter("detection")}
-                </div>
+                </Space>
                 <div
                   style={{
                     display: "flex",
                     justifyContent: "center",
-                    paddingTop: 35,
+                    paddingTop: 15,
                   }}
                 >
                   {(selectedMetrics.detection || []).map((name, index) => (
@@ -820,18 +834,21 @@ const LineupTable = (props) => {
         : {
             title: (
               <div>
-                <div style={titleStyle}>
+                <Space direction="horizontal" className="lineup-table-main">
                   Detection metrics{createFilter("detection")}
-                </div>
+                </Space>
               </div>
             ),
             children: (selectedMetrics.detection || []).map((name) => {
               return {
                 title: (
-                  <div style={{ textAlign: "center" }}>
+                  <Space
+                    direction="horizontal"
+                    className="lineup-table-children"
+                  >
                     {name}
                     {createFilter("detection", name)}
-                  </div>
+                  </Space>
                 ),
                 dataIndex: "detection",
                 key: "detection:" + name,
