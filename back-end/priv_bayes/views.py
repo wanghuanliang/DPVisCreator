@@ -127,7 +127,7 @@ def solveOriginalData(session_id):
 
 def getOriginalData(request):  # 获取原始数据
     global tmp_data_storage
-    BAYES_EPS = 5
+    BAYES_EPS = 10
     data = request.FILES['file']
     session_id = request.POST.get("session_id")
     if not check_session_id(session_id):
@@ -165,7 +165,7 @@ def cnt_poly(x, params):  # 根据x和多项式系数params计算返回值
 
 def initialize(request):
     global tmp_data_storage
-    BAYES_EPS = 5
+    BAYES_EPS = 10
 
     session_id = json.loads(request.body).get('session_id')
     tmp_data_storage[session_id] = {
@@ -681,6 +681,10 @@ def getMetrics(request):
     for cons in constraints:
         pcbayes_selected_data = None
         privbayes_selected_data = None
+        selected_legends = None
+        if cons['color']:
+            selected_legends = [item for item in cons['selectedLegend'] if cons['selectedLegend'][item]]
+            print(selected_legends)
         if cons["type"] == "cluster":
             area = cons["params"]["area"]
             dt_x = pcbayes_df[cons["x_axis"]]
@@ -805,10 +809,20 @@ def getMetrics(request):
             cond22 = privbayes_df[cons['x_axis']] >= cons['params']['range'][0]
             cond31 = ORI_DATA[cons['x_axis']] <= cons['params']['range'][1]
             cond32 = ORI_DATA[cons['x_axis']] >= cons['params']['range'][0]
+            if selected_legends:
+                cond13 = pcbayes_df[cons['color']].isin(selected_legends)
+                cond23 = privbayes_df[cons['color']].isin(selected_legends)
+                cond33 = ORI_DATA[cons['color']].isin(selected_legends)
+
             if cons['computation'] == 'count':
-                pcbayes_selected_data = pcbayes_df[cond11 & cond12][[cons["x_axis"]]]
-                privbayes_selected_data = privbayes_df[cond21 & cond22][[cons["x_axis"]]]
-                ori_selected_data = ORI_DATA[cond31 & cond32][[cons["x_axis"]]]
+                if selected_legends:
+                    pcbayes_selected_data = pcbayes_df[cond11 & cond12 & cond13][[cons["x_axis"]]]
+                    privbayes_selected_data = privbayes_df[cond21 & cond22 & cond23][[cons["x_axis"]]]
+                    ori_selected_data = ORI_DATA[cond31 & cond32 & cond33][[cons["x_axis"]]]
+                else:
+                    pcbayes_selected_data = pcbayes_df[cond11 & cond12][[cons["x_axis"]]]
+                    privbayes_selected_data = privbayes_df[cond21 & cond22][[cons["x_axis"]]]
+                    ori_selected_data = ORI_DATA[cond31 & cond32][[cons["x_axis"]]]
                 cut_points = np.arange(cons['params']['range'][0], cons['params']['range'][1] + 1e-6, cons['x_step'])
                 cut_points[-1] += 1e-6
                 pcbayes_selected_data[cons["x_axis"]] = pd.cut(pcbayes_selected_data[cons['x_axis']], cut_points,
@@ -828,15 +842,22 @@ def getMetrics(request):
             elif cons['computation'] == 'average':
                 cut_points = np.arange(cons['params']['range'][0], cons['params']['range'][1] + 1e-6, cons['x_step'])
                 cut_points[-1] += 1e-6
-                pcbayes_selected_data = pcbayes_df[cond11 & cond12][[cons["x_axis"], cons["y_axis"]]]
+                if selected_legends:
+                    pcbayes_selected_data = pcbayes_df[cond11 & cond12 & cond13][[cons["x_axis"], cons["y_axis"]]]
+                    privbayes_selected_data = privbayes_df[cond21 & cond22 & cond23][[cons["x_axis"], cons["y_axis"]]]
+                    ori_selected_data = ORI_DATA[cond31 & cond32 & cond33][[cons["x_axis"], cons["y_axis"]]]
+                else:
+                    pcbayes_selected_data = pcbayes_df[cond11 & cond12][[cons["x_axis"], cons["y_axis"]]]
+                    privbayes_selected_data = privbayes_df[cond21 & cond22][[cons["x_axis"], cons["y_axis"]]]
+                    ori_selected_data = ORI_DATA[cond31 & cond32][[cons["x_axis"], cons["y_axis"]]]
                 pcbayes_selected_data[cons["x_axis"]] = pd.cut(pcbayes_selected_data[cons['x_axis']], cut_points,
                                                                right=False)
 
-                privbayes_selected_data = privbayes_df[cond21 & cond22][[cons["x_axis"], cons["y_axis"]]]
+
                 privbayes_selected_data[cons["x_axis"]] = pd.cut(privbayes_selected_data[cons['x_axis']], cut_points,
                                                                  right=False)
 
-                ori_selected_data = ORI_DATA[cond31 & cond32][[cons["x_axis"], cons["y_axis"]]]
+
                 ori_selected_data[cons["x_axis"]] = pd.cut(ori_selected_data[cons['x_axis']], cut_points,
                                                            right=False)
                 pcbayes_data = pcbayes_selected_data.groupby(cons["x_axis"]).mean().sort_index().values
@@ -846,14 +867,14 @@ def getMetrics(request):
             pcbayes_DTW, cost_matrix, acc_cost_matrix, path = dtw(pcbayes_data, ori_data, dist=manhattan_distance)
             privbayes_DTW, cost_matrix, acc_cost_matrix, path = dtw(privbayes_data, ori_data, dist=manhattan_distance)
             maxDTW = max(pcbayes_DTW, privbayes_DTW) * 1.1
-            # pcbayes_DTW = 1 - pcbayes_DTW / maxDTW
-            # privbayes_DTW = 1 - privbayes_DTW / maxDTW
+            pcbayes_DTW = 1 - pcbayes_DTW / maxDTW
+            privbayes_DTW = 1 - privbayes_DTW / maxDTW
 
             pcbayes_Euc = np.sqrt(np.sum(np.square(pcbayes_data - ori_data)))
             privbayes_Euc = np.sqrt(np.sum(np.square(privbayes_data - ori_data)))
             maxEuc = max(pcbayes_Euc, privbayes_Euc) * 1.1
-            # pcbayes_Euc = 1 - pcbayes_Euc / maxEuc
-            # privbayes_Euc = 1 - privbayes_Euc / maxEuc
+            pcbayes_Euc = 1 - pcbayes_Euc / maxEuc
+            privbayes_Euc = 1 - privbayes_Euc / maxEuc
             if cons['computation'] == 'count':
                 ori_coef_data = ori_selected_data.groupby(cons['x_axis']).count().sort_index().reset_index()
                 ori_coef_data[cons['x_axis']] = range(1, len(ori_coef_data) + 1)
@@ -921,8 +942,8 @@ def getMetrics(request):
                 },
                 "dot_sim": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ORI_DATA)
             })
-            pcbayes_patterns = [pcbayes_DTW, pcbayes_Euc, pcbayes_PCD, 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ORI_DATA)]
-            privbayes_patterns = [privbayes_DTW, privbayes_Euc, privbayes_PCD, 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ORI_DATA)]
+            # pcbayes_patterns = [pcbayes_DTW, pcbayes_Euc, pcbayes_PCD, 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ORI_DATA)]
+            # privbayes_patterns = [privbayes_DTW, privbayes_Euc, privbayes_PCD, 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ORI_DATA)]
         if cons["type"] == "order":
             raw_pcbayes_df = pd.read_csv(synthetic_data)
             raw_privbayes_df = pd.DataFrame(base_scheme['protected_data'])
