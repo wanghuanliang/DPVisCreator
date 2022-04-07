@@ -990,31 +990,31 @@ def getMetrics(request):
     baseret = copy.deepcopy(tmp_data_storage[session_id]['BASE_SCHEME'])
     baseret['pattern'] = privbayes_patterns
     # baseret['protected_data'] = json.loads(privbayes_df.to_json(orient="records")),
-    # ret = {
-    #     "status": "success",
-    #     "scheme": {
-    #         "metrics": {
-    #             "privacy_budget": bayes_epsilon,
-    #             "statistical_metrics": {
-    #                 # "KSTest": 0.85,
-    #                 # "CSTest": 0.85,
-    #                 # "KSTest": KSTest.compute(ORI_DATA, pcbayes_df),
-    #                 # "CSTest": CSTest.compute(ORI_DATA, pcbayes_df)
-    #             },
-    #             "detection_metrics": {
-    #                 # "LogisticDetection": LogisticDetection.compute(ORI_DATA, pcbayes_df)
-    #             },
-    #             "privacy_metrics": {
-    #                 # "MLP": NumericalMLP.compute(ORI_DATA, pcbayes_df, key_fields=list(set(Measures).difference(['charges'])), sensitive_fields=['charges']),
-    #                 # "CAP": CategoricalCAP.compute(ORI_DATA, pcbayes_df, key_fields=list(set(Dimensions).difference(['children'])), sensitive_fields=['children'])
-    #                 # "MLP": 0.85,
-    #                 # "CAP": 0.85
-    #             }
-    #         },
-    #         "protected_data": json.loads(raw_pcbayes_df.to_json(orient="records")),
-    #         "pattern": pcbayes_patterns
-    #     },
-    #     "base": baseret
-    # }
-    ret = [pcbayes_patterns, privbayes_patterns]
+    ret = {
+        "status": "success",
+        "scheme": {
+            "metrics": {
+                "privacy_budget": bayes_epsilon,
+                "statistical_metrics": {
+                    # "KSTest": 0.85,
+                    # "CSTest": 0.85,
+                    # "KSTest": KSTest.compute(ORI_DATA, pcbayes_df),
+                    # "CSTest": CSTest.compute(ORI_DATA, pcbayes_df)
+                },
+                "detection_metrics": {
+                    # "LogisticDetection": LogisticDetection.compute(ORI_DATA, pcbayes_df)
+                },
+                "privacy_metrics": {
+                    # "MLP": NumericalMLP.compute(ORI_DATA, pcbayes_df, key_fields=list(set(Measures).difference(['charges'])), sensitive_fields=['charges']),
+                    # "CAP": CategoricalCAP.compute(ORI_DATA, pcbayes_df, key_fields=list(set(Dimensions).difference(['children'])), sensitive_fields=['children'])
+                    # "MLP": 0.85,
+                    # "CAP": 0.85
+                }
+            },
+            "protected_data": json.loads(raw_pcbayes_df.to_json(orient="records")),
+            "pattern": pcbayes_patterns
+        },
+        "base": baseret
+    }
+    # ret = [pcbayes_patterns, privbayes_patterns]
     return HttpResponse(json.dumps(ret))
