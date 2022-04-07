@@ -169,7 +169,7 @@ def initialize(request):
 
     session_id = json.loads(request.body).get('session_id')
     tmp_data_storage[session_id] = {
-        "DATA_PATH": 'priv_bayes/data/loan_dataset.csv',
+        "DATA_PATH": 'priv_bayes/data/insurance.csv',
         "constraints": None,
         "threshold_value": 20,  # 离散型和数值型分界点
         "bayes_epsilon": BAYES_EPS,  # 贝叶斯网络的隐私预算
