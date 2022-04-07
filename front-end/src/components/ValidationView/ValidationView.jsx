@@ -50,7 +50,7 @@ const ValidationView = (props) => {
     statistical: ["KSTest"],
     cluster: ["Concentration"],
     correlation: ["DTW", "Euclidean"],
-    order: ["NDCG", "Euclidean"],
+    order: ["Euclidean"],
   }); // 选中的展示指标
 
   // schemes变化时候，默认选中schemes最后一项
