@@ -64,8 +64,8 @@ const IndexPage = () => {
       setNetworkData(baseNetworkData);
       setShowBaseModel(true);
     }
-  }
-  
+  };
+
   const handleNextClick = () => {
     const jcts = JSON.parse(JSON.stringify(constraints));
     const cts = [];

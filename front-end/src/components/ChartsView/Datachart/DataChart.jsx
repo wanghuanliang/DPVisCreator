@@ -4,6 +4,7 @@ import * as ecStat from "echarts-stat";
 import * as d3 from "d3";
 import { chart_constraint, constraint_chart, RENDER_MODE } from "../constants";
 import { isArray, mean } from "lodash";
+import { fetchAndUpdateAttribute } from "../../ValidationView/DataChart/DataChart";
 const renderMode = RENDER_MODE;
 const globalColor = [
   "#74cbed",
@@ -367,12 +368,21 @@ export default class DataChart extends Component {
       type: "value",
       id: attribute.name,
       name: attribute.name,
+      max: function (value) {
+        return fetchAndUpdateAttribute(
+          self.props.constraint,
+          attribute,
+          value.min,
+          value.max
+        ).max;
+      },
       min: function (value) {
-        const parsed =
-          computation === "count"
-            ? parseInt(value.min - (value.max - value.min) * 0.2)
-            : value.min - (value.max - value.min) * 0.2;
-        self.YAxisMin = value.min >= 0 ? (parsed >= 0 ? parsed : 0) : parsed;
+        self.YAxisMin = fetchAndUpdateAttribute(
+          self.props.constraint,
+          attribute,
+          value.min,
+          value.max
+        ).min;
         return self.YAxisMin;
       },
       nameGap: "45",

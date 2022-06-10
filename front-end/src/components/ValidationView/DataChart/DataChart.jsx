@@ -8,6 +8,92 @@ import {
   RENDER_MODE,
 } from "../../ChartsView/constants";
 import { isArray, mean } from "lodash";
+
+let cache = {};
+
+export function fetchAndUpdateAttribute(constraint, attribute, min, max) {
+  let minmax = { min, max };
+  if (constraint.id) {
+    if (!cache[constraint.id]) cache[constraint.id] = {};
+    if (!cache[constraint.id][attribute.name]) {
+      cache[constraint.id][attribute.name] = { min, max };
+    }
+    if (cache[constraint.id][attribute.name].max < max) {
+      cache[constraint.id][attribute.name].max = max;
+    }
+    if (cache[constraint.id][attribute.name].min > min) {
+      cache[constraint.id][attribute.name].min = min;
+    }
+    minmax = cache[constraint.id][attribute.name];
+  }
+  console.log(cache);
+  if (minmax.min > 0) {
+    const maxLog = Math.log10(minmax.max);
+    const minLog = Math.log10(minmax.min);
+    if (maxLog - minLog > 0.5) {
+      return {
+        min: 0,
+        max:
+          Math.ceil(Math.pow(10, maxLog % 1)) *
+          Math.pow(10, Math.floor(maxLog)),
+      };
+    } else {
+      return {
+        min:
+          Math.floor(Math.pow(10, minLog % 1)) *
+          Math.pow(10, Math.floor(minLog)),
+        max:
+          Math.ceil(Math.pow(10, maxLog % 1)) *
+          Math.pow(10, Math.floor(maxLog)),
+      };
+    }
+  } else if (minmax.min === 0) {
+    const maxLog = Math.log10(minmax.max);
+    return {
+      min: 0,
+      max:
+        Math.ceil(Math.pow(10, maxLog % 1)) * Math.pow(10, Math.floor(maxLog)),
+    };
+  } else if (minmax.max > 0 && minmax.min < 0) {
+    const maxLog = Math.log10(minmax.max);
+    const minLog = Math.log10(-minmax.min);
+    return {
+      min:
+        -Math.ceil(Math.pow(10, minLog % 1)) * Math.pow(10, Math.floor(minLog)),
+      max:
+        Math.ceil(Math.pow(10, maxLog % 1)) * Math.pow(10, Math.floor(maxLog)),
+    };
+  } else if (minmax.max === 0) {
+    const minLog = Math.log10(-minmax.min);
+    return {
+      min:
+        -Math.ceil(Math.pow(10, minLog % 1)) * Math.pow(10, Math.floor(minLog)),
+      max: 0,
+    };
+  } else if (minmax.max < 0) {
+    const maxLog = Math.log10(-minmax.max);
+    const minLog = Math.log10(-minmax.min);
+    if (minLog - maxLog > 0.5) {
+      return {
+        min:
+          -Math.ceil(Math.pow(10, minLog % 1)) *
+          Math.pow(10, Math.floor(minLog)),
+        max: 0,
+      };
+    } else {
+      return {
+        min:
+          -Math.ceil(Math.pow(10, minLog % 1)) *
+          Math.pow(10, Math.floor(minLog)),
+        max:
+          -Math.floor(Math.pow(10, maxLog % 1)) *
+          Math.pow(10, Math.floor(maxLog)),
+      };
+    }
+  }
+  return cache[constraint.id][attribute.name];
+}
+
 const renderMode = RENDER_MODE;
 const globalColor = [
   "#d9d9d9",
@@ -323,13 +409,22 @@ export default class DataChart extends Component {
       name: attribute.name,
       nameGap: "45",
       min: function (value) {
-        const axisMin = min ? Math.min(value.min, min) : value.min;
-        let parse =
-          axisMin >= 0 ? axisMin - (value.max - axisMin) * 0.2 : axisMin;
-        if (computation === "count") parse = parseInt(parse);
-        self.YAxisMin =
-          computation === "count" ? (parse >= 0 ? parse : 0) : parse;
+        console.log(value);
+        self.YAxisMin = fetchAndUpdateAttribute(
+          self.props.constraint,
+          attribute,
+          value.min,
+          value.max
+        ).min;
         return self.YAxisMin;
+      },
+      max: function (value) {
+        return fetchAndUpdateAttribute(
+          self.props.constraint,
+          attribute,
+          value.min,
+          value.max
+        ).max;
       },
       axisLine: {
         show: true,
