@@ -1,5 +1,7 @@
 import json
 import random
+import numba
+from multiprocessing.dummy import Pool as ThreadPool
 from string import ascii_lowercase
 
 import numpy as np
@@ -11,10 +13,31 @@ from sklearn.metrics import normalized_mutual_info_score
 
 
 def set_random_seed(seed=0):
-    random.seed(seed)
-    np.random.seed(seed)
+    # random.seed(seed)
+    # np.random.seed(seed)
+    pass
 
 
+def process(paras):  # 并行去处理联合分布概率修改
+    labels_true, labels_pred, class_idx, cluster_idx, nzx, nzy, nz_val, weights, axes, id = paras
+    x_bin = labels_true[id]
+    x_bin = class_idx[labels_true.tolist().index(x_bin)]
+    y_bin = labels_pred[id]
+    y_bin = cluster_idx[labels_pred.tolist().index(y_bin)]
+    target = None
+    for i in range(len(nzx)):
+        if nzx[i] == x_bin and nzy[i] == y_bin:
+            target = i
+            break
+
+    all_weights = [weights[id].get(axis) or 1 for axis in axes]
+    avg_weight = sum(all_weights) / len(all_weights)
+    # ans += (avg_weight - 1)
+    # print(target)
+    # nz_val[target] += (avg_weight - 1)
+    return target, avg_weight
+
+# @numba.jit(nopython=True)
 def mutual_info_score(labels_true, labels_pred, axes, weights):
     labels_true = labels_true.values
     labels_pred = labels_pred.values
@@ -31,7 +54,11 @@ def mutual_info_score(labels_true, labels_pred, axes, weights):
     if flag:
         ori_sum = np.sum(nz_val)
         nz_val = np.float64(nz_val)
-        ans = 0
+        # ans = 0
+        # pool = ThreadPool()
+        # res_list = pool.map(process, [(labels_true, labels_pred, class_idx, cluster_idx, nzx, nzy, nz_val, weights, axes, id) for id in weights])
+        # for item in res_list:
+        #     nz_val[item[0]] += (nz_val[item[1]] - 1)
         for id in weights:  # 考虑分布式权重
             x_bin = labels_true[id]
             x_bin = class_idx[labels_true.tolist().index(x_bin)]
@@ -45,7 +72,7 @@ def mutual_info_score(labels_true, labels_pred, axes, weights):
 
             all_weights = [weights[id].get(axis) or 1 for axis in axes]
             avg_weight = sum(all_weights) / len(all_weights)
-            ans += (avg_weight - 1)
+            # ans += (avg_weight - 1)
             # print(target)
             nz_val[target] += (avg_weight - 1)
         # print("nz_val之和:", np.sum(nz_val))
