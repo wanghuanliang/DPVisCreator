@@ -13,8 +13,8 @@ from sklearn.metrics import normalized_mutual_info_score
 
 
 def set_random_seed(seed=0):
-    # random.seed(seed)
-    # np.random.seed(seed)
+    random.seed(seed)
+    np.random.seed(seed)
     pass
 
 
@@ -38,10 +38,13 @@ def process(paras):  # 并行去处理联合分布概率修改
     return target, avg_weight
 
 # @numba.jit(nopython=True)
+
+
 def mutual_info_score(labels_true, labels_pred, axes, weights):
     labels_true = labels_true.values
     labels_pred = labels_pred.values
-    contingency, classes, class_idx, clusters, cluster_idx = contingency_matrix(labels_true, labels_pred, sparse=True)
+    contingency, classes, class_idx, clusters, cluster_idx = contingency_matrix(
+        labels_true, labels_pred, sparse=True)
     nzx, nzy, nz_val = sp.find(contingency)
 
     contingency_sum = contingency.sum()
@@ -74,6 +77,8 @@ def mutual_info_score(labels_true, labels_pred, axes, weights):
             avg_weight = sum(all_weights) / len(all_weights)
             # ans += (avg_weight - 1)
             # print(target)
+            if avg_weight != 1:
+                print(avg_weight)
             nz_val[target] += (avg_weight - 1)
         # print("nz_val之和:", np.sum(nz_val))
         # print("sum:", ans)
@@ -95,7 +100,6 @@ def mutual_info_score(labels_true, labels_pred, axes, weights):
     return np.clip(mi.sum(), 0.0, None)
 
 
-
 def mutual_information(labels_x: Series, labels_y: DataFrame, weights: {}):
     """Mutual information of distributions in format of Series or DataFrame.
 
@@ -111,18 +115,19 @@ def mutual_information(labels_x: Series, labels_y: DataFrame, weights: {}):
     else:
         labels_y = labels_y.apply(lambda x: ' '.join(x.values), axis=1)
 
-
     return mutual_info_score(labels_x, labels_y, axes, weights=weights)
 
 
 def pairwise_attributes_mutual_information(dataset):
     """Compute normalized mutual information for all pairwise attributes. Return a DataFrame."""
     sorted_columns = sorted(dataset.columns)
-    mi_df = DataFrame(columns=sorted_columns, index=sorted_columns, dtype=float)
+    mi_df = DataFrame(columns=sorted_columns,
+                      index=sorted_columns, dtype=float)
     for row in mi_df.columns:
         for col in mi_df.columns:
             mi_df.loc[row, col] = normalized_mutual_info_score(dataset[row].astype(str),
-                                                               dataset[col].astype(str),
+                                                               dataset[col].astype(
+                                                                   str),
                                                                average_method='arithmetic')
     return mi_df
 
@@ -163,7 +168,8 @@ def display_bayesian_network(bn):
 
     print('Constructed Bayesian network:')
     for child, parents in bn:
-        print("    {0:{width}} has parents {1}.".format(child, parents, width=length))
+        print("    {0:{width}} has parents {1}.".format(
+            child, parents, width=length))
 
 
 def generate_random_string(length):
