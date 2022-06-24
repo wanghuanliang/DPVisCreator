@@ -19,7 +19,7 @@ model_dic = json.load(f)
 model_dic.update(session_dic)
 df = pd.DataFrame()
 EPS_LIST = [2]
-W_LIST = [1.99]
+W_LIST = [1, 1.2, 1.4, 1.6, 1.8, 2.0]
 
 df.append(["epsilon", "weight"])
 

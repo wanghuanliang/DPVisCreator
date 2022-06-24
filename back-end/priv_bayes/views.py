@@ -543,13 +543,14 @@ def get_bayes_with_weights(session_id):
     if weights is not None:
         # 构建一个weights数组
         weight_df = copy.deepcopy(ORI_DATA)
-        weight_df[weight_df.columns] = 1
+        weight_df[weight_df.columns] = 1.0
         ssum = sum(np.array([w["weight"] for w in weights]))
         # 建立一张axis到id的索引表
         axis2id = {}
         for idx, val in enumerate(weight_df.columns):
             axis2id[val] = idx
         arr = weight_df.values
+
         for w in weights:
             if w["id"] == "others":
                 continue
@@ -559,10 +560,8 @@ def get_bayes_with_weights(session_id):
             cur_ids = cons["data"]
             for id in cur_ids:
                 if x_id is not None:
-                    print(arr[id][x_id], w["weight"] / ssum * BASE_WEIGHT)
                     arr[id][x_id] = max(
                         arr[id][x_id], w["weight"] / ssum * BASE_WEIGHT)
-                    print("after:", arr[id][x_id])
                 if y_id is not None:
                     arr[id][y_id] = max(
                         arr[id][y_id], w["weight"] / ssum * BASE_WEIGHT)
