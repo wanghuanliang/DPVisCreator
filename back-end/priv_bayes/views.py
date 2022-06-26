@@ -805,8 +805,8 @@ def getMetrics(request):
             margin_nodes = np.array(list(itertools.product(x_edge, y_edge)))
             diff = margin_nodes - ori_center
             maxKL = max(np.array([np.sqrt(sum(item ** 2)) for item in diff]))
-            pcbayes_KL = 1 - pcbayes_KL / maxKL
-            privbayes_KL = 1 - privbayes_KL / maxKL
+            # pcbayes_KL = 1 - pcbayes_KL / maxKL
+            # privbayes_KL = 1 - privbayes_KL / maxKL
 
             # 处理WDis
             pcbayes_WDis = get_w_distance(
@@ -842,6 +842,7 @@ def getMetrics(request):
             pcbayes_patterns['wdispc'] = float(pcbayes_WDis)
             pcbayes_patterns['nodessimpc'] = 1 - abs(
                 len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)
+            pcbayes_patterns['pc_node_num'] = len(pcbayes_selected_data)
             # pcbayes_patterns['klpc'] = float(pcbayes_KL_ori)    # sdv打开注释
             # privbayes_patterns['klpriv'] = float(privbayes_KL_ori)  # sdv打开注释
 
@@ -849,6 +850,11 @@ def getMetrics(request):
             privbayes_patterns['wdispriv'] = float(privbayes_WDis)
             privbayes_patterns['nodessimpriv'] = 1 - abs(
                 len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)
+            pcbayes_patterns['priv_node_num'] = len(privbayes_selected_data)
+
+            privbayes_patterns['cluster_dis_diff'] = abs(float(privbayes_KL) - float(pcbayes_KL))
+            privbayes_patterns['cluster_real_node_num'] = len(ori_selected_data)
+
             # pcbayes_patterns += [float(pcbayes_KL), float(pcbayes_WDis), 1 - abs(
             #     len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)]
             # privbayes_patterns += [float(privbayes_KL), float(privbayes_WDis), 1 - abs(
@@ -996,54 +1002,17 @@ def getMetrics(request):
             privbayes_PCD = abs(np.corrcoef(
                 privbayes_coef_data[:, 0], privbayes_coef_data[:, 1]) - ori_coef)[0][1]
 
-            # pcbayes_patterns.append({
-            #     "id": cons["id"],
-            #     "DTW": {
-            #         "original": 1,
-            #         "protected": pcbayes_DTW
-            #     },
-            #     "Euc": {
-            #         "original": 1,
-            #         "protected": pcbayes_Euc
-            #     },
-            #     "PCD": {
-            #         "original": 0,
-            #         "protected": pcbayes_PCD
-            #     },
-            #     "dots_stab": {
-            #         "original": 1,
-            #         "protected": 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)
-            #     },
-            # })
-            # privbayes_patterns.append({
-            #     "id": cons["id"],
-            #     "DTW": {
-            #         "original": 1,
-            #         "protected": privbayes_DTW
-            #     },
-            #     "Euc": {
-            #         "original": 1,
-            #         "protected": privbayes_Euc
-            #     },
-            #     "PCD": {
-            #         "original": 0,
-            #         "protected": privbayes_PCD
-            #     },
-            #     "dots_stab": {
-            #         "original": 1,
-            #         "protected": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)
-            #     },
-            # })
             pcbayes_patterns['DTWpc'] = float(pcbayes_DTW_ori)
             pcbayes_patterns['Eucpc'] = float(pcbayes_Euc_ori)
             pcbayes_patterns['PCDpc'] = float(pcbayes_PCD)
+            pcbayes_patterns['Pearson_ori'] = float(ori_coef[0][1])
+            pcbayes_patterns['Pearson_pc'] = float(np.corrcoef(
+                pcbayes_coef_data[:, 0], pcbayes_coef_data[:, 1])[0][1])
             privbayes_patterns['DTWpriv'] = float(privbayes_DTW_ori)
             privbayes_patterns['Eucpriv'] = float(privbayes_Euc_ori)
             privbayes_patterns['PCDpriv'] = float(privbayes_PCD)
-            # pcbayes_patterns += [float(pcbayes_DTW), float(pcbayes_Euc), float(
-            #     pcbayes_PCD), float(pcbayes_DTW_ori), float(pcbayes_Euc_ori)]
-            # privbayes_patterns += [float(privbayes_DTW), float(privbayes_Euc), float(
-            #     privbayes_PCD), float(privbayes_DTW_ori), float(privbayes_Euc_ori)]
+            privbayes_patterns['Pearson_pc'] = float(np.corrcoef(
+                privbayes_coef_data[:, 0], privbayes_coef_data[:, 1])[0][1])
 
         if cons["type"] == "order":
             raw_pcbayes_df = pd.read_csv(synthetic_data)
@@ -1068,53 +1037,17 @@ def getMetrics(request):
                 cons['x_axis']).count().sort_index().values.flatten()
             privbayes_arr = privbayes_selected_data[[cons['x_axis'], 'index']].groupby(
                 cons['x_axis']).count().sort_index().values.flatten()
-            # ori_ndcg = ndcg_score([ori_arr], [ori_arr])
-
-            # pcbayes_patterns.append({
-            #     "id": cons["id"],
-            #     "NDCG": {
-            #         # "original": ori_ndcg,
-            #         # "protected": ndcg_score([ori_arr], [pcbayes_arr])
-            #     },
-            #     "Euc": {
-            #         "original": 0,
-            #         "protected": int(np.sum(np.abs(ori_arr - pcbayes_arr)))
-            #     },
-            #     "dots_stab": {
-            #         "original": 1,
-            #         "protected": 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)
-            #     },
-            # })
-            # privbayes_patterns.append({
-            #     "id": cons["id"],
-            #     "NDCG": {
-            #         # "original": ori_ndcg,
-            #         # "protected": ndcg_score([ori_arr], [privbayes_arr])
-            #     },
-            #     "Euc": {
-            #         "original": 0,
-            #         "protected": int(np.sum(np.abs(ori_arr - privbayes_arr)))
-            #     },
-            #     "dots_stab": {
-            #         "original": 1,
-            #         "protected": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)
-            #     },
-            # })
             pcbayes_patterns['ndcgpc'] = float(ndcg_score([ori_arr], [pcbayes_arr]))
             pcbayes_patterns['diffpc'] = int(np.sum(np.abs(ori_arr - pcbayes_arr)))
+            pcbayes_patterns['Eucpc'] = float(np.sqrt(np.sum(np.square(pcbayes_arr - ori_arr))))
             pcbayes_patterns['reldiffpc'] = float(np.sum(np.abs(ori_arr - pcbayes_arr) / ori_arr))
             pcbayes_patterns['nodessimpc'] = 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)
             privbayes_patterns['ndcgpriv'] = float(ndcg_score([ori_arr], [privbayes_arr]))
             privbayes_patterns['diffpriv'] = int(np.sum(np.abs(ori_arr - privbayes_arr)))
+            privbayes_patterns['Eucpriv'] = float(np.sqrt(np.sum(np.square(privbayes_arr - ori_arr))))
             privbayes_patterns['reldiffpriv'] = float(np.sum(np.abs(ori_arr - privbayes_arr) / ori_arr))
             privbayes_patterns['nodessimpriv'] = 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)
 
-            # pcbayes_patterns += [float(ndcg_score([ori_arr], [pcbayes_arr])), int(np.sum(np.abs(ori_arr - pcbayes_arr))),
-            #                      float(np.sum(np.abs(ori_arr - pcbayes_arr) / ori_arr)),
-            #                      1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)]
-            # privbayes_patterns += [float(ndcg_score([ori_arr], [privbayes_arr])), int(np.sum(np.abs(ori_arr - privbayes_arr))),
-            #                        float(np.sum(np.abs(ori_arr - privbayes_arr) / ori_arr)),
-            #                        1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)]
     baseret = copy.deepcopy(tmp_data_storage[session_id]['BASE_SCHEME'])
     baseret['pattern'] = privbayes_patterns
     # baseret['protected_data'] = orjson.loads(privbayes_df.to_json(orient="records")),
