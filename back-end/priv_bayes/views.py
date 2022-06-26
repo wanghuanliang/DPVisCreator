@@ -1,11 +1,9 @@
-import json
 import copy
 import pandas as pd
 import numpy as np
 from pandarallel import pandarallel
 import orjson
 from sklearn.manifold import MDS
-from sklearn import metrics
 from priv_bayes.kl import get_w_distance, KLdivergence
 from django.http import HttpResponse
 from django.core.files.storage import default_storage
@@ -14,8 +12,8 @@ import networkx as nx
 from dtw import dtw
 import itertools
 from sklearn.metrics import ndcg_score, average_precision_score
-# from sdv.evaluation import evaluate
-# from sdv.metrics.tabular import KSTest, CSTest, LogisticDetection, CategoricalCAP, NumericalMLP
+# from sdv.evaluation import evaluate # sdv打开注释
+# from sdv.metrics.tabular import KSTest, CSTest, LogisticDetection, CategoricalCAP, NumericalMLP # sdv打开注释
 # 隐私保护相关包
 
 from priv_bayes.DataSynthesizer.DataDescriber import DataDescriber
@@ -715,8 +713,8 @@ def getMetrics(request):
                 lambda x: value_to_bin_idx[x], na_action='ignore')
             privbayes_df[dim] = privbayes_df[dim].map(
                 lambda x: value_to_bin_idx[x], na_action='ignore')
-    pcbayes_patterns = []
-    privbayes_patterns = []
+    pcbayes_patterns = {}
+    privbayes_patterns = {}
     for cons in constraints:
         pcbayes_selected_data = None
         privbayes_selected_data = None
@@ -771,10 +769,8 @@ def getMetrics(request):
             # privbayes_KL = 1 - privbayes_KL / maxKL
 
             # 处理KL sdv逻辑
-            # pcbayes_KL = evaluate(pcbayes_selected_data, ori_selected_data, metrics=['ContinuousKLDivergence'])
-            # privbayes_KL = evaluate(privbayes_selected_data, ori_selected_data, metrics=['ContinuousKLDivergence'])
-            # pcbayes_KL = 1 - pcbayes_KL
-            # privbayes_KL = 1 - privbayes_KL
+            # pcbayes_KL_ori = evaluate(pcbayes_selected_data, ori_selected_data, metrics=['ContinuousKLDivergence'])   # sdv打开注释
+            # privbayes_KL_ori = evaluate(privbayes_selected_data, ori_selected_data, metrics=['ContinuousKLDivergence']) # sdv打开注释
 
             # 占用KL的接口去返回一个轮廓系数
             # labels_0 = np.ones((len(ori_selected_data), 1)) * 0
@@ -839,10 +835,21 @@ def getMetrics(request):
             #         "protected": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)
             #     },
             # })
-            pcbayes_patterns += [float(pcbayes_KL), float(pcbayes_WDis), 1 - abs(
-                len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)]
-            privbayes_patterns += [float(privbayes_KL), float(privbayes_WDis), 1 - abs(
-                len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)]
+            pcbayes_patterns['distocenterpc'] = pcbayes_KL
+            pcbayes_patterns['wdispc'] = pcbayes_WDis
+            pcbayes_patterns['nodessimpc'] = 1 - abs(
+                len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)
+            # pcbayes_patterns['klpc'] = float(pcbayes_KL_ori)    # sdv打开注释
+            # privbayes_patterns['klpriv'] = float(privbayes_KL_ori)  # sdv打开注释
+
+            privbayes_patterns['distocenterpriv'] = privbayes_KL
+            privbayes_patterns['wdispriv'] = privbayes_WDis
+            privbayes_patterns['nodessimpriv'] = 1 - abs(
+                len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)
+            # pcbayes_patterns += [float(pcbayes_KL), float(pcbayes_WDis), 1 - abs(
+            #     len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)]
+            # privbayes_patterns += [float(privbayes_KL), float(privbayes_WDis), 1 - abs(
+            #     len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)]
             # pcbayes_patterns = [float(pcbayes_WDis)]
             # privbayes_patterns = [float(privbayes_WDis)]
         if cons["type"] == "correlation":
@@ -926,6 +933,7 @@ def getMetrics(request):
                     cons["x_axis"]).mean().sort_index().values
 
             def manhattan_distance(x, y): return np.abs(x - y)
+
             pcbayes_DTW, cost_matrix, acc_cost_matrix, path = dtw(
                 pcbayes_data, ori_data, dist=manhattan_distance)
             privbayes_DTW, cost_matrix, acc_cost_matrix, path = dtw(
@@ -1023,10 +1031,16 @@ def getMetrics(request):
             #         "protected": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)
             #     },
             # })
-            pcbayes_patterns += [float(pcbayes_DTW), float(pcbayes_Euc), float(
-                pcbayes_PCD), float(pcbayes_DTW_ori), float(pcbayes_Euc_ori)]
-            privbayes_patterns += [float(privbayes_DTW), float(privbayes_Euc), float(
-                privbayes_PCD), float(privbayes_DTW_ori), float(privbayes_Euc_ori)]
+            pcbayes_patterns['DTWpc'] = float(pcbayes_DTW_ori)
+            pcbayes_patterns['Eucpc'] = float(pcbayes_Euc_ori)
+            pcbayes_patterns['PCDpc'] = float(pcbayes_PCD)
+            privbayes_patterns['DTWpriv'] = float(privbayes_DTW_ori)
+            privbayes_patterns['Eucpriv'] = float(privbayes_Euc_ori)
+            privbayes_patterns['PCDpriv'] = float(privbayes_PCD)
+            # pcbayes_patterns += [float(pcbayes_DTW), float(pcbayes_Euc), float(
+            #     pcbayes_PCD), float(pcbayes_DTW_ori), float(pcbayes_Euc_ori)]
+            # privbayes_patterns += [float(privbayes_DTW), float(privbayes_Euc), float(
+            #     privbayes_PCD), float(privbayes_DTW_ori), float(privbayes_Euc_ori)]
 
         if cons["type"] == "order":
             raw_pcbayes_df = pd.read_csv(synthetic_data)
@@ -1083,14 +1097,21 @@ def getMetrics(request):
             #         "protected": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)
             #     },
             # })
-            pcbayes_patterns += [float(ndcg_score([ori_arr], [pcbayes_arr])), int(np.sum(np.abs(ori_arr - pcbayes_arr))),
-                                 float(
-                                     np.sum(np.abs(ori_arr - pcbayes_arr) / ori_arr)),
-                                 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)]
-            privbayes_patterns += [float(ndcg_score([ori_arr], [privbayes_arr])), int(np.sum(np.abs(ori_arr - privbayes_arr))),
-                                   float(
-                                       np.sum(np.abs(ori_arr - privbayes_arr) / ori_arr)),
-                                   1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)]
+            pcbayes_patterns['ndcgpc'] = float(ndcg_score([ori_arr], [pcbayes_arr]))
+            pcbayes_patterns['diffpc'] = int(np.sum(np.abs(ori_arr - pcbayes_arr)))
+            pcbayes_patterns['reldiffpc'] = float(np.sum(np.abs(ori_arr - pcbayes_arr) / ori_arr))
+            pcbayes_patterns['nodessimpc'] = 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)
+            privbayes_patterns['ndcgpriv'] = float(ndcg_score([ori_arr], [privbayes_arr]))
+            privbayes_patterns['diffpriv'] = int(np.sum(np.abs(ori_arr - privbayes_arr)))
+            privbayes_patterns['reldiffpriv'] = float(np.sum(np.abs(ori_arr - privbayes_arr) / ori_arr))
+            privbayes_patterns['nodessimpriv'] = 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)
+
+            # pcbayes_patterns += [float(ndcg_score([ori_arr], [pcbayes_arr])), int(np.sum(np.abs(ori_arr - pcbayes_arr))),
+            #                      float(np.sum(np.abs(ori_arr - pcbayes_arr) / ori_arr)),
+            #                      1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)]
+            # privbayes_patterns += [float(ndcg_score([ori_arr], [privbayes_arr])), int(np.sum(np.abs(ori_arr - privbayes_arr))),
+            #                        float(np.sum(np.abs(ori_arr - privbayes_arr) / ori_arr)),
+            #                        1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)]
     baseret = copy.deepcopy(tmp_data_storage[session_id]['BASE_SCHEME'])
     baseret['pattern'] = privbayes_patterns
     # baseret['protected_data'] = orjson.loads(privbayes_df.to_json(orient="records")),
@@ -1120,5 +1141,9 @@ def getMetrics(request):
     #     },
     #     "base": baseret
     # }
+    # pcbayes_patterns['kstestpc'] = float(KSTest.compute(ORI_DATA, pcbayes_df)) # sdv打开注释
+    # privbayes_patterns['kstestpriv'] = float(KSTest.compute(ORI_DATA, privbayes_df)) # sdv打开注释
+    # pcbayes_patterns['cstestpc'] = float(CSTest.compute(ORI_DATA, pcbayes_df)) # sdv打开注释
+    # privbayes_patterns['cstestpriv'] = float(CSTest.compute(ORI_DATA, privbayes_df)) # sdv打开注释
     ret = [pcbayes_patterns, privbayes_patterns]
     return HttpResponse(orjson.dumps(ret))

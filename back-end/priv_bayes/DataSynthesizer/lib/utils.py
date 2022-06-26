@@ -77,8 +77,8 @@ def mutual_info_score(labels_true, labels_pred, axes, weights):
             avg_weight = sum(all_weights) / len(all_weights)
             # ans += (avg_weight - 1)
             # print(target)
-            if avg_weight != 1:
-                print(all_weights)
+            # if avg_weight != 1:
+            #     print(all_weights)
             nz_val[target] += (avg_weight - 1)
         # print("nz_val之和:", np.sum(nz_val))
         # print("sum:", ans)
