@@ -3,10 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="62de0408-60e4-4212-b83a-17b229b6ed07" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/adult-pattern2-weightx3.csv" beforeDir="false" afterPath="$PROJECT_DIR$/adult-pattern2-weightx3.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/priv_bayes/DataSynthesizer/lib/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/priv_bayes/DataSynthesizer/lib/utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/priv_bayes/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/priv_bayes/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testfile_corr.py" beforeDir="false" afterPath="$PROJECT_DIR$/testfile_corr.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/testfile_weight.py" beforeDir="false" afterPath="$PROJECT_DIR$/testfile_weight.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

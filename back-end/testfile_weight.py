@@ -28,7 +28,7 @@ for BAYES_EPS in EPS_LIST:
                       "bayes_budget": BAYES_EPS}
         weight_dic.update(session_dic)
         for tt in range(10):
-            dt = requests.get(base_url + "init", data=json.dumps({'session_id': 'carlwang', 'bayes_eps': BAYES_EPS}), headers=headers)  # 初始化
+            dt = requests.get(base_url + "init", data=json.dumps({'session_id': 'carlwang', 'bayes_eps': BAYES_EPS, 'BASE_WEIGHT': 1}), headers=headers)  # 初始化
             dt = requests.get(base_url + "getBaseData", params=session_dic)  # 初始化
             dt = requests.get(base_url + "getModelData", data=json.dumps(model_dic), headers=headers)  # 初始化
             dt = requests.get(base_url + "setWeights", data=json.dumps(weight_dic), headers=headers)
