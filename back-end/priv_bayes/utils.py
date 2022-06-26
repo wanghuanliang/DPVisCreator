@@ -124,10 +124,11 @@ def mAP(target_map, target_index, current_index):
     return result
 
 
-def get_matrix_data(threshold_value, DATA_PATH, constraints, weights, ORI_DATA, DataDescriber):
+def get_matrix_data(threshold_value, DATA_PATH, constraints, weights, ORI_DATA, DataDescriber, randomize):
     describer = DataDescriber(histogram_bins=15, category_threshold=threshold_value)
     describer.get_mutual_info_init(dataset_file=DATA_PATH,
-                                   epsilon=None)
+                                   epsilon=None,
+                                   randomize=randomize)
 
     # 构建一个weights数组
 

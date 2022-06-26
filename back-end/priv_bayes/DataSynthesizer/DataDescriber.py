@@ -69,7 +69,8 @@ class DataDescriber:
                                         attribute_to_is_candidate_key: Dict[str, bool] = None,
                                         categorical_attribute_domain_file: str = None,
                                         numerical_attribute_ranges: Dict[str, List] = None,
-                                        seed=0):
+                                        seed=0,
+                                        randomize=False):
         attribute_to_datatype = attribute_to_datatype or {}
         attribute_to_is_categorical = attribute_to_is_categorical or {}
         attribute_to_is_candidate_key = attribute_to_is_candidate_key or {}
@@ -80,7 +81,7 @@ class DataDescriber:
         else:
             categorical_attribute_to_domain = {}
 
-        utils.set_random_seed(seed)
+        utils.set_random_seed(randomize, seed)
         self.attr_to_datatype = {attr: DataType(datatype) for attr, datatype in attribute_to_datatype.items()}
         self.attr_to_is_categorical = attribute_to_is_categorical
         self.attr_to_is_candidate_key = attribute_to_is_candidate_key
@@ -111,14 +112,16 @@ class DataDescriber:
                                                        attribute_to_is_candidate_key: Dict[str, bool] = None,
                                                        categorical_attribute_domain_file: str = None,
                                                        numerical_attribute_ranges: Dict[str, List] = None,
-                                                       seed=0):
+                                                       seed=0,
+                                                       randomize=False):
         self.describe_dataset_in_random_mode(dataset_file,
                                              attribute_to_datatype,
                                              attribute_to_is_categorical,
                                              attribute_to_is_candidate_key,
                                              categorical_attribute_domain_file,
                                              numerical_attribute_ranges,
-                                             seed=seed)
+                                             seed=seed,
+                                             randomize=randomize)
 
         for column in self.attr_to_column.values():
             column.infer_distribution()
@@ -139,7 +142,8 @@ class DataDescriber:
                                                       categorical_attribute_domain_file: str = None,
                                                       numerical_attribute_ranges: Dict[str, List] = None,
                                                       seed=0,
-                                                      weights: Dict[str, Dict] = None):
+                                                      weights: Dict[str, Dict] = None,
+                                                      randomize=False):
         """Generate dataset description using correlated attribute mode.
 
         Parameters
@@ -181,7 +185,8 @@ class DataDescriber:
                                                             attribute_to_is_candidate_key,
                                                             categorical_attribute_domain_file,
                                                             numerical_attribute_ranges,
-                                                            seed)
+                                                            seed,
+                                                            randomize)
         self.df_encoded = self.encode_dataset_into_binning_indices()
         if self.df_encoded.shape[1] < 2:
             raise Exception("Correlated Attribute Mode requires at least 2 attributes(i.e., columns) in dataset.")
@@ -199,7 +204,8 @@ class DataDescriber:
                              attribute_to_is_candidate_key: Dict[str, bool] = None,
                              categorical_attribute_domain_file: str = None,
                              numerical_attribute_ranges: Dict[str, List] = None,
-                             seed=0):
+                             seed=0,
+                             randomize=False):
         self.describe_dataset_in_independent_attribute_mode(dataset_file,
                                                             epsilon,
                                                             attribute_to_datatype,
@@ -207,7 +213,8 @@ class DataDescriber:
                                                             attribute_to_is_candidate_key,
                                                             categorical_attribute_domain_file,
                                                             numerical_attribute_ranges,
-                                                            seed)
+                                                            seed,
+                                                            randomize)
         self.df_encoded = self.encode_dataset_into_binning_indices()
         if self.df_encoded.shape[1] < 2:
             raise Exception("Correlated Attribute Mode requires at least 2 attributes(i.e., columns) in dataset.")

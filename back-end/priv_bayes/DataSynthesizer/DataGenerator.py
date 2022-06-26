@@ -53,9 +53,8 @@ class DataGenerator(object):
                 binning_indices = column.sample_binning_indices_in_independent_attribute_mode(n)
                 self.synthetic_dataset[attr] = column.sample_values_from_binning_indices(binning_indices)
 
-    def generate_dataset_in_correlated_attribute_mode(self, n, description_file, seed=0):
-        # seed = random.randint(1, 100)
-        set_random_seed(seed)
+    def generate_dataset_in_correlated_attribute_mode(self, n, description_file, seed=0, randomize=False):
+        set_random_seed(randomize, seed)
         self.n = n
         self.description = read_json_file(description_file)
 

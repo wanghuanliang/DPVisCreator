@@ -30,7 +30,7 @@ for BAYES_EPS in EPS_LIST:
         weight_dic.update(session_dic)
         for tt in range(10):
             result_dict = {}
-            dt = requests.get(base_url + "init", data=json.dumps({'session_id': 'carlwang', 'bayes_eps': BAYES_EPS, 'BASE_WEIGHT': BASE_WEIGHT}), headers=headers)  # 初始化
+            dt = requests.get(base_url + "init", data=json.dumps({'session_id': 'carlwang', 'bayes_eps': BAYES_EPS, 'BASE_WEIGHT': BASE_WEIGHT, "randomize": True}), headers=headers)  # 初始化
             dt = requests.get(base_url + "getBaseData", params=session_dic)  # 初始化
             dt = requests.get(base_url + "getModelData", data=json.dumps(model_dic), headers=headers)  # 初始化
             dt = requests.get(base_url + "setWeights", data=json.dumps(weight_dic), headers=headers)
@@ -40,7 +40,8 @@ for BAYES_EPS in EPS_LIST:
             print(BAYES_EPS, "_privbayes: ", cluster_result[1])
             result_dict.update({
                 "epsilon": BAYES_EPS,
-                "BASE_WEIGHT": BASE_WEIGHT
+                "BASE_WEIGHT": BASE_WEIGHT,
+                "pattern_weight": WEIGHT_LIST
             })
             result_dict.update(cluster_result[0])
             result_dict.update(cluster_result[1])

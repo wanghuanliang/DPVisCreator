@@ -171,6 +171,7 @@ def initialize(request):
     BAYES_EPS = orjson.loads(request.body).get('bayes_eps')
     # BAYES_EPS = 0.1
     session_id = orjson.loads(request.body).get('session_id')
+    randomize = orjson.loads(request.body).get('randomize')
     tmp_data_storage[session_id] = {
         "DATA_PATH": 'priv_bayes/data/bank_filter1.csv',
         "constraints": None,
@@ -182,7 +183,8 @@ def initialize(request):
         "INT_TYPE": [],
         "ORI_DATA": None,
         "BASE_SCHEME": None,
-        "BASE_WEIGHT": 1
+        "BASE_WEIGHT": 1,
+        "randomize": randomize
     }
     df = pd.read_csv(tmp_data_storage[session_id]['DATA_PATH'])
     # ORI_DATA中的数据是filter过的，用于后续处理
@@ -501,7 +503,7 @@ def setWeights(request):
     ORI_DATA = tmp_data_storage[session_id]['ORI_DATA']
     tmp_file_path = "priv_bayes/data/1" + session_id + ".csv"   # 为了用筛选后的数据建贝叶斯网络
     matrix_data = get_matrix_data(
-        threshold_value, tmp_file_path, constraints, weights, ORI_DATA, DataDescriber)
+        threshold_value, tmp_file_path, constraints, weights, ORI_DATA, DataDescriber, randomize=tmp_data_storage[session_id]['randomize'])
     # c_weights = [w["weight"] for w in weights if w["id"] != "others"]
     # if np.max(c_weights) != np.min(c_weights):
     #     c_weights = (c_weights - np.min(c_weights)) / (np.max(c_weights) - np.min(c_weights)) * 5 + 5
@@ -580,7 +582,8 @@ def get_bayes_with_weights(session_id):
                                                             k=3,
                                                             attribute_to_is_categorical={},
                                                             attribute_to_is_candidate_key={},
-                                                            weights=cur_scheme_weights)
+                                                            weights=cur_scheme_weights,
+                                                            randomize=tmp_data_storage[session_id]["randomize"])
 
     describer.save_dataset_description_to_file(description_file)
 
@@ -631,7 +634,7 @@ def getBaseData(request):
 
     generator = DataGenerator()
     generator.generate_dataset_in_correlated_attribute_mode(
-        len(ORI_DATA), description_file)
+        len(ORI_DATA), description_file, 0, tmp_data_storage[session_id]["randomize"])
     generator.save_synthetic_data(synthetic_data)
     synthetic_df = pd.read_csv(synthetic_data)
     ret['data']['base'] = {
@@ -695,7 +698,7 @@ def getMetrics(request):
 
     generator = DataGenerator()
     generator.generate_dataset_in_correlated_attribute_mode(
-        len(ORI_DATA), description_file)
+        len(ORI_DATA), description_file, 0, tmp_data_storage[session_id]["randomize"])
     generator.save_synthetic_data(synthetic_data)
     pcbayes_df = pd.read_csv(synthetic_data)
     raw_pcbayes_df = pd.read_csv(synthetic_data)
