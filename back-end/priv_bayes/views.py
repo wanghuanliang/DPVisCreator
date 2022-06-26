@@ -172,7 +172,7 @@ def initialize(request):
     # BAYES_EPS = 0.1
     session_id = orjson.loads(request.body).get('session_id')
     tmp_data_storage[session_id] = {
-        "DATA_PATH": 'priv_bayes/data/adult_filter1.csv',
+        "DATA_PATH": 'priv_bayes/data/bank_filter1.csv',
         "constraints": None,
         "threshold_value": 20,  # 离散型和数值型分界点
         "bayes_epsilon": BAYES_EPS,  # 贝叶斯网络的隐私预算
@@ -835,15 +835,15 @@ def getMetrics(request):
             #         "protected": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)
             #     },
             # })
-            pcbayes_patterns['distocenterpc'] = pcbayes_KL
-            pcbayes_patterns['wdispc'] = pcbayes_WDis
+            pcbayes_patterns['distocenterpc'] = float(pcbayes_KL)
+            pcbayes_patterns['wdispc'] = float(pcbayes_WDis)
             pcbayes_patterns['nodessimpc'] = 1 - abs(
                 len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)
             # pcbayes_patterns['klpc'] = float(pcbayes_KL_ori)    # sdv打开注释
             # privbayes_patterns['klpriv'] = float(privbayes_KL_ori)  # sdv打开注释
 
-            privbayes_patterns['distocenterpriv'] = privbayes_KL
-            privbayes_patterns['wdispriv'] = privbayes_WDis
+            privbayes_patterns['distocenterpriv'] = float(privbayes_KL)
+            privbayes_patterns['wdispriv'] = float(privbayes_WDis)
             privbayes_patterns['nodessimpriv'] = 1 - abs(
                 len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)
             # pcbayes_patterns += [float(pcbayes_KL), float(pcbayes_WDis), 1 - abs(
