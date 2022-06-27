@@ -11,9 +11,10 @@ from django.core.files.base import ContentFile
 import networkx as nx
 from dtw import dtw
 import itertools
+import random
 from sklearn.metrics import ndcg_score, average_precision_score
-from sdv.evaluation import evaluate  # sdv打开注释
-from sdv.metrics.tabular import KSTest, CSTest, LogisticDetection, CategoricalCAP, NumericalMLP  # sdv打开注释
+# from sdv.evaluation import evaluate  # sdv打开注释
+# from sdv.metrics.tabular import KSTest, CSTest, LogisticDetection, CategoricalCAP, NumericalMLP  # sdv打开注释
 # 隐私保护相关包
 
 from priv_bayes.DataSynthesizer.DataDescriber import DataDescriber
@@ -24,6 +25,18 @@ from priv_bayes.utils import ndcg, mAP, get_matrix_data
 tmp_data_storage = {}
 pandarallel.initialize()
 
+
+seed_list = [12004, 11124, 47324, 22162, 40388]
+seed_cnt = 0
+
+
+def set_random_seed(randomize, seed=0):
+    global seed_list, seed_cnt
+    if not randomize:    # 不是随机的，设个种子
+        print("set seed: ", seed_list[seed_cnt])
+        random.seed(seed_list[seed_cnt])
+        np.random.seed(seed_list[seed_cnt])
+        seed_cnt = (seed_cnt + 1) % 5
 
 def point_inside_polygon(x, y, poly, include_edges=True):
     '''
@@ -168,12 +181,15 @@ def cnt_poly(x, params):  # 根据x和多项式系数params计算返回值
 def initialize(request):
     global tmp_data_storage
 
+
     BAYES_EPS = orjson.loads(request.body).get('bayes_eps')
     # BAYES_EPS = 0.1
     session_id = orjson.loads(request.body).get('session_id')
     randomize = orjson.loads(request.body).get('randomize')
+    set_random_seed(randomize)
+
     tmp_data_storage[session_id] = {
-        "DATA_PATH": 'priv_bayes/data/adult_filter1.csv',
+        "DATA_PATH": 'priv_bayes/data/insurance.csv',
         "constraints": None,
         "threshold_value": 20,  # 离散型和数值型分界点
         "bayes_epsilon": BAYES_EPS,  # 贝叶斯网络的隐私预算
@@ -583,7 +599,8 @@ def get_bayes_with_weights(session_id):
                                                             attribute_to_is_categorical={},
                                                             attribute_to_is_candidate_key={},
                                                             weights=cur_scheme_weights,
-                                                            randomize=tmp_data_storage[session_id]["randomize"])
+                                                            randomize=tmp_data_storage[session_id]["randomize"],
+                                                            )
 
     describer.save_dataset_description_to_file(description_file)
 
@@ -772,10 +789,10 @@ def getMetrics(request):
             # privbayes_KL = 1 - privbayes_KL / maxKL
 
             # 处理KL sdv逻辑
-            pcbayes_KL_ori = evaluate(pcbayes_selected_data, ori_selected_data, metrics=[
-                                      'ContinuousKLDivergence'])   # sdv打开注释
-            privbayes_KL_ori = evaluate(privbayes_selected_data, ori_selected_data, metrics=[
-                                        'ContinuousKLDivergence'])  # sdv打开注释
+            # pcbayes_KL_ori = evaluate(pcbayes_selected_data, ori_selected_data, metrics=[
+            #                           'ContinuousKLDivergence'])   # sdv打开注释
+            # privbayes_KL_ori = evaluate(privbayes_selected_data, ori_selected_data, metrics=[
+            #                             'ContinuousKLDivergence'])  # sdv打开注释
 
             # 占用KL的接口去返回一个轮廓系数
             # labels_0 = np.ones((len(ori_selected_data), 1)) * 0
@@ -845,8 +862,8 @@ def getMetrics(request):
             pcbayes_patterns['nodessimpc'] = 1 - abs(
                 len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)
             pcbayes_patterns['pc_node_num'] = len(pcbayes_selected_data)
-            pcbayes_patterns['klpc'] = float(pcbayes_KL_ori)    # sdv打开注释
-            privbayes_patterns['klpriv'] = float(privbayes_KL_ori)  # sdv打开注释
+            # pcbayes_patterns['klpc'] = float(pcbayes_KL_ori)    # sdv打开注释
+            # privbayes_patterns['klpriv'] = float(privbayes_KL_ori)  # sdv打开注释
 
             privbayes_patterns['distocenterpriv'] = float(privbayes_KL)
             privbayes_patterns['wdispriv'] = float(privbayes_WDis)
@@ -914,7 +931,7 @@ def getMetrics(request):
                     cons["x_axis"]).count().sort_index().values
             elif cons['computation'] == 'average':
                 cut_points = np.arange(
-                    cons['params']['range'][0], cons['params']['range'][1] + 1e-6, cons['x_step'])
+                    cons['params']['range'][0], cons['params']['range'][1] + cons['x_step'] + 1e-6, cons['x_step'])
                 cut_points[-1] += 1e-6
                 if selected_legends:
                     pcbayes_selected_data = pcbayes_df[cond11 & cond12 & cond13][[
@@ -1091,17 +1108,17 @@ def getMetrics(request):
     #     },
     #     "base": baseret
     # }
-    pcbayes_patterns['kstestpc'] = float(
-        KSTest.compute(ORI_DATA, pcbayes_df))  # sdv打开注释
-    privbayes_patterns['kstestpriv'] = float(
-        KSTest.compute(ORI_DATA, privbayes_df))  # sdv打开注释
+    # pcbayes_patterns['kstestpc'] = float(
+    #     KSTest.compute(ORI_DATA, pcbayes_df))  # sdv打开注释
+    # privbayes_patterns['kstestpriv'] = float(
+    #     KSTest.compute(ORI_DATA, privbayes_df))  # sdv打开注释
     # 临时
     # print(ORI_DATA)
     # print("23333")
     # print(pcbayes_df)
-    pcbayes_patterns['cstestpc'] = float(
-        CSTest.compute(ORI_DATA, pcbayes_df))  # sdv打开注释
-    privbayes_patterns['cstestpriv'] = float(
-        CSTest.compute(ORI_DATA, privbayes_df))  # sdv打开注释
+    # pcbayes_patterns['cstestpc'] = float(
+    #     CSTest.compute(ORI_DATA, pcbayes_df))  # sdv打开注释
+    # privbayes_patterns['cstestpriv'] = float(
+    #     CSTest.compute(ORI_DATA, privbayes_df))  # sdv打开注释
     ret = [pcbayes_patterns, privbayes_patterns]
     return HttpResponse(orjson.dumps(ret))

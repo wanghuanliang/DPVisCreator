@@ -81,7 +81,7 @@ class DataDescriber:
         else:
             categorical_attribute_to_domain = {}
 
-        utils.set_random_seed(randomize, seed)
+        # utils.set_random_seed(randomize, seed)
         self.attr_to_datatype = {attr: DataType(datatype) for attr, datatype in attribute_to_datatype.items()}
         self.attr_to_is_categorical = attribute_to_is_categorical
         self.attr_to_is_candidate_key = attribute_to_is_candidate_key

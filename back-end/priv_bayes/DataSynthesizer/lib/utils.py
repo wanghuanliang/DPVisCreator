@@ -12,10 +12,8 @@ from priv_bayes.utils import contingency_matrix
 from sklearn.metrics import normalized_mutual_info_score
 
 
-def set_random_seed(randomize, seed=0):
-    if not randomize:    # 不是随机的，设个种子
-        random.seed(seed)
-        np.random.seed(seed)
+
+
 
 
 def process(paras):  # 并行去处理联合分布概率修改
