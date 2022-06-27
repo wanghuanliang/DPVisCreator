@@ -1032,7 +1032,7 @@ def getMetrics(request):
             privbayes_patterns['DTWpriv'] = float(privbayes_DTW_ori)
             privbayes_patterns['Eucpriv_corr'] = float(privbayes_Euc_ori)
             privbayes_patterns['PCDpriv'] = float(privbayes_PCD)
-            privbayes_patterns['Pearson_pc'] = float(np.corrcoef(
+            privbayes_patterns['Pearson_priv'] = float(np.corrcoef(
                 privbayes_coef_data[:, 0], privbayes_coef_data[:, 1])[0][1])
 
         if cons["type"] == "order":
