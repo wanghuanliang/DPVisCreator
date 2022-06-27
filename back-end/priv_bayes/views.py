@@ -12,8 +12,8 @@ import networkx as nx
 from dtw import dtw
 import itertools
 from sklearn.metrics import ndcg_score, average_precision_score
-# from sdv.evaluation import evaluate # sdv打开注释
-# from sdv.metrics.tabular import KSTest, CSTest, LogisticDetection, CategoricalCAP, NumericalMLP # sdv打开注释
+from sdv.evaluation import evaluate  # sdv打开注释
+from sdv.metrics.tabular import KSTest, CSTest, LogisticDetection, CategoricalCAP, NumericalMLP  # sdv打开注释
 # 隐私保护相关包
 
 from priv_bayes.DataSynthesizer.DataDescriber import DataDescriber
@@ -173,7 +173,7 @@ def initialize(request):
     session_id = orjson.loads(request.body).get('session_id')
     randomize = orjson.loads(request.body).get('randomize')
     tmp_data_storage[session_id] = {
-        "DATA_PATH": 'priv_bayes/data/bank_filter1.csv',
+        "DATA_PATH": 'priv_bayes/data/adult_filter1.csv',
         "constraints": None,
         "threshold_value": 20,  # 离散型和数值型分界点
         "bayes_epsilon": BAYES_EPS,  # 贝叶斯网络的隐私预算
@@ -772,8 +772,10 @@ def getMetrics(request):
             # privbayes_KL = 1 - privbayes_KL / maxKL
 
             # 处理KL sdv逻辑
-            # pcbayes_KL_ori = evaluate(pcbayes_selected_data, ori_selected_data, metrics=['ContinuousKLDivergence'])   # sdv打开注释
-            # privbayes_KL_ori = evaluate(privbayes_selected_data, ori_selected_data, metrics=['ContinuousKLDivergence']) # sdv打开注释
+            pcbayes_KL_ori = evaluate(pcbayes_selected_data, ori_selected_data, metrics=[
+                                      'ContinuousKLDivergence'])   # sdv打开注释
+            privbayes_KL_ori = evaluate(privbayes_selected_data, ori_selected_data, metrics=[
+                                        'ContinuousKLDivergence'])  # sdv打开注释
 
             # 占用KL的接口去返回一个轮廓系数
             # labels_0 = np.ones((len(ori_selected_data), 1)) * 0
@@ -843,17 +845,19 @@ def getMetrics(request):
             pcbayes_patterns['nodessimpc'] = 1 - abs(
                 len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)
             pcbayes_patterns['pc_node_num'] = len(pcbayes_selected_data)
-            # pcbayes_patterns['klpc'] = float(pcbayes_KL_ori)    # sdv打开注释
-            # privbayes_patterns['klpriv'] = float(privbayes_KL_ori)  # sdv打开注释
+            pcbayes_patterns['klpc'] = float(pcbayes_KL_ori)    # sdv打开注释
+            privbayes_patterns['klpriv'] = float(privbayes_KL_ori)  # sdv打开注释
 
             privbayes_patterns['distocenterpriv'] = float(privbayes_KL)
             privbayes_patterns['wdispriv'] = float(privbayes_WDis)
             privbayes_patterns['nodessimpriv'] = 1 - abs(
                 len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)
-            pcbayes_patterns['priv_node_num'] = len(privbayes_selected_data)
+            privbayes_patterns['priv_node_num'] = len(privbayes_selected_data)
 
-            privbayes_patterns['cluster_dis_diff'] = abs(float(privbayes_KL) - float(pcbayes_KL))
-            privbayes_patterns['cluster_real_node_num'] = len(ori_selected_data)
+            privbayes_patterns['cluster_dis_diff'] = abs(
+                float(privbayes_KL) - float(pcbayes_KL))
+            privbayes_patterns['cluster_real_node_num'] = len(
+                ori_selected_data)
 
             # pcbayes_patterns += [float(pcbayes_KL), float(pcbayes_WDis), 1 - abs(
             #     len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)]
@@ -1003,13 +1007,13 @@ def getMetrics(request):
                 privbayes_coef_data[:, 0], privbayes_coef_data[:, 1]) - ori_coef)[0][1]
 
             pcbayes_patterns['DTWpc'] = float(pcbayes_DTW_ori)
-            pcbayes_patterns['Eucpc'] = float(pcbayes_Euc_ori)
+            pcbayes_patterns['Eucpc_corr'] = float(pcbayes_Euc_ori)
             pcbayes_patterns['PCDpc'] = float(pcbayes_PCD)
             pcbayes_patterns['Pearson_ori'] = float(ori_coef[0][1])
             pcbayes_patterns['Pearson_pc'] = float(np.corrcoef(
                 pcbayes_coef_data[:, 0], pcbayes_coef_data[:, 1])[0][1])
             privbayes_patterns['DTWpriv'] = float(privbayes_DTW_ori)
-            privbayes_patterns['Eucpriv'] = float(privbayes_Euc_ori)
+            privbayes_patterns['Eucpriv_corr'] = float(privbayes_Euc_ori)
             privbayes_patterns['PCDpriv'] = float(privbayes_PCD)
             privbayes_patterns['Pearson_pc'] = float(np.corrcoef(
                 privbayes_coef_data[:, 0], privbayes_coef_data[:, 1])[0][1])
@@ -1037,16 +1041,26 @@ def getMetrics(request):
                 cons['x_axis']).count().sort_index().values.flatten()
             privbayes_arr = privbayes_selected_data[[cons['x_axis'], 'index']].groupby(
                 cons['x_axis']).count().sort_index().values.flatten()
-            pcbayes_patterns['ndcgpc'] = float(ndcg_score([ori_arr], [pcbayes_arr]))
-            pcbayes_patterns['diffpc'] = int(np.sum(np.abs(ori_arr - pcbayes_arr)))
-            pcbayes_patterns['Eucpc'] = float(np.sqrt(np.sum(np.square(pcbayes_arr - ori_arr))))
-            pcbayes_patterns['reldiffpc'] = float(np.sum(np.abs(ori_arr - pcbayes_arr) / ori_arr))
-            pcbayes_patterns['nodessimpc'] = 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)
-            privbayes_patterns['ndcgpriv'] = float(ndcg_score([ori_arr], [privbayes_arr]))
-            privbayes_patterns['diffpriv'] = int(np.sum(np.abs(ori_arr - privbayes_arr)))
-            privbayes_patterns['Eucpriv'] = float(np.sqrt(np.sum(np.square(privbayes_arr - ori_arr))))
-            privbayes_patterns['reldiffpriv'] = float(np.sum(np.abs(ori_arr - privbayes_arr) / ori_arr))
-            privbayes_patterns['nodessimpriv'] = 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)
+            pcbayes_patterns['ndcgpc'] = float(
+                ndcg_score([ori_arr], [pcbayes_arr]))
+            pcbayes_patterns['diffpc'] = int(
+                np.sum(np.abs(ori_arr - pcbayes_arr)))
+            pcbayes_patterns['Eucpc'] = float(
+                np.sqrt(np.sum(np.square(pcbayes_arr - ori_arr))))
+            pcbayes_patterns['reldiffpc'] = float(
+                np.sum(np.abs(ori_arr - pcbayes_arr) / ori_arr))
+            pcbayes_patterns['nodessimpc'] = 1 - abs(len(ori_selected_data) - len(
+                pcbayes_selected_data)) / len(ori_selected_data)
+            privbayes_patterns['ndcgpriv'] = float(
+                ndcg_score([ori_arr], [privbayes_arr]))
+            privbayes_patterns['diffpriv'] = int(
+                np.sum(np.abs(ori_arr - privbayes_arr)))
+            privbayes_patterns['Eucpriv'] = float(
+                np.sqrt(np.sum(np.square(privbayes_arr - ori_arr))))
+            privbayes_patterns['reldiffpriv'] = float(
+                np.sum(np.abs(ori_arr - privbayes_arr) / ori_arr))
+            privbayes_patterns['nodessimpriv'] = 1 - abs(
+                len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)
 
     baseret = copy.deepcopy(tmp_data_storage[session_id]['BASE_SCHEME'])
     baseret['pattern'] = privbayes_patterns
@@ -1077,9 +1091,17 @@ def getMetrics(request):
     #     },
     #     "base": baseret
     # }
-    # pcbayes_patterns['kstestpc'] = float(KSTest.compute(ORI_DATA, pcbayes_df)) # sdv打开注释
-    # privbayes_patterns['kstestpriv'] = float(KSTest.compute(ORI_DATA, privbayes_df)) # sdv打开注释
-    # pcbayes_patterns['cstestpc'] = float(CSTest.compute(ORI_DATA, pcbayes_df)) # sdv打开注释
-    # privbayes_patterns['cstestpriv'] = float(CSTest.compute(ORI_DATA, privbayes_df)) # sdv打开注释
+    pcbayes_patterns['kstestpc'] = float(
+        KSTest.compute(ORI_DATA, pcbayes_df))  # sdv打开注释
+    privbayes_patterns['kstestpriv'] = float(
+        KSTest.compute(ORI_DATA, privbayes_df))  # sdv打开注释
+    # 临时
+    # print(ORI_DATA)
+    # print("23333")
+    # print(pcbayes_df)
+    pcbayes_patterns['cstestpc'] = float(
+        CSTest.compute(ORI_DATA, pcbayes_df))  # sdv打开注释
+    privbayes_patterns['cstestpriv'] = float(
+        CSTest.compute(ORI_DATA, privbayes_df))  # sdv打开注释
     ret = [pcbayes_patterns, privbayes_patterns]
     return HttpResponse(orjson.dumps(ret))

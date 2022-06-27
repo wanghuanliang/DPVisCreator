@@ -18,32 +18,36 @@ f = open("constraints.json")
 model_dic = json.load(f)
 model_dic.update(session_dic)
 df = pd.DataFrame()
-EPS_LIST = [2]
+EPS_LIST = [1, 3]
 # W_LIST = [1, 1.2, 1.4, 1.6, 1.8, 2.0]
-W_LIST = [2.0]
+W_LIST = [0.5, 2.5]
 
 df.append(["epsilon", "weight"])
 
 for BASE_WEIGHT in W_LIST:
     for BAYES_EPS in EPS_LIST:
-        result_dict = {}
-        dt = requests.get(base_url + "init", data=json.dumps(
-            {'session_id': 'carlwang', 'bayes_eps': BAYES_EPS, 'BASE_WEIGHT': BASE_WEIGHT, "randomize": False}), headers=headers)  # 初始化
-        dt = requests.get(base_url + "getBaseData", params=session_dic)  # 初始化
-        dt = requests.get(base_url + "getModelData",
-                          data=json.dumps(model_dic), headers=headers)  # 初始化
-        dt = requests.get(base_url + "getMetrics", params=session_dic)  # 初始化
-        cluster_result = json.loads(dt.text)
-        print(BAYES_EPS, ", ", BASE_WEIGHT, ": ", cluster_result)
-        result_dict.update({
-            "epsilon": BAYES_EPS,
-            "BASE_WEIGHT": BASE_WEIGHT
-        })
-        result_dict.update(cluster_result[0])
-        result_dict.update(cluster_result[1])
-        # df = df.append(
-        #     [[BAYES_EPS] + [BASE_WEIGHT] + np.array(cluster_result).flatten().tolist()])
-        df = df.append(result_dict, ignore_index=True)
-df.to_csv("adult-pattern2-weightx3.csv")
+        # 添加多组
+        for tt in range(2):
+            result_dict = {}
+            dt = requests.get(base_url + "init", data=json.dumps(
+                {'session_id': 'carlwang', 'bayes_eps': BAYES_EPS, 'BASE_WEIGHT': BASE_WEIGHT, "randomize": False}), headers=headers)  # 初始化
+            dt = requests.get(base_url + "getBaseData",
+                              params=session_dic)  # 初始化
+            dt = requests.get(base_url + "getModelData",
+                              data=json.dumps(model_dic), headers=headers)  # 初始化
+            dt = requests.get(base_url + "getMetrics",
+                              params=session_dic)  # 初始化
+            cluster_result = json.loads(dt.text)
+            print(BAYES_EPS, ", ", BASE_WEIGHT, ": ", cluster_result)
+            result_dict.update({
+                "epsilon": BAYES_EPS,
+                "BASE_WEIGHT": BASE_WEIGHT
+            })
+            result_dict.update(cluster_result[0])
+            result_dict.update(cluster_result[1])
+            # df = df.append(
+            #     [[BAYES_EPS] + [BASE_WEIGHT] + np.array(cluster_result).flatten().tolist()])
+            df = df.append(result_dict, ignore_index=True)
+df.to_csv("test-adult2.csv")
 
 # 数组第一行pcbayes指标，第二行privbayes指标
