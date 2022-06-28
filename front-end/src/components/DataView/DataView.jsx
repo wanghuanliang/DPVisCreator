@@ -5,7 +5,7 @@ import { Upload, Button, DatePicker, Space } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import AttributeBlock from "./AttributeBlock/AttributeBlock";
 import FilterBlock from "./FilterBlock/FilterBlock";
-import { session, getFilteredData, getBaseData } from "../../services/api";
+import { currentURL, session, getFilteredData, getBaseData } from "../../services/api";
 
 const colorArray = ["#92B0C9", "#92B0C9", "#92B0C9"];
 
@@ -32,8 +32,7 @@ const DataView = (props) => {
   const attributeNum = Object.keys(attributeCharacter).length;
 
   const prop = {
-    // action: "http://101.43.188.187:30010/api/getOriginalData",
-    action: "http://localhost:8000/api/getOriginalData",
+    action: `${currentURL}/getOriginalData`,
     data: { session_id: session },
     maxCount: 1,
     onChange({ file, fileList }) {

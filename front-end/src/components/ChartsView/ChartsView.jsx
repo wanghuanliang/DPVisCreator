@@ -324,6 +324,7 @@ class ChartsView extends Component {
                   if (this.state.original_constraint.id)
                     this.updateConstraint(this.state.original_constraint);
                   else this.insertConstraint(this.state.original_constraint);
+                  console.log(this.state.constraints);
                 }}
               >
                 Save
