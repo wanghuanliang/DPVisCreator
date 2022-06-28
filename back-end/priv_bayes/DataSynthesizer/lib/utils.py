@@ -10,11 +10,6 @@ from priv_bayes.utils import contingency_matrix
 from sklearn.metrics import normalized_mutual_info_score
 
 
-def set_random_seed(seed=0):
-    random.seed(seed)
-    np.random.seed(seed)
-
-
 def mutual_info_score(labels_true, labels_pred, axes, weights):
     labels_true = labels_true.values
     labels_pred = labels_pred.values

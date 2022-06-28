@@ -13,7 +13,7 @@ from dtw import dtw
 import itertools
 from sklearn.metrics import ndcg_score, average_precision_score
 # from sdv.evaluation import evaluate
-# from sdv.metrics.tabular import KSTest, CSTest, LogisticDetection, CategoricalCAP, NumericalMLP
+from sdv.metrics.tabular import KSTest, CSTest, LogisticDetection, CategoricalCAP, NumericalMLP
 # 隐私保护相关包
 
 from priv_bayes.DataSynthesizer.DataDescriber import DataDescriber
@@ -22,6 +22,12 @@ from priv_bayes.DataSynthesizer.lib.utils import display_bayesian_network
 from priv_bayes.utils import ndcg, mAP, get_matrix_data
 
 tmp_data_storage = {}
+RANDOM_SEED = int(0)
+
+def set_random_seed():
+    global RANDOM_SEED
+    random.seed(RANDOM_SEED)
+    np.random.seed(RANDOM_SEED)
 
 
 def point_inside_polygon(x, y, poly, include_edges=True):
@@ -127,7 +133,7 @@ def solveOriginalData(session_id):
 
 def getOriginalData(request):  # 获取原始数据
     global tmp_data_storage
-    BAYES_EPS = 0.1
+    BAYES_EPS = 10
     data = request.FILES['file']
     session_id = request.POST.get("session_id")
     if not check_session_id(session_id):
@@ -165,7 +171,7 @@ def cnt_poly(x, params):  # 根据x和多项式系数params计算返回值
 
 def initialize(request):
     global tmp_data_storage
-    BAYES_EPS = 0.1
+    BAYES_EPS = 10
 
     session_id = json.loads(request.body).get('session_id')
     tmp_data_storage[session_id] = {
@@ -586,6 +592,7 @@ def get_bayes_with_weights(session_id):
 
 def getBaseData(request):
     global tmp_data_storage
+    set_random_seed()
     session_id = request.GET.get('session_id')
     if not check_session_id(session_id):
         return HttpResponse(json.dumps({
@@ -610,8 +617,8 @@ def getBaseData(request):
             "statistical_metrics": {
                 # "KSTest": 0.85,
                 # "CSTest": 0.85,
-                # "KSTest": KSTest.compute(ORI_DATA, synthetic_df),
-                # "CSTest": CSTest.compute(ORI_DATA, synthetic_df)
+                "KSTest": KSTest.compute(ORI_DATA, synthetic_df),
+                "CSTest": CSTest.compute(ORI_DATA, synthetic_df)
             },
             "detection_metrics": {
                 # "LogisticDetection": LogisticDetection.compute(ORI_DATA, synthetic_df)
@@ -644,6 +651,7 @@ def getNetwork(request):
 
 def getMetrics(request):
     global tmp_data_storage
+    set_random_seed()
     session_id = request.GET.get('session_id')
     if not check_session_id(session_id):
         return HttpResponse(json.dumps({
@@ -771,30 +779,28 @@ def getMetrics(request):
             maxWDis = max(pcbayes_WDis, privbayes_WDis) * 1.1
             pcbayes_WDis = 1 - pcbayes_WDis / maxWDis
             privbayes_WDis = 1 - privbayes_WDis / maxWDis
-            # pcbayes_patterns.append({
-            #     "id": cons["id"],
-            #     "Concentration": {
-            #         "original": 1,
-            #         "protected": pcbayes_KL
-            #     },
-            #     "dots_stab": {
-            #         "original": 1,
-            #         "protected": 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)
-            #     },
-            # })
-            # privbayes_patterns.append({
-            #     "id": cons["id"],
-            #     "Concentration": {
-            #         "original": 1,
-            #         "protected": privbayes_KL
-            #     },
-            #     "dots_stab": {
-            #         "original": 1,
-            #         "protected": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)
-            #     },
-            # })
-            pcbayes_patterns = [pcbayes_KL, 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)]
-            privbayes_patterns = [privbayes_KL, 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)]
+            pcbayes_patterns.append({
+                "id": cons["id"],
+                "Concentration": {
+                    "original": 1,
+                    "protected": pcbayes_KL
+                },
+                "dots_stab": {
+                    "original": 1,
+                    "protected": 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)
+                },
+            })
+            privbayes_patterns.append({
+                "id": cons["id"],
+                "Concentration": {
+                    "original": 1,
+                    "protected": privbayes_KL
+                },
+                "dots_stab": {
+                    "original": 1,
+                    "protected": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)
+                },
+            })
         if cons["type"] == "correlation":
             cond11 = pcbayes_df[cons['x_axis']] <= cons['params']['range'][1]
             cond12 = pcbayes_df[cons['x_axis']] >= cons['params']['range'][0]
@@ -933,9 +939,6 @@ def getMetrics(request):
                     "protected": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)
                 },
             })
-            pcbayes_patterns = [pcbayes_DTW, pcbayes_Euc]
-            privbayes_patterns = [privbayes_DTW, privbayes_Euc]
-
         if cons["type"] == "order":
             raw_pcbayes_df = pd.read_csv(synthetic_data)
             raw_privbayes_df = pd.DataFrame(base_scheme['protected_data'])
@@ -983,10 +986,6 @@ def getMetrics(request):
                     "protected": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)
                 },
             })
-            pcbayes_patterns = [ndcg_score([ori_arr], [pcbayes_arr]), int(np.sum(np.abs(ori_arr - pcbayes_arr))),
-                                1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)]
-            privbayes_patterns = [ndcg_score([ori_arr], [privbayes_arr]), int(np.sum(np.abs(ori_arr - privbayes_arr))),
-                                  1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)]
     baseret = copy.deepcopy(tmp_data_storage[session_id]['BASE_SCHEME'])
     baseret['pattern'] = privbayes_patterns
     # baseret['protected_data'] = json.loads(privbayes_df.to_json(orient="records")),
@@ -998,8 +997,8 @@ def getMetrics(request):
                 "statistical_metrics": {
                     # "KSTest": 0.85,
                     # "CSTest": 0.85,
-                    # "KSTest": KSTest.compute(ORI_DATA, pcbayes_df),
-                    # "CSTest": CSTest.compute(ORI_DATA, pcbayes_df)
+                    "KSTest": KSTest.compute(ORI_DATA, pcbayes_df),
+                    "CSTest": CSTest.compute(ORI_DATA, pcbayes_df)
                 },
                 "detection_metrics": {
                     # "LogisticDetection": LogisticDetection.compute(ORI_DATA, pcbayes_df)
@@ -1016,5 +1015,5 @@ def getMetrics(request):
         },
         "base": baseret
     }
-    # ret = [pcbayes_patterns, privbayes_patterns]
+
     return HttpResponse(json.dumps(ret))
