@@ -26,7 +26,8 @@ tmp_data_storage = {}
 pandarallel.initialize()
 
 
-seed_list = [12004, 11124, 47324, 22162, 40388]
+# seed_list = [21394, 21394, 60471, 60471, 1763, 1763, 36727, 36727, 32364, 32364, 62609, 62609, 3177, 3177, 22646, 22646, 8538, 8538, 35036, 35036]
+seed_list = [21394, 21394, 60471, 60471, 1763, 1763, 36727, 36727, 32364, 32364]
 seed_cnt = 0
 
 
@@ -36,7 +37,7 @@ def set_random_seed(randomize, seed=0):
         print("set seed: ", seed_list[seed_cnt])
         random.seed(seed_list[seed_cnt])
         np.random.seed(seed_list[seed_cnt])
-        seed_cnt = (seed_cnt + 1) % 5
+        seed_cnt = (seed_cnt + 1) % 10
 
 def point_inside_polygon(x, y, poly, include_edges=True):
     '''
@@ -186,10 +187,10 @@ def initialize(request):
     # BAYES_EPS = 0.1
     session_id = orjson.loads(request.body).get('session_id')
     randomize = orjson.loads(request.body).get('randomize')
-    set_random_seed(randomize)
+
 
     tmp_data_storage[session_id] = {
-        "DATA_PATH": 'priv_bayes/data/insurance.csv',
+        "DATA_PATH": 'priv_bayes/data/adult_filter2.csv',
         "constraints": None,
         "threshold_value": 20,  # 离散型和数值型分界点
         "bayes_epsilon": BAYES_EPS,  # 贝叶斯网络的隐私预算
@@ -637,6 +638,7 @@ def get_bayes_with_weights(session_id):
 def getBaseData(request):
     global tmp_data_storage
     session_id = request.GET.get('session_id')
+    set_random_seed(tmp_data_storage[session_id]['randomize'])
     if not check_session_id(session_id):
         return HttpResponse(orjson.dumps({
             "status": "failed",
@@ -698,6 +700,7 @@ def getNetwork(request):
 def getMetrics(request):
     global tmp_data_storage
     session_id = request.GET.get('session_id')
+    set_random_seed(tmp_data_storage[session_id]['randomize'])
     if not check_session_id(session_id):
         return HttpResponse(orjson.dumps({
             "status": "failed",

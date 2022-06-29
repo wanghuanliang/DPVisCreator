@@ -18,16 +18,14 @@ f = open("constraints.json")
 model_dic = json.load(f)
 model_dic.update(session_dic)
 df = pd.DataFrame()
-EPS_LIST = [1, 3]
+EPS_LIST = [0.1, 0.5, 1, 3, 5]
 # W_LIST = [1, 1.2, 1.4, 1.6, 1.8, 2.0]
-W_LIST = [0.5, 2.5]
-
-df.append(["epsilon", "weight"])
+W_LIST = list(range(2, 11))
 
 for BASE_WEIGHT in W_LIST:
     for BAYES_EPS in EPS_LIST:
         # 添加多组
-        for tt in range(2):
+        for tt in range(5):
             result_dict = {}
             dt = requests.get(base_url + "init", data=json.dumps(
                 {'session_id': 'carlwang', 'bayes_eps': BAYES_EPS, 'BASE_WEIGHT': BASE_WEIGHT, "randomize": False}), headers=headers)  # 初始化
