@@ -11,6 +11,7 @@ from django.core.files.base import ContentFile
 import networkx as nx
 from dtw import dtw
 import itertools
+import random
 from sklearn.metrics import ndcg_score, average_precision_score
 # from sdv.evaluation import evaluate
 from sdv.metrics.tabular import KSTest, CSTest, LogisticDetection, CategoricalCAP, NumericalMLP
