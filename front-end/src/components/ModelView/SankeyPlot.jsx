@@ -120,8 +120,9 @@ const SankeyPlot = (props) => {
       constraints.forEach(constraint => {
         const constraintId = constraint.id;
         // 新增需求，一个间隔内的约束桑基，只绘制topN的, 对约束进行原地排序
-        // const n = 2;
-        // (obj.constraints?.[constraintId] || []).sort((a, b) => b.num - a.num);
+        // let sankeyNum = (obj.constraints?.[constraintId] || []).length;
+        // let n = Math.floor(sankeyNum / 2);
+        (obj.constraints?.[constraintId] || []).sort((a, b) => b.num - a.num);
         // 新增需求，同一个source，判断流向的target。计算一下每一个source的总和num, [20, 50];
         const sourceTotalNum = new Array(10).fill(0);
         (obj.constraints?.[constraintId] || []).forEach((sankey, i) => {
