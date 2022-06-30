@@ -713,7 +713,7 @@ def getMetrics(request):
     constraints = tmp_data_storage[session_id]['constraints']
     base_scheme = tmp_data_storage[session_id]['BASE_SCHEME']
 
-    get_bayes_with_weights(session_id)  # 这里修改了贝叶斯网络的生成
+    get_bayes_with_weights(session_id)  # 根据当前tmp_data_storage中的weight
 
     generator = DataGenerator()
     generator.generate_dataset_in_correlated_attribute_mode(
@@ -910,11 +910,6 @@ def getMetrics(request):
                 pcbayes_data, ori_data, dist=manhattan_distance)
             privbayes_DTW, cost_matrix, acc_cost_matrix, path = dtw(
                 privbayes_data, ori_data, dist=manhattan_distance)
-            pcbayes_DTW_ori = pcbayes_DTW
-            privbayes_DTW_ori = privbayes_DTW
-            maxDTW = max(pcbayes_DTW, privbayes_DTW) * 1.1
-            pcbayes_DTW = 1 - pcbayes_DTW / maxDTW
-            privbayes_DTW = 1 - privbayes_DTW / maxDTW
 
             pcbayes_Euc = np.sqrt(np.sum(np.square(pcbayes_data - ori_data)))
             privbayes_Euc = np.sqrt(
@@ -965,17 +960,19 @@ def getMetrics(request):
             privbayes_PCD = abs(np.corrcoef(
                 privbayes_coef_data[:, 0], privbayes_coef_data[:, 1]) - ori_coef)[0][1]
 
-            pcbayes_patterns['DTWpc'] = float(pcbayes_DTW_ori)
-            pcbayes_patterns['Eucpc_corr'] = float(pcbayes_Euc_ori)
-            pcbayes_patterns['PCDpc'] = float(pcbayes_PCD)
-            pcbayes_patterns['Pearson_ori'] = float(ori_coef[0][1])
-            pcbayes_patterns['Pearson_pc'] = float(np.corrcoef(
-                pcbayes_coef_data[:, 0], pcbayes_coef_data[:, 1])[0][1])
-            privbayes_patterns['DTWpriv'] = float(privbayes_DTW_ori)
-            privbayes_patterns['Eucpriv_corr'] = float(privbayes_Euc_ori)
-            privbayes_patterns['PCDpriv'] = float(privbayes_PCD)
-            privbayes_patterns['Pearson_priv'] = float(np.corrcoef(
-                privbayes_coef_data[:, 0], privbayes_coef_data[:, 1])[0][1])
+            pcbayes_patterns.update({
+                "DTWpc": float(pcbayes_DTW),
+                "Eucpc_corr": float(pcbayes_Euc_ori),
+                "PCDpc": float(pcbayes_PCD),
+                "Pearson_ori": float(ori_coef[0][1]),
+                "Pearson_pc": float(np.corrcoef(pcbayes_coef_data[:, 0], pcbayes_coef_data[:, 1])[0][1])
+            })
+            privbayes_patterns.update({
+                "DTWpriv": float(privbayes_DTW),
+                "Eucpriv_corr": float(privbayes_Euc_ori),
+                "PCDpriv": float(privbayes_PCD),
+                "Pearson_priv": float(np.corrcoef(privbayes_coef_data[:, 0], privbayes_coef_data[:, 1])[0][1])
+            })
 
         if cons["type"] == "order":
             raw_pcbayes_df = pd.read_csv(synthetic_data)
@@ -1000,67 +997,22 @@ def getMetrics(request):
                 cons['x_axis']).count().sort_index().values.flatten()
             privbayes_arr = privbayes_selected_data[[cons['x_axis'], 'index']].groupby(
                 cons['x_axis']).count().sort_index().values.flatten()
-            pcbayes_patterns['ndcgpc'] = float(
-                ndcg_score([ori_arr], [pcbayes_arr]))
-            pcbayes_patterns['diffpc'] = int(
-                np.sum(np.abs(ori_arr - pcbayes_arr)))
-            pcbayes_patterns['Eucpc'] = float(
-                np.sqrt(np.sum(np.square(pcbayes_arr - ori_arr))))
-            pcbayes_patterns['reldiffpc'] = float(
-                np.sum(np.abs(ori_arr - pcbayes_arr) / ori_arr))
-            pcbayes_patterns['nodessimpc'] = 1 - abs(len(ori_selected_data) - len(
-                pcbayes_selected_data)) / len(ori_selected_data)
-            privbayes_patterns['ndcgpriv'] = float(
-                ndcg_score([ori_arr], [privbayes_arr]))
-            privbayes_patterns['diffpriv'] = int(
-                np.sum(np.abs(ori_arr - privbayes_arr)))
-            privbayes_patterns['Eucpriv'] = float(
-                np.sqrt(np.sum(np.square(privbayes_arr - ori_arr))))
-            privbayes_patterns['reldiffpriv'] = float(
-                np.sum(np.abs(ori_arr - privbayes_arr) / ori_arr))
-            privbayes_patterns['nodessimpriv'] = 1 - abs(
-                len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)
 
-    baseret = copy.deepcopy(tmp_data_storage[session_id]['BASE_SCHEME'])
-    baseret['pattern'] = privbayes_patterns
-    # baseret['protected_data'] = orjson.loads(privbayes_df.to_json(orient="records")),
-    # ret = {
-    #     "status": "success",
-    #     "scheme": {
-    #         "metrics": {
-    #             "privacy_budget": bayes_epsilon,
-    #             "statistical_metrics": {
-    #                 # "KSTest": 0.85,
-    #                 # "CSTest": 0.85,
-    #                 # "KSTest": KSTest.compute(ORI_DATA, pcbayes_df),
-    #                 # "CSTest": CSTest.compute(ORI_DATA, pcbayes_df)
-    #             },
-    #             "detection_metrics": {
-    #                 # "LogisticDetection": LogisticDetection.compute(ORI_DATA, pcbayes_df)
-    #             },
-    #             "privacy_metrics": {
-    #                 # "MLP": NumericalMLP.compute(ORI_DATA, pcbayes_df, key_fields=list(set(Measures).difference(['charges'])), sensitive_fields=['charges']),
-    #                 # "CAP": CategoricalCAP.compute(ORI_DATA, pcbayes_df, key_fields=list(set(Dimensions).difference(['children'])), sensitive_fields=['children'])
-    #                 # "MLP": 0.85,
-    #                 # "CAP": 0.85
-    #             }
-    #         },
-    #         "protected_data": orjson.loads(raw_pcbayes_df.to_json(orient="records")),
-    #         "pattern": pcbayes_patterns
-    #     },
-    #     "base": baseret
-    # }
-    # pcbayes_patterns['kstestpc'] = float(
-    #     KSTest.compute(ORI_DATA, pcbayes_df))  # sdv打开注释
-    # privbayes_patterns['kstestpriv'] = float(
-    #     KSTest.compute(ORI_DATA, privbayes_df))  # sdv打开注释
-    # 临时
-    # print(ORI_DATA)
-    # print("23333")
-    # print(pcbayes_df)
-    # pcbayes_patterns['cstestpc'] = float(
-    #     CSTest.compute(ORI_DATA, pcbayes_df))  # sdv打开注释
-    # privbayes_patterns['cstestpriv'] = float(
-    #     CSTest.compute(ORI_DATA, privbayes_df))  # sdv打开注释
+            pcbayes_patterns.update({
+                "ndcgpc": float(ndcg_score([ori_arr], [pcbayes_arr])),
+                "diffpc": int(np.sum(np.abs(ori_arr - pcbayes_arr))),
+                "Eucpc": float(np.sqrt(np.sum(np.square(pcbayes_arr - ori_arr)))),
+                "reldiffpc": float(np.sum(np.abs(ori_arr - pcbayes_arr) / ori_arr)),
+                "nodes_real": len(ori_selected_data),
+                "nodes_pc": len(pcbayes_selected_data),
+            })
+            privbayes_patterns.update({
+                "ndcgpriv": float(ndcg_score([ori_arr], [privbayes_arr])),
+                "diffpriv": int(np.sum(np.abs(ori_arr - privbayes_arr))),
+                "Eucpriv":  float(np.sqrt(np.sum(np.square(privbayes_arr - ori_arr)))),
+                "reldiffpriv": float(np.sum(np.abs(ori_arr - privbayes_arr) / ori_arr)),
+                "nodessimpriv": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data),
+                "nodes_priv": len(privbayes_selected_data)
+            })
     ret = [pcbayes_patterns, privbayes_patterns]
     return HttpResponse(orjson.dumps(ret))
