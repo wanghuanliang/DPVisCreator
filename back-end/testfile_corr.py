@@ -46,6 +46,6 @@ for BASE_WEIGHT in W_LIST:
             # df = df.append(
             #     [[BAYES_EPS] + [BASE_WEIGHT] + np.array(cluster_result).flatten().tolist()])
             df = df.append(result_dict, ignore_index=True)
-df.to_csv("test-adult2.csv")
+df.to_csv("test-adult2-pattern2-correlation.csv")
 
 # 数组第一行pcbayes指标，第二行privbayes指标

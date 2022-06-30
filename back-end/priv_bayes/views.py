@@ -190,7 +190,7 @@ def initialize(request):
 
 
     tmp_data_storage[session_id] = {
-        "DATA_PATH": 'priv_bayes/data/adult_filter2.csv',
+        "DATA_PATH": 'priv_bayes/data/shopping_filter1.csv',
         "constraints": None,
         "threshold_value": 20,  # 离散型和数值型分界点
         "bayes_epsilon": BAYES_EPS,  # 贝叶斯网络的隐私预算
@@ -547,7 +547,6 @@ def setWeights(request):
 
 def get_bayes_with_weights(session_id):
     description_file = "priv_bayes/out/dscrpt.json"
-    DATA_PATH = tmp_data_storage[session_id]['DATA_PATH']
     ORI_DATA = tmp_data_storage[session_id]['ORI_DATA']
     BASE_WEIGHT = tmp_data_storage[session_id]['BASE_WEIGHT']
     print("weight", tmp_data_storage[session_id]['BASE_WEIGHT'])
@@ -645,7 +644,6 @@ def getBaseData(request):
             "err_msg": "disconnected with the server"
         }))
     ret = get_bayes_with_weights(session_id)
-    # 增加ret['data']['base']，存放base方案各项指标
     description_file = "priv_bayes/out/dscrpt.json"
     synthetic_data = "priv_bayes/out/syndata.csv"
     bayes_epsilon = tmp_data_storage[session_id]['bayes_epsilon']
@@ -656,6 +654,8 @@ def getBaseData(request):
         len(ORI_DATA), description_file, 0, tmp_data_storage[session_id]["randomize"])
     generator.save_synthetic_data(synthetic_data)
     synthetic_df = pd.read_csv(synthetic_data)
+
+    # 存放base方案各项指标
     ret['data']['base'] = {
         "id": "base",
         "metrics": {
@@ -711,7 +711,6 @@ def getMetrics(request):
     ORI_DATA = copy.deepcopy(tmp_data_storage[session_id]['ORI_DATA'])
     Dimensions = tmp_data_storage[session_id]['Dimensions']
     constraints = tmp_data_storage[session_id]['constraints']
-    bayes_epsilon = tmp_data_storage[session_id]['bayes_epsilon']
     base_scheme = tmp_data_storage[session_id]['BASE_SCHEME']
 
     get_bayes_with_weights(session_id)  # 这里修改了贝叶斯网络的生成
@@ -720,9 +719,8 @@ def getMetrics(request):
     generator.generate_dataset_in_correlated_attribute_mode(
         len(ORI_DATA), description_file, 0, tmp_data_storage[session_id]["randomize"])
     generator.save_synthetic_data(synthetic_data)
-    pcbayes_df = pd.read_csv(synthetic_data)
-    raw_pcbayes_df = pd.read_csv(synthetic_data)
 
+    pcbayes_df = pd.read_csv(synthetic_data)
     privbayes_df = pd.DataFrame(base_scheme['protected_data'])
 
     # 对类别型数据做个离散化记录
@@ -745,7 +743,6 @@ def getMetrics(request):
         if cons['color']:
             # selected_legends = [item for item in cons['selectedLegend'] if cons['selectedLegend'][item]]
             selected_legends = None
-            print(selected_legends)
         if cons["type"] == "cluster":
             area = cons["params"]["area"]
             dt_x = pcbayes_df[cons["x_axis"]]
@@ -784,108 +781,50 @@ def getMetrics(request):
                 cons["x_axis"], cons["y_axis"]]]
             ori_selected_data = ori_selected_data[[
                 cons["x_axis"], cons["y_axis"]]]
-            # 处理KL
-            # pcbayes_KL = KLdivergence(pcbayes_selected_data.values, ori_selected_data.values)
-            # privbayes_KL = KLdivergence(privbayes_selected_data.values, ori_selected_data.values)
-            # maxKL = max(pcbayes_KL, privbayes_KL) * 1.1
-            # pcbayes_KL = 1 - pcbayes_KL / maxKL
-            # privbayes_KL = 1 - privbayes_KL / maxKL
 
-            # 处理KL sdv逻辑
+            # 使用sdv库计算KL散度
             # pcbayes_KL_ori = evaluate(pcbayes_selected_data, ori_selected_data, metrics=[
             #                           'ContinuousKLDivergence'])   # sdv打开注释
             # privbayes_KL_ori = evaluate(privbayes_selected_data, ori_selected_data, metrics=[
             #                             'ContinuousKLDivergence'])  # sdv打开注释
 
-            # 占用KL的接口去返回一个轮廓系数
-            # labels_0 = np.ones((len(ori_selected_data), 1)) * 0
-            # labels_1 = np.ones((len(pcbayes_selected_data), 1))
-            # labels_2 = np.ones((len(privbayes_selected_data), 1)) * 2
-            # con_labels_pc = np.vstack((labels_0, labels_1))
-            # con_labels_priv = np.vstack((labels_0, labels_2))
-            # print(len(ori_selected_data))
-            # print(len(pd.concat([ori_selected_data, pcbayes_selected_data])))
-            # pc_eff = metrics.silhouette_score(pd.concat([ori_selected_data, pcbayes_selected_data]), con_labels_pc.tolist(), metric='euclidean')
-            # priv_eff = metrics.silhouette_score(pd.concat([ori_selected_data, privbayes_selected_data]), con_labels_priv.tolist(), metric='euclidean')
-            # pc_eff = 1 - abs(pc_eff)
-            # priv_eff = 1 - abs(priv_eff)
-
-            # 新数据中每个点到原始数据 均值点的距离 => 再除以点数算个均值
-
+            # intra_cluster_dis: 新数据中每个点到原始数据均值点的距离的平均值
             ori_center = ori_selected_data.values.mean(axis=0)
             diff1 = pcbayes_selected_data.values - ori_center
             diff2 = privbayes_selected_data.values - ori_center
 
-            pcbayes_KL = np.sum([np.sqrt(item ** 2)
+            pcbayes_intra_cluster_dis = np.sum([np.sqrt(item ** 2)
                                 for item in diff1]) / len(pcbayes_selected_data)
-            privbayes_KL = np.sum([np.sqrt(item ** 2)
+            privbayes_intra_cluster_dis = np.sum([np.sqrt(item ** 2)
                                   for item in diff2]) / len(privbayes_selected_data)
-
-            area_arr = np.array(cons['params']['area'])
-            x_edge = [min(area_arr[:, 0]), max(area_arr[:, 0])]
-            y_edge = [min(area_arr[:, 1]), max(area_arr[:, 1])]
-            margin_nodes = np.array(list(itertools.product(x_edge, y_edge)))
-            diff = margin_nodes - ori_center
-            maxKL = max(np.array([np.sqrt(sum(item ** 2)) for item in diff]))
-            # pcbayes_KL = 1 - pcbayes_KL / maxKL
-            # privbayes_KL = 1 - privbayes_KL / maxKL
 
             # 处理WDis
             pcbayes_WDis = get_w_distance(
                 pcbayes_selected_data.values, ori_selected_data.values)
             privbayes_WDis = get_w_distance(
                 privbayes_selected_data.values, ori_selected_data.values)
-            maxWDis = max(pcbayes_WDis, privbayes_WDis) * 1.1
-            # pcbayes_WDis = 1 - pcbayes_WDis / maxWDis
-            # privbayes_WDis = 1 - privbayes_WDis / maxWDis
-            # pcbayes_patterns.append({
-            #     "id": cons["id"],
-            #     "Concentration": {
-            #         "original": 1,
-            #         "protected": pcbayes_KL
-            #     },
-            #     "dots_stab": {
-            #         "original": 1,
-            #         "protected": 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)
-            #     },
-            # })
-            # privbayes_patterns.append({
-            #     "id": cons["id"],
-            #     "Concentration": {
-            #         "original": 1,
-            #         "protected": privbayes_KL
-            #     },
-            #     "dots_stab": {
-            #         "original": 1,
-            #         "protected": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)
-            #     },
-            # })
-            pcbayes_patterns['distocenterpc'] = float(pcbayes_KL)
-            pcbayes_patterns['wdispc'] = float(pcbayes_WDis)
-            pcbayes_patterns['nodessimpc'] = 1 - abs(
-                len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)
-            pcbayes_patterns['pc_node_num'] = len(pcbayes_selected_data)
-            # pcbayes_patterns['klpc'] = float(pcbayes_KL_ori)    # sdv打开注释
-            # privbayes_patterns['klpriv'] = float(privbayes_KL_ori)  # sdv打开注释
 
-            privbayes_patterns['distocenterpriv'] = float(privbayes_KL)
-            privbayes_patterns['wdispriv'] = float(privbayes_WDis)
-            privbayes_patterns['nodessimpriv'] = 1 - abs(
-                len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)
-            privbayes_patterns['priv_node_num'] = len(privbayes_selected_data)
+            pcbayes_patterns.update({
+                # "klpc": float(pcbayes_KL_ori)    # sdv打开注释
+                "distocenterpc": float(pcbayes_intra_cluster_dis),
+                "wdispc": float(pcbayes_WDis),
+                "nodessimpc": 1 - abs(len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data),
+                "pc_node_num": len(pcbayes_selected_data)
+            })
 
-            privbayes_patterns['cluster_dis_diff'] = abs(
-                float(privbayes_KL) - float(pcbayes_KL))
-            privbayes_patterns['cluster_real_node_num'] = len(
-                ori_selected_data)
+            privbayes_patterns.update({
+                # "klpriv": float(privbayes_KL_ori),   # sdv打开注释
+                "distocenterpriv": float(privbayes_intra_cluster_dis),
+                "wdispriv": float(privbayes_WDis),
+                "nodessimpriv": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data),
+                "priv_node_num": len(privbayes_selected_data),
+                "cluster_intra_dis_diff_pc_priv": abs(float(privbayes_intra_cluster_dis)
+                                                      - float(pcbayes_intra_cluster_dis)),
+                "cluster_real_node_num":len(ori_selected_data)
+            })
 
-            # pcbayes_patterns += [float(pcbayes_KL), float(pcbayes_WDis), 1 - abs(
-            #     len(ori_selected_data) - len(pcbayes_selected_data)) / len(ori_selected_data)]
-            # privbayes_patterns += [float(privbayes_KL), float(privbayes_WDis), 1 - abs(
-            #     len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data)]
-            # pcbayes_patterns = [float(pcbayes_WDis)]
-            # privbayes_patterns = [float(privbayes_WDis)]
         if cons["type"] == "correlation":
+            cons['params']['range'][1] += cons['x_step']    # 右端点向右扩展，作为最后一个端点的区间
             cond11 = pcbayes_df[cons['x_axis']] <= cons['params']['range'][1]
             cond12 = pcbayes_df[cons['x_axis']] >= cons['params']['range'][0]
             cond21 = privbayes_df[cons['x_axis']] <= cons['params']['range'][1]
@@ -934,7 +873,7 @@ def getMetrics(request):
                     cons["x_axis"]).count().sort_index().values
             elif cons['computation'] == 'average':
                 cut_points = np.arange(
-                    cons['params']['range'][0], cons['params']['range'][1] + cons['x_step'] + 1e-6, cons['x_step'])
+                    cons['params']['range'][0], cons['params']['range'][1] + 1e-6, cons['x_step'])
                 cut_points[-1] += 1e-6
                 if selected_legends:
                     pcbayes_selected_data = pcbayes_df[cond11 & cond12 & cond13][[
