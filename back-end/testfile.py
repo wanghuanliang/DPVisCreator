@@ -14,21 +14,21 @@ base_url = "http://0.0.0.0:8000/api/"
 headers = {'content-type': "application/json"}
 session_dic = {'session_id': 'carlwang'}
 
-f = open("constraints_4_619.json")
+f = open("constraints.json")
 model_dic = json.load(f)
 model_dic.update(session_dic)
 df = pd.DataFrame()
 EPS_LIST = [0.1, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 2, 3, 4, 5, 10, 15, 20]
 for BAYES_EPS in EPS_LIST:
     for tt in range(10):
-        dt = requests.get(base_url + "init", data=json.dumps({'session_id': 'carlwang_619', 'bayes_eps': BAYES_EPS}), headers=headers)  # 初始化
+        dt = requests.get(base_url + "init", data=json.dumps({'session_id': 'carlwang', 'bayes_eps': BAYES_EPS}), headers=headers)  # 初始化
         dt = requests.get(base_url + "getBaseData", params=session_dic)  # 初始化
         dt = requests.get(base_url + "getModelData", data=json.dumps(model_dic), headers=headers)  # 初始化
         dt = requests.get(base_url + "getMetrics", params=session_dic)  # 初始化
         cluster_result = json.loads(dt.text)
         print(BAYES_EPS, ": ", cluster_result)
         df = df.append([[BAYES_EPS] + np.array(cluster_result).flatten().tolist()])
-df.to_csv("test_bankdataset_0.csv")
+df.to_csv("test_insurance.csv")
 
 # 数组第一行pcbayes指标，第二行privbayes指标
 

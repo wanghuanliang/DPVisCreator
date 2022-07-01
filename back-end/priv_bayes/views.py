@@ -173,7 +173,7 @@ def initialize(request):
     # BAYES_EPS = 0.1
     session_id = orjson.loads(request.body).get('session_id')
     tmp_data_storage[session_id] = {
-        "DATA_PATH": 'priv_bayes/data/bank_filter1.csv',
+        "DATA_PATH": 'priv_bayes/data/insurance.csv',
         "constraints": None,
         "threshold_value": 20,  # 离散型和数值型分界点
         "bayes_epsilon": BAYES_EPS,  # 贝叶斯网络的隐私预算
@@ -769,8 +769,8 @@ def getMetrics(request):
             margin_nodes = np.array(list(itertools.product(x_edge, y_edge)))
             diff = margin_nodes - ori_center
             maxKL = max(np.array([np.sqrt(sum(item ** 2)) for item in diff]))
-            pcbayes_KL = 1 - pcbayes_KL / maxKL
-            privbayes_KL = 1 - privbayes_KL / maxKL
+            # pcbayes_KL = 1 - pcbayes_KL / maxKL
+            # privbayes_KL = 1 - privbayes_KL / maxKL
 
             # 处理WDis
             pcbayes_WDis = get_w_distance(pcbayes_selected_data.values, ori_selected_data.values)
