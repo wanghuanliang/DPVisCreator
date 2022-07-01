@@ -115,6 +115,9 @@ class DataGenerator(object):
     def save_synthetic_data(self, to_file):
         self.synthetic_dataset.to_csv(to_file, index=False)
 
+    def get_synthetic_data(self):
+        return self.synthetic_dataset
+
 
 if __name__ == '__main__':
     from time import time
