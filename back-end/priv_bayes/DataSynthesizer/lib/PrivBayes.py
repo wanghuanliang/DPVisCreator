@@ -163,7 +163,8 @@ def greedy_bayes(dataset: DataFrame, k: int, epsilon: float, weights: {}):
     attr_to_is_binary = {attr: dataset[attr].unique().size <= 2 for attr in dataset}
 
     print('================ Constructing Bayesian Network (BN) ================')
-    root_attribute = random.choice(dataset.columns)
+    # root_attribute = random.choice(dataset.columns)
+    root_attribute = dataset.columns[2]
     V = [root_attribute]
     rest_attributes = list(dataset.columns)
     rest_attributes.remove(root_attribute)
