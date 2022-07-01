@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from 'react';
+import React, { useState, memo, useMemo } from 'react';
 import * as d3 from 'd3';
 import { ReactComponent as FocusIcon } from "../../assets/focus.svg";
 
@@ -31,6 +31,11 @@ const SankeyPlot = (props) => {
     selectedId,
   } = props;
 
+  // hover
+  const [isHover, setIsHover] = useState(false);
+  const [hoverPos, setHoverPos] = useState([0, 0]);
+  const [hoverContent, setHoverContent] = useState(null);
+
   // xScale
   const xScale = useMemo(() => {
     return d3.scalePoint()
@@ -53,7 +58,8 @@ const SankeyPlot = (props) => {
       proportionData[attr].forEach(obj=> {
         let num = obj.num;
         let height = num / totalNum * lineTotalHeight;
-        linePos[attr].push({ start: start, height: height })
+        let content = JSON.stringify(obj);
+        linePos[attr].push({ start: start, height: height, content: content })
         currentStartPos[attr].push(start);
         start += height + intervalHeight;
       })
@@ -239,6 +245,7 @@ const SankeyPlot = (props) => {
                 linePos[attr].map(info => {
                   const y = info.start;
                   const height = info.height;
+                  // 增加hover信息
                   return <rect
                     key={attr+info.start}
                     x={x}
@@ -247,11 +254,27 @@ const SankeyPlot = (props) => {
                     height={height}
                     fill='#fff'
                     stroke='#999'
+                    onMouseMove={() => {
+                      setIsHover(true);
+                      setHoverPos([x, y + height / 2]);
+                      setHoverContent(info.content);
+                    }}
+                    onMouseLeave={() => {
+                      setIsHover(false);
+                    }}
                   ></rect>
                 })
               }
             </g>
           })
+        }
+        {/* 绘制hover */}
+        {
+          isHover && <text
+            x={hoverPos[0]}
+            y={hoverPos[1]}
+            // fill="red"
+          >{hoverContent}</text>
         }
         {/* 绘制focus */}
         <g transform='translate(0, -8)'>
