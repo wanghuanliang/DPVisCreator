@@ -1,7 +1,13 @@
 # DPVisCreator
-This is the demonstration system for the paper "DPVisCreator: Incorporating pattern constraints to privacy-preserving visualization via differential privacy".
-![image](https://github.com/wanghuanliang/images/blob/main/VIS2022-System-22.png?raw=true)
+
+Here is the official implementation of system prototype in paper _"DPVisCreator: Incorporating pattern constraints to privacy-preserving visualization via differential privacy"_.
+
+We implemented the frontend and backend seprately. They could be found in the folder [`/front-end`](front-end/) and [`/back-end`](back-end/).
+
+![system](./system.png)
+
 ## Operating Instruction
+
 - Run the backend locally
   - cd back-end
   - pip install -r requirements.txt
