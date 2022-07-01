@@ -65,11 +65,15 @@ class DataDescriber:
 
     def describe_dataset_in_random_mode(self,
                                         dataset_file: str,
-                                        attribute_to_datatype: Dict[str, DataType] = None,
-                                        attribute_to_is_categorical: Dict[str, bool] = None,
-                                        attribute_to_is_candidate_key: Dict[str, bool] = None,
+                                        attribute_to_datatype: Dict[str,
+                                                                    DataType] = None,
+                                        attribute_to_is_categorical: Dict[str,
+                                                                          bool] = None,
+                                        attribute_to_is_candidate_key: Dict[str,
+                                                                            bool] = None,
                                         categorical_attribute_domain_file: str = None,
-                                        numerical_attribute_ranges: Dict[str, List] = None,
+                                        numerical_attribute_ranges: Dict[str,
+                                                                         List] = None,
                                         seed=0,
                                         randomize=False):
         attribute_to_datatype = attribute_to_datatype or {}
@@ -78,12 +82,14 @@ class DataDescriber:
         numerical_attribute_ranges = numerical_attribute_ranges or {}
 
         if categorical_attribute_domain_file:
-            categorical_attribute_to_domain = utils.read_json_file(categorical_attribute_domain_file)
+            categorical_attribute_to_domain = utils.read_json_file(
+                categorical_attribute_domain_file)
         else:
             categorical_attribute_to_domain = {}
 
         # utils.set_random_seed(randomize, seed)
-        self.attr_to_datatype = {attr: DataType(datatype) for attr, datatype in attribute_to_datatype.items()}
+        self.attr_to_datatype = {attr: DataType(
+            datatype) for attr, datatype in attribute_to_datatype.items()}
         self.attr_to_is_categorical = attribute_to_is_categorical
         self.attr_to_is_candidate_key = attribute_to_is_candidate_key
         self.read_dataset_from_csv(dataset_file)
@@ -94,25 +100,32 @@ class DataDescriber:
         for column in self.attr_to_column.values():
             attr_name = column.name
             if attr_name in categorical_attribute_to_domain:
-                column.infer_domain(categorical_domain=categorical_attribute_to_domain[attr_name])
+                column.infer_domain(
+                    categorical_domain=categorical_attribute_to_domain[attr_name])
             elif attr_name in numerical_attribute_ranges:
-                column.infer_domain(numerical_range=numerical_attribute_ranges[attr_name])
+                column.infer_domain(
+                    numerical_range=numerical_attribute_ranges[attr_name])
             else:
                 column.infer_domain()
 
         # record attribute information in json format
         self.data_description['attribute_description'] = {}
         for attr, column in self.attr_to_column.items():
-            self.data_description['attribute_description'][attr] = column.to_json()
+            self.data_description['attribute_description'][attr] = column.to_json(
+            )
 
     def describe_dataset_in_independent_attribute_mode(self,
                                                        dataset_file,
                                                        epsilon=0.1,
-                                                       attribute_to_datatype: Dict[str, DataType] = None,
-                                                       attribute_to_is_categorical: Dict[str, bool] = None,
-                                                       attribute_to_is_candidate_key: Dict[str, bool] = None,
+                                                       attribute_to_datatype: Dict[str,
+                                                                                   DataType] = None,
+                                                       attribute_to_is_categorical: Dict[str,
+                                                                                         bool] = None,
+                                                       attribute_to_is_candidate_key: Dict[str,
+                                                                                           bool] = None,
                                                        categorical_attribute_domain_file: str = None,
-                                                       numerical_attribute_ranges: Dict[str, List] = None,
+                                                       numerical_attribute_ranges: Dict[str,
+                                                                                        List] = None,
                                                        seed=0,
                                                        randomize=False):
         self.describe_dataset_in_random_mode(dataset_file,
@@ -131,19 +144,25 @@ class DataDescriber:
         # record attribute information in json format
         self.data_description['attribute_description'] = {}
         for attr, column in self.attr_to_column.items():
-            self.data_description['attribute_description'][attr] = column.to_json()
+            self.data_description['attribute_description'][attr] = column.to_json(
+            )
 
     def describe_dataset_in_correlated_attribute_mode(self,
                                                       dataset_file,
                                                       k=0,
                                                       epsilon=0.1,
-                                                      attribute_to_datatype: Dict[str, DataType] = None,
-                                                      attribute_to_is_categorical: Dict[str, bool] = None,
-                                                      attribute_to_is_candidate_key: Dict[str, bool] = None,
+                                                      attribute_to_datatype: Dict[str,
+                                                                                  DataType] = None,
+                                                      attribute_to_is_categorical: Dict[str,
+                                                                                        bool] = None,
+                                                      attribute_to_is_candidate_key: Dict[str,
+                                                                                          bool] = None,
                                                       categorical_attribute_domain_file: str = None,
-                                                      numerical_attribute_ranges: Dict[str, List] = None,
+                                                      numerical_attribute_ranges: Dict[str,
+                                                                                       List] = None,
                                                       seed=0,
-                                                      weights: Dict[str, Dict] = None,
+                                                      weights: Dict[str,
+                                                                    Dict] = None,
                                                       randomize=False,
                                                       df_selected=None):
         """Generate dataset description using correlated attribute mode.
@@ -191,9 +210,11 @@ class DataDescriber:
                                                             randomize)
         self.df_encoded = self.encode_dataset_into_binning_indices()
         if self.df_encoded.shape[1] < 2:
-            raise Exception("Correlated Attribute Mode requires at least 2 attributes(i.e., columns) in dataset.")
+            raise Exception(
+                "Correlated Attribute Mode requires at least 2 attributes(i.e., columns) in dataset.")
 
-        self.bayesian_network = greedy_bayes(self.df_encoded, k, epsilon / 2, weights)
+        self.bayesian_network = greedy_bayes(
+            self.df_encoded, k, epsilon / 2, weights)
         self.data_description['bayesian_network'] = self.bayesian_network
         # self.data_description['conditional_probabilities'] = construct_noisy_conditional_distributions(
         #         self.bayesian_network, self.df_encoded, 0)
@@ -207,10 +228,13 @@ class DataDescriber:
                              dataset_file,
                              epsilon=0.1,
                              attribute_to_datatype: Dict[str, DataType] = None,
-                             attribute_to_is_categorical: Dict[str, bool] = None,
-                             attribute_to_is_candidate_key: Dict[str, bool] = None,
+                             attribute_to_is_categorical: Dict[str,
+                                                               bool] = None,
+                             attribute_to_is_candidate_key: Dict[str,
+                                                                 bool] = None,
                              categorical_attribute_domain_file: str = None,
-                             numerical_attribute_ranges: Dict[str, List] = None,
+                             numerical_attribute_ranges: Dict[str,
+                                                              List] = None,
                              seed=0,
                              randomize=False):
         self.describe_dataset_in_independent_attribute_mode(dataset_file,
@@ -224,7 +248,8 @@ class DataDescriber:
                                                             randomize)
         self.df_encoded = self.encode_dataset_into_binning_indices()
         if self.df_encoded.shape[1] < 2:
-            raise Exception("Correlated Attribute Mode requires at least 2 attributes(i.e., columns) in dataset.")
+            raise Exception(
+                "Correlated Attribute Mode requires at least 2 attributes(i.e., columns) in dataset.")
 
     def get_mutual_info_list(self, weights):
         # cur_ids: 当前pattern选取的数据下标
@@ -233,7 +258,8 @@ class DataDescriber:
 
     def read_dataset_from_csv(self, file_name=None):
         try:
-            self.df_input = read_csv(file_name, skipinitialspace=True, na_values=self.null_values)
+            self.df_input = read_csv(
+                file_name, skipinitialspace=True, na_values=self.null_values)
         except (UnicodeDecodeError, NameError):
             self.df_input = read_csv(file_name, skipinitialspace=True, na_values=self.null_values,
                                      encoding='latin1')
@@ -243,11 +269,14 @@ class DataDescriber:
         self.df_input.dropna(axis=1, how='all')
         attributes_after = set(self.df_input.columns)
         if len(attributes_before) > len(attributes_after):
-            print(f'Empty columns are removed, including {attributes_before - attributes_after}.')
+            print(
+                f'Empty columns are removed, including {attributes_before - attributes_after}.')
 
     def infer_attribute_data_types(self):
-        attributes_with_unknown_datatype = set(self.df_input.columns) - set(self.attr_to_datatype)
-        inferred_numerical_attributes = utils.infer_numerical_attributes_in_dataframe(self.df_input)
+        attributes_with_unknown_datatype = set(
+            self.df_input.columns) - set(self.attr_to_datatype)
+        inferred_numerical_attributes = utils.infer_numerical_attributes_in_dataframe(
+            self.df_input)
 
         for attr in attributes_with_unknown_datatype:
             column_dropna = self.df_input[attr].dropna()
@@ -282,7 +311,8 @@ class DataDescriber:
             else:
                 self.attr_to_is_candidate_key[attr] = self.df_input[attr].is_unique
 
-        candidate_keys = {attr for attr, is_key in self.attr_to_is_candidate_key.items() if is_key}
+        candidate_keys = {
+            attr for attr, is_key in self.attr_to_is_candidate_key.items() if is_key}
 
         # find all categorical attributes.
         for attr in all_attributes - set(self.attr_to_is_categorical):
@@ -295,7 +325,8 @@ class DataDescriber:
 
         attributes_in_BN = [attr for attr in self.df_input if
                             attr not in candidate_keys and attr not in non_categorical_string_attributes]
-        non_categorical_string_attributes = list(non_categorical_string_attributes)
+        non_categorical_string_attributes = list(
+            non_categorical_string_attributes)
 
         self.data_description['meta'] = {"num_tuples": self.df_input.shape[0],
                                          "num_attributes": self.df_input.shape[1],
@@ -323,7 +354,8 @@ class DataDescriber:
             data_type = self.attr_to_datatype[attr]
             is_candidate_key = self.attr_to_is_candidate_key[attr]
             is_categorical = self.attr_to_is_categorical[attr]
-            paras = (attr, is_candidate_key, is_categorical, self.histogram_bins, self.df_input[attr])
+            paras = (attr, is_candidate_key, is_categorical,
+                     self.histogram_bins, self.df_input[attr])
             if data_type is DataType.INTEGER:
                 self.attr_to_column[attr] = IntegerAttribute(*paras)
             elif data_type is DataType.FLOAT:
@@ -333,7 +365,8 @@ class DataDescriber:
             elif data_type is DataType.STRING:
                 self.attr_to_column[attr] = StringAttribute(*paras)
             elif data_type is DataType.SOCIAL_SECURITY_NUMBER:
-                self.attr_to_column[attr] = SocialSecurityNumberAttribute(*paras)
+                self.attr_to_column[attr] = SocialSecurityNumberAttribute(
+                    *paras)
             else:
                 raise Exception(f'The DataType of {attr} is unknown.')
 
@@ -347,7 +380,8 @@ class DataDescriber:
         """Before constructing Bayesian network, encode input dataset into binning indices."""
         encoded_dataset = DataFrame()
         for attr in self.data_description['meta']['attributes_in_BN']:
-            encoded_dataset[attr] = self.attr_to_column[attr].encode_values_into_bin_idx()
+            encoded_dataset[attr] = self.attr_to_column[attr].encode_values_into_bin_idx(
+            )
         return encoded_dataset
 
     def save_dataset_description_to_file(self, file_name):
