@@ -69,6 +69,6 @@ for BAYES_EPS in EPS_LIST:
             df = df.append(result_dict, ignore_index=True)
 
             # df = df.append([[BAYES_EPS] + list(WEIGHT_LIST) + np.array(cluster_result).flatten().tolist()])
-df.to_csv("shopping_3ptns_base1_iter5_eps2_with_weight_9_composition.csv")
+df.to_csv("loan_3ptns_base1_iter5_eps2_with_weight_9_composition.csv")
 
 # 数组第一行pcbayes指标，第二行privbayes指标

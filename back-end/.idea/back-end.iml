@@ -17,7 +17,7 @@
       <excludeFolder url="file://$MODULE_DIR$/priv_bayes/DataSynthesizer/.ipynb_checkpoints" />
       <excludeFolder url="file://$MODULE_DIR$/priv_bayes/out" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.9 (2)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.8 (vis2022)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PyDocumentationSettings">

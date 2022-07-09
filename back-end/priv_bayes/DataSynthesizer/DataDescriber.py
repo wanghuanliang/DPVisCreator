@@ -214,12 +214,12 @@ class DataDescriber:
                 "Correlated Attribute Mode requires at least 2 attributes(i.e., columns) in dataset.")
 
         self.bayesian_network = greedy_bayes(
-            self.df_encoded, k, epsilon / 2, weights)
+            self.df_encoded, k, epsilon/2, weights)
         self.data_description['bayesian_network'] = self.bayesian_network
         # self.data_description['conditional_probabilities'] = construct_noisy_conditional_distributions(
         #         self.bayesian_network, self.df_encoded, 0)
         self.data_description['conditional_probabilities'] = construct_noisy_conditional_distributions(
-            self.bayesian_network, self.df_encoded, epsilon / 2)
+            self.bayesian_network, self.df_encoded, epsilon/2)
 
 # 第一步精确建网络 看全体数据与选择数据对结构的影响
 # 第二步带上noise建CPT，计算生成数据的指标 (不同结构对生成数据的影响)

@@ -7,7 +7,7 @@ import copy
 import random
 from sklearn.metrics import ndcg_score
 from sdv.evaluation import evaluate  # sdv打开注释
-from priv_bayes.kl import get_w_distance
+from priv_bayes.kl import get_w_distance, KLdivergence
 from priv_bayes.DataSynthesizer.DataDescriber import DataDescriber
 from priv_bayes.DataSynthesizer.DataGenerator import DataGenerator
 from priv_bayes.DataSynthesizer.lib.utils import display_bayesian_network
@@ -63,13 +63,14 @@ def point_inside_polygon(x, y, poly, include_edges=True):
 
 
 # 参数
-# BAYES_LIST = [0]
+# BAYES_LIST = [5]
+# BAYES_LIST = [0.1, 0.5, 1,  3,  5, 7, 9, 11, 13, 15, 17, 19, 21]
 BAYES_LIST = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6,
               0.7, 0.8, 0.9, 1, 2, 3, 4, 5, 10, 15, 20]
 BASE_WEIGHT = 6
 
 # 读入原始数据
-DATA_PATH = "priv_bayes/data/adult_filter1.csv"
+DATA_PATH = "priv_bayes/data/loan_filter1.csv"
 SELECTED_DATA_PATH = "selected_data.csv"
 DES_PATH = "description.json"
 DES_SELECTED_PATH = "description_selected.json"
@@ -77,7 +78,9 @@ DES_SELECTED_PATH = "description_selected.json"
 df = pd.read_csv(DATA_PATH)
 
 # 保存筛选过后的数据
-f = open("constraints_staged.json")
+# f = open("constraints_staged.json")
+f = open("constraints_staged_cluster.json")
+# f = open("constraints_staged_order.json")
 constraint = json.load(f)['constraints'][0]
 selected_df = df.iloc[constraint['data']]
 selected_df.to_csv(SELECTED_DATA_PATH, index=False)
@@ -132,31 +135,41 @@ if __name__ == '__main__':
         cur_scheme_weights[idx] = dt
 
     for bayes_epsilon in BAYES_LIST:
-        for iter in range(10):
-            # 生成原始数据的描述文件
-            describer = DataDescriber(
-                histogram_bins=15, category_threshold=20)
-            describer.describe_dataset_in_correlated_attribute_mode(dataset_file=DATA_PATH,
-                                                                    epsilon=bayes_epsilon,
-                                                                    k=2,
-                                                                    attribute_to_is_categorical={},
-                                                                    attribute_to_is_candidate_key={},
-                                                                    )
-            describer.save_dataset_description_to_file(DES_PATH)
-            display_bayesian_network(describer.bayesian_network)
+        # rs = random.randint(1, 65536)
 
-            # 生成新数据的描述文件
-            describer_selected = DataDescriber(
-                histogram_bins=15, category_threshold=20)
-            describer_selected.describe_dataset_in_correlated_attribute_mode(dataset_file=DATA_PATH,  # 使用原数据构建概率表
+        set_random_seed(int(bayes_epsilon*10))
+        # set_random_seed(rs)
+        # 生成原始数据的描述文件
+        describer = DataDescriber(
+            histogram_bins=15, category_threshold=20)
+        describer.describe_dataset_in_correlated_attribute_mode(dataset_file=DATA_PATH,
+                                                                epsilon=bayes_epsilon,
+                                                                k=2,
+                                                                attribute_to_is_categorical={},
+                                                                attribute_to_is_candidate_key={},
+                                                                )
+        describer.save_dataset_description_to_file(DES_PATH)
+        display_bayesian_network(describer.bayesian_network)
+
+        set_random_seed(int(bayes_epsilon*10))
+        # set_random_seed(rs)
+        # 生成新数据的描述文件
+        describer_selected = DataDescriber(
+            histogram_bins=10, category_threshold=20)
+        describer_selected.describe_dataset_in_correlated_attribute_mode(dataset_file=DATA_PATH,  # 使用原数据构建概率表
                                                                             epsilon=bayes_epsilon,
                                                                             k=2,
                                                                             attribute_to_is_categorical={},
                                                                             attribute_to_is_candidate_key={},
                                                                             weights=cur_scheme_weights  # 加上weights建表
                                                                             )  # 使用df_selected数据建网络
-            describer_selected.save_dataset_description_to_file(DES_SELECTED_PATH)
-            display_bayesian_network(describer_selected.bayesian_network)
+        describer_selected.save_dataset_description_to_file(
+            DES_SELECTED_PATH)
+        display_bayesian_network(describer_selected.bayesian_network)
+
+        # for iter in range(2):
+        for iter in range(10):
+            
             # res_isomorphic = is_isomorphic(describer.bayesian_network, describer_selected.bayesian_network)
             # result_df.append({
             #     "bayes_epsilon": bayes_epsilon,
@@ -173,6 +186,8 @@ if __name__ == '__main__':
                 len(df), DES_SELECTED_PATH, 0)
             synthetic_ori = generator.get_synthetic_data()
             synthetic_p = generator_selected.get_synthetic_data()
+            # synthetic_ori.to_csv("result_data/synthetic_ori"+str(iter)+".csv")
+            # synthetic_p.to_csv("result_data/synthetic_p"+str(iter)+".csv")
 
             p_patterns = {}
             privbayes_patterns = {}
@@ -185,6 +200,7 @@ if __name__ == '__main__':
                 base_dt_y = synthetic_ori[constraint["y_axis"]]
                 ori_dt_x = df[constraint["x_axis"]]
                 ori_dt_y = df[constraint["y_axis"]]
+                
                 if constraint["params"]["type"] == "rect":
                     p_selected_data = synthetic_p[(dt_x >= area[0][0]) & (dt_x <= area[1][0]) & (dt_y >= area[1][1])
                                                   & (dt_y <= area[0][1])]
@@ -211,6 +227,7 @@ if __name__ == '__main__':
                     p_selected_data = synthetic_p.iloc[p_selected_data]
                     privbayes_selected_data = synthetic_ori.iloc[privbayes_selected_data]
                     ori_selected_data = df.iloc[ori_selected_data]
+
                 p_selected_data = p_selected_data[[
                     constraint["x_axis"], constraint["y_axis"]]]
                 privbayes_selected_data = privbayes_selected_data[[
@@ -232,9 +249,13 @@ if __name__ == '__main__':
                     p_selected_data.values, ori_selected_data.values)
                 privbayes_WDis = get_w_distance(
                     privbayes_selected_data.values, ori_selected_data.values)
+                
+
                 # 使用sdv库计算KL散度
+                # p_KL = KLdivergence(ori_selected_data, p_selected_data)
                 p_KL = evaluate(p_selected_data, ori_selected_data, metrics=[
                     'ContinuousKLDivergence'])   # sdv打开注释
+                # privbayes_KL = KLdivergence(ori_selected_data, privbayes_selected_data)
                 privbayes_KL = evaluate(privbayes_selected_data, ori_selected_data, metrics=[
                     'ContinuousKLDivergence'])  # sdv打开注释
 
@@ -411,12 +432,17 @@ if __name__ == '__main__':
                     len(privbayes_selected_data))
                 ori_selected_data['index'] = range(len(ori_selected_data))
                 ori_arr = ori_selected_data[[constraint['x_axis'], 'index']].groupby(
-                    constraint['x_axis']).count().sort_index().values.flatten()
+                    constraint['x_axis']).count().fillna(0).sort_index().values.flatten()
                 pcbayes_arr = p_selected_data[[constraint['x_axis'], 'index']].groupby(
-                    constraint['x_axis']).count().sort_index().values.flatten()
+                    constraint['x_axis']).count().fillna(0).sort_index().values.flatten()
                 privbayes_arr = privbayes_selected_data[[constraint['x_axis'], 'index']].groupby(
-                    constraint['x_axis']).count().sort_index().values.flatten()
-
+                    constraint['x_axis']).count().fillna(0).sort_index().values.flatten()
+                if len(ori_arr) == 1:
+                    ori_arr = np.append(ori_arr, -1)
+                if len(pcbayes_arr) == 1:
+                    pcbayes_arr = np.append(pcbayes_arr, -1)
+                if len(privbayes_arr) == 1:
+                    privbayes_arr = np.append(privbayes_arr, -1)
                 p_patterns.update({
                     "ndcgpc": float(ndcg_score([ori_arr], [pcbayes_arr])),
                     "diffpc": int(np.sum(np.abs(ori_arr - pcbayes_arr))),
@@ -439,5 +465,7 @@ if __name__ == '__main__':
             })
             print(p_patterns)
             result_df = result_df.append(p_patterns, ignore_index=True)
+        synthetic_ori.to_csv("result_data/synthetic_ori_"+str(bayes_epsilon)+".csv")
+        synthetic_p.to_csv("result_data/synthetic_p_"+str(bayes_epsilon)+".csv")
 
-    result_df.to_csv("epsilon_0.1-20_adult_cluster.csv")
+    result_df.to_csv("result_cluster.csv")

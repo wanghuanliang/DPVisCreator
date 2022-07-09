@@ -190,7 +190,7 @@ def initialize(request):
 
 
     tmp_data_storage[session_id] = {
-        "DATA_PATH": 'priv_bayes/data/shopping_filter1.csv',
+        "DATA_PATH": 'priv_bayes/data/loan_filter1.csv',
         "constraints": None,
         "threshold_value": 20,  # 离散型和数值型分界点
         "bayes_epsilon": BAYES_EPS,  # 贝叶斯网络的隐私预算
@@ -330,7 +330,7 @@ def setWeights(request):
     return HttpResponse(orjson.dumps(ret))
 
 
-def get_bayes_with_weights(session_id):
+def get_bayes_with_weights(session_id, bin_num=15):
     description_file = "priv_bayes/out/dscrpt.json"
     ORI_DATA = tmp_data_storage[session_id]['ORI_DATA']
     BASE_WEIGHT = tmp_data_storage[session_id]['BASE_WEIGHT']
@@ -377,7 +377,7 @@ def get_bayes_with_weights(session_id):
     tmp_file_path = "priv_bayes/data/1" + session_id + ".csv"
     ORI_DATA.to_csv(tmp_file_path, index=False)
     describer = DataDescriber(
-        histogram_bins=15, category_threshold=threshold_value)
+        histogram_bins=bin_num, category_threshold=threshold_value)
     describer.describe_dataset_in_correlated_attribute_mode(dataset_file=tmp_file_path,
                                                             epsilon=bayes_epsilon,
                                                             k=3,
@@ -428,7 +428,7 @@ def getBaseData(request):
             "status": "failed",
             "err_msg": "disconnected with the server"
         }))
-    ret = get_bayes_with_weights(session_id)
+    ret = get_bayes_with_weights(session_id, 15)
     description_file = "priv_bayes/out/dscrpt.json"
     synthetic_data = "priv_bayes/out/syndata.csv"
     bayes_epsilon = tmp_data_storage[session_id]['bayes_epsilon']
@@ -498,7 +498,7 @@ def getMetrics(request):
     constraints = tmp_data_storage[session_id]['constraints']
     base_scheme = tmp_data_storage[session_id]['BASE_SCHEME']
 
-    get_bayes_with_weights(session_id)  # 根据当前tmp_data_storage中的weight
+    get_bayes_with_weights(session_id, 10)  # 根据当前tmp_data_storage中的weight
 
     generator = DataGenerator()
     generator.generate_dataset_in_correlated_attribute_mode(

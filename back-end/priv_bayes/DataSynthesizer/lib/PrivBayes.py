@@ -78,21 +78,24 @@ def usefulness_minus_target(k, num_attributes, num_tuples, target_usefulness=5, 
         print('here')
         usefulness = target_usefulness
     else:
-        usefulness = num_tuples * epsilon / ((num_attributes - k) * (2 ** (k + 3)))  # PrivBayes Lemma 3
+        usefulness = num_tuples * epsilon / \
+            ((num_attributes - k) * (2 ** (k + 3)))  # PrivBayes Lemma 3
     return usefulness - target_usefulness
 
 
 def calculate_k(num_attributes, num_tuples, target_usefulness=4, epsilon=0.1):
     """Calculate the maximum degree when constructing Bayesian networks. See PrivBayes Lemma 3."""
     default_k = 3
-    initial_usefulness = usefulness_minus_target(default_k, num_attributes, num_tuples, 0, epsilon)
+    initial_usefulness = usefulness_minus_target(
+        default_k, num_attributes, num_tuples, 0, epsilon)
     if initial_usefulness > target_usefulness:
         return default_k
     else:
         arguments = (num_attributes, num_tuples, target_usefulness, epsilon)
         warnings.filterwarnings("error")
         try:
-            ans = fsolve(usefulness_minus_target, np.array([int(num_attributes / 2)]), args=arguments)[0]
+            ans = fsolve(usefulness_minus_target, np.array(
+                [int(num_attributes / 2)]), args=arguments)[0]
             ans = ceil(ans)
         except RuntimeWarning:
             print("Warning: k is not properly computed!")
@@ -106,6 +109,7 @@ def worker_mutual(paras):
     axis1, axis2, dataset, weights = paras
     mi = mutual_information(dataset[axis1], dataset[[axis2]], weights)
     return axis1, axis2, mi
+
 
 def worker(paras):
     child, V, num_parents, split, dataset, weights = paras
@@ -138,7 +142,8 @@ def get_mutual_info_list(dataset, weights, k=2):
     """
     axes = dataset.columns.tolist()
     with Pool() as pool:
-        res_list = pool.map(worker_mutual, [(axis1, axis2, dataset, weights) for axis1, axis2 in product(axes, axes) if axis1 != axis2])
+        res_list = pool.map(worker_mutual, [(axis1, axis2, dataset, weights)
+                            for axis1, axis2 in product(axes, axes) if axis1 != axis2])
 
     return res_list
 
@@ -160,11 +165,14 @@ def greedy_bayes(dataset: DataFrame, k: int, epsilon: float, weights: {}):
     if not k:
         k = calculate_k(num_attributes, num_tuples)
 
-    attr_to_is_binary = {attr: dataset[attr].unique().size <= 2 for attr in dataset}
+    attr_to_is_binary = {
+        attr: dataset[attr].unique().size <= 2 for attr in dataset}
 
     print('================ Constructing Bayesian Network (BN) ================')
     # root_attribute = random.choice(dataset.columns)
-    root_attribute = dataset.columns[2]
+    # print(dataset.columns)
+    # root_attribute = dataset.columns[5] # ['age', 'sex', 'bmi', 'children', 'smoker', 'region', 'charges']
+    root_attribute = dataset.columns[1]
     V = [root_attribute]
     rest_attributes = list(dataset.columns)
     rest_attributes.remove(root_attribute)
@@ -187,7 +195,8 @@ def greedy_bayes(dataset: DataFrame, k: int, epsilon: float, weights: {}):
         if epsilon:
             sampling_distribution = exponential_mechanism(epsilon, mutual_info_list, parents_pair_list, attr_to_is_binary,
                                                           num_tuples, num_attributes)
-            idx = np.random.choice(list(range(len(mutual_info_list))), p=sampling_distribution)
+            idx = np.random.choice(
+                list(range(len(mutual_info_list))), p=sampling_distribution)
         else:
             idx = mutual_info_list.index(max(mutual_info_list))
 
@@ -206,7 +215,8 @@ def exponential_mechanism(epsilon, mutual_info_list, parents_pair_list, attr_to_
     """Applied in Exponential Mechanism to sample outcomes."""
     delta_array = []
     for (child, parents) in parents_pair_list:
-        sensitivity = calculate_sensitivity(num_tuples, child, parents, attr_to_is_binary)
+        sensitivity = calculate_sensitivity(
+            num_tuples, child, parents, attr_to_is_binary)
         delta = calculate_delta(num_attributes, sensitivity, epsilon)
         delta_array.append(delta)
 
@@ -229,7 +239,8 @@ def get_noisy_distribution_of_attributes(attributes, encoded_dataset, epsilon=0.
     data['count'] = 1
     stats = data.groupby(attributes).sum()
 
-    iterables = [range(int(encoded_dataset[attr].max()) + 1) for attr in attributes]
+    iterables = [range(int(encoded_dataset[attr].max()) + 1)
+                 for attr in attributes]
     products = product(*iterables)
 
     def grouper_it(iterable, n):
@@ -247,7 +258,8 @@ def get_noisy_distribution_of_attributes(attributes, encoded_dataset, epsilon=0.
             full_space = DataFrame(columns=attributes, data=list(item))
         else:
             data_frame_append = DataFrame(columns=attributes, data=list(item))
-            full_space = full_space.append(data_frame_append, ignore_index=True)
+            full_space = full_space.append(
+                data_frame_append, ignore_index=True)
 
     stats.reset_index(inplace=True)
     stats = merge(full_space, stats, how='left')
@@ -256,8 +268,10 @@ def get_noisy_distribution_of_attributes(attributes, encoded_dataset, epsilon=0.
     if epsilon:
         k = len(attributes) - 1
         num_tuples, num_attributes = encoded_dataset.shape
-        noise_para = laplace_noise_parameter(k, num_attributes, num_tuples, epsilon)
-        laplace_noises = np.random.laplace(0, scale=noise_para, size=stats.index.size)
+        noise_para = laplace_noise_parameter(
+            k, num_attributes, num_tuples, epsilon)
+        laplace_noises = np.random.laplace(
+            0, scale=noise_para, size=stats.index.size)
         stats['count'] += laplace_noises
         stats.loc[stats['count'] < 0, 'count'] = 0
 
@@ -276,22 +290,28 @@ def construct_noisy_conditional_distributions(bayesian_network, encoded_dataset,
     for child, _ in bayesian_network[:k]:
         kplus1_attributes.append(child)
 
-    noisy_dist_of_kplus1_attributes = get_noisy_distribution_of_attributes(kplus1_attributes, encoded_dataset, epsilon)
+    noisy_dist_of_kplus1_attributes = get_noisy_distribution_of_attributes(
+        kplus1_attributes, encoded_dataset, epsilon)
 
     # generate noisy distribution of root attribute.
-    root_stats = noisy_dist_of_kplus1_attributes.loc[:, [root, 'count']].groupby(root).sum()['count']
-    conditional_distributions[root] = normalize_given_distribution(root_stats).tolist()
+    root_stats = noisy_dist_of_kplus1_attributes.loc[:, [
+        root, 'count']].groupby(root).sum()['count']
+    conditional_distributions[root] = normalize_given_distribution(
+        root_stats).tolist()
 
     for idx, (child, parents) in enumerate(bayesian_network):
         conditional_distributions[child] = {}
 
         if idx <= k - 2:
-            stats = noisy_dist_of_kplus1_attributes.copy().loc[:, parents + [child, 'count']]
+            stats = noisy_dist_of_kplus1_attributes.copy(
+            ).loc[:, parents + [child, 'count']]
             stats = stats.groupby(parents + [child], as_index=False).sum()
         elif idx == k - 1:
-            stats = noisy_dist_of_kplus1_attributes.loc[:, parents + [child, 'count']]
+            stats = noisy_dist_of_kplus1_attributes.loc[:,
+                                                        parents + [child, 'count']]
         else:
-            stats = get_noisy_distribution_of_attributes(parents + [child], encoded_dataset, epsilon)
+            stats = get_noisy_distribution_of_attributes(
+                parents + [child], encoded_dataset, epsilon)
             stats = stats.loc[:, parents + [child, 'count']]
 
         for parents_instance, stats_sub in stats.groupby(parents):
