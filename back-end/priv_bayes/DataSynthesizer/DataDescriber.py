@@ -195,12 +195,21 @@ class DataDescriber:
 
         # self.bayesian_network = greedy_bayes(self.df_encoded, k, epsilon / 2, weights)
         if df_selected is not None:
-            self.bayesian_network = greedy_bayes(df_selected, k, 0, weights)
+            df_selected_encoded = DataFrame()
+            for attr in self.data_description['meta']['attributes_in_BN']:
+                df_selected_encoded[attr] = self.attr_to_column[attr].encode_values_into_bin_idx()
+            df_selected_encoded = df_selected_encoded.iloc[list(df_selected.index)]
+            self.bayesian_network = greedy_bayes(df_selected_encoded, k, 0, weights)
+            # self.bayesian_network = [('capital.loss', ['fnlwgt']), ('income', ['capital.loss']), ('education.num', ['capital.loss']), ('hours.per.week', ['education.num']), ('workclass', ['education.num']), ('age', ['education.num'])]
+            # self.bayesian_network = [('fnlwgt', ['capital.loss']), ('age', ['fnlwgt']), ('hours.per.week', ['age']), ('education.num', ['hours.per.week']), ('workclass', ['education.num']), ('income', ['workclass'])]
         else:
             self.bayesian_network = greedy_bayes(self.df_encoded, k, 0, weights)
+            # self.bayesian_network = [('education.num', ['age']), ('workclass', ['education.num']), ('income', ['education.num']), ('hours.per.week', ['education.num']), ('capital.loss', ['workclass']), ('fnlwgt', ['education.num'])]
+            # self.bayesian_network = [('age', ['capital.loss']), ('hours.per.week', ['age']), ('education.num', ['hours.per.week']), ('workclass', ['education.num']), ('income', ['workclass']), ('fnlwgt', ['income'])]
+        print(self.bayesian_network)
         self.data_description['bayesian_network'] = self.bayesian_network
         self.data_description['conditional_probabilities'] = construct_noisy_conditional_distributions(
-                self.bayesian_network, self.df_encoded, 0)
+                self.bayesian_network, self.df_encoded, epsilon)
         # self.data_description['conditional_probabilities'] = construct_noisy_conditional_distributions(
         #     self.bayesian_network, self.df_encoded, epsilon / 2)
 

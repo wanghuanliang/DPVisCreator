@@ -2,6 +2,7 @@ import json
 import numpy as np
 import pandas as pd
 from dtw import dtw
+import random
 from sklearn.metrics import ndcg_score
 from priv_bayes.kl import get_w_distance
 from priv_bayes.DataSynthesizer.DataDescriber import DataDescriber
@@ -9,6 +10,11 @@ from priv_bayes.DataSynthesizer.DataGenerator import DataGenerator
 from priv_bayes.DataSynthesizer.lib.utils import display_bayesian_network
 
 # 判断点是否在多边形内
+
+def set_random_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+
 def point_inside_polygon(x, y, poly, include_edges=True):
     '''
     Test if point (x,y) is inside polygon poly.
@@ -52,13 +58,13 @@ def point_inside_polygon(x, y, poly, include_edges=True):
 
 
 # 参数
-bayes_epsilon = 2
+bayes_epsilon = 6
 
 # 读入原始数据
-DATA_PATH = "priv_bayes/data/shopping_filter1.csv"
-SELECTED_DATA_PATH = "selected_data_corr.csv"
-DES_PATH = "description_corr.json"
-DES_SELECTED_PATH = "description_selected_corr.json"
+DATA_PATH = "priv_bayes/data/adult_filter1.csv"
+SELECTED_DATA_PATH = "selected_data_cluster.csv"
+DES_PATH = "description_cluster.json"
+DES_SELECTED_PATH = "description_selected_cluster.json"
 
 df = pd.read_csv(DATA_PATH)
 
@@ -84,14 +90,15 @@ def is_isomorphic(network1, network2):
             break
     return flag
 
-if __name__ =='__main__':
+
+if __name__ == '__main__':
     result_df = pd.DataFrame()
     # 生成原始数据的描述文件
     describer = DataDescriber(
-        histogram_bins=15, category_threshold=20)
+        histogram_bins=8, category_threshold=15)
     describer.describe_dataset_in_correlated_attribute_mode(dataset_file=DATA_PATH,
                                                             epsilon=bayes_epsilon,
-                                                            k=3,
+                                                            k=2,
                                                             attribute_to_is_categorical={},
                                                             attribute_to_is_candidate_key={},
                                                             )
@@ -100,10 +107,10 @@ if __name__ =='__main__':
 
     # 生成新数据的描述文件
     describer_selected = DataDescriber(
-        histogram_bins=15, category_threshold=20)
+        histogram_bins=8, category_threshold=15)
     describer_selected.describe_dataset_in_correlated_attribute_mode(dataset_file=DATA_PATH,  # 使用原数据构建概率表
                                                                      epsilon=bayes_epsilon,
-                                                                     k=3,
+                                                                     k=2,
                                                                      attribute_to_is_categorical={},
                                                                      attribute_to_is_candidate_key={},
                                                                      df_selected=selected_df)  # 使用df_selected数据建网络
@@ -117,12 +124,18 @@ if __name__ =='__main__':
         # }, ignore_index=True)
         # result_df.to_csv("match_result.csv")
 
+        set_random_seed(iter)
         generator = DataGenerator()
-        generator.generate_dataset_in_correlated_attribute_mode(len(df), DES_PATH, 0)
+        generator.generate_dataset_in_correlated_attribute_mode(
+            len(df), DES_PATH, 0)
+        set_random_seed(iter)
         generator_selected = DataGenerator()
-        generator_selected.generate_dataset_in_correlated_attribute_mode(len(df), DES_SELECTED_PATH, 0)
+        generator_selected.generate_dataset_in_correlated_attribute_mode(
+            len(df), DES_SELECTED_PATH, 0)
         synthetic_ori = generator.get_synthetic_data()
         synthetic_p = generator_selected.get_synthetic_data()
+        # synthetic_ori.to_csv("result_data/synthetic_ori" + str(iter) + ".csv")
+        # synthetic_p.to_csv("result_data/synthetic_p" + str(iter) + ".csv")
 
         p_patterns = {}
         privbayes_patterns = {}
@@ -137,12 +150,13 @@ if __name__ =='__main__':
             ori_dt_y = df[constraint["y_axis"]]
             if constraint["params"]["type"] == "rect":
                 p_selected_data = synthetic_p[(dt_x >= area[0][0]) & (dt_x <= area[1][0]) & (dt_y >= area[1][1])
-                                                   & (dt_y <= area[0][1])]
+                                              & (dt_y <= area[0][1])]
                 privbayes_selected_data = synthetic_ori[
-                    (base_dt_x >= area[0][0]) & (base_dt_x <= area[1][0]) & (base_dt_y >= area[1][1])
+                    (base_dt_x >= area[0][0]) & (base_dt_x <=
+                                                 area[1][0]) & (base_dt_y >= area[1][1])
                     & (base_dt_y <= area[0][1])]
                 ori_selected_data = df[(ori_dt_x >= area[0][0]) & (ori_dt_x <= area[1][0]) & (ori_dt_y >= area[1][1])
-                                             & (ori_dt_y <= area[0][1])]
+                                       & (ori_dt_y <= area[0][1])]
             if constraint["params"]["type"] == "polygon":
                 p_selected_data = []
                 for idx, row in synthetic_p.iterrows():
@@ -172,7 +186,7 @@ if __name__ =='__main__':
             diff2 = privbayes_selected_data.values - ori_center
 
             p_intra_cluster_dis = np.sum([np.sqrt(item ** 2)
-                                                for item in diff1]) / len(p_selected_data)
+                                          for item in diff1]) / len(p_selected_data)
             privbayes_intra_cluster_dis = np.sum([np.sqrt(item ** 2)
                                                   for item in diff2]) / len(privbayes_selected_data)
 
@@ -202,13 +216,20 @@ if __name__ =='__main__':
             })
 
         if constraint['type'] == "correlation":
-            constraint['params']['range'][1] += constraint['x_step']  # 右端点向右扩展，作为最后一个端点的区间
-            cond11 = synthetic_p[constraint['x_axis']] <= constraint['params']['range'][1]
-            cond12 = synthetic_p[constraint['x_axis']] >= constraint['params']['range'][0]
-            cond21 = synthetic_ori[constraint['x_axis']] <= constraint['params']['range'][1]
-            cond22 = synthetic_ori[constraint['x_axis']] >= constraint['params']['range'][0]
-            cond31 = df[constraint['x_axis']] <= constraint['params']['range'][1]
-            cond32 = df[constraint['x_axis']] >= constraint['params']['range'][0]
+            # 右端点向右扩展，作为最后一个端点的区间
+            constraint['params']['range'][1] += constraint['x_step']
+            cond11 = synthetic_p[constraint['x_axis']
+                     ] <= constraint['params']['range'][1]
+            cond12 = synthetic_p[constraint['x_axis']
+                     ] >= constraint['params']['range'][0]
+            cond21 = synthetic_ori[constraint['x_axis']
+                     ] <= constraint['params']['range'][1]
+            cond22 = synthetic_ori[constraint['x_axis']
+                     ] >= constraint['params']['range'][0]
+            cond31 = df[constraint['x_axis']
+                     ] <= constraint['params']['range'][1]
+            cond32 = df[constraint['x_axis']
+                     ] >= constraint['params']['range'][0]
             if constraint['computation'] == 'count':
                 p_selected_data = synthetic_p[cond11 & cond12][[
                     constraint["x_axis"]]]
@@ -225,14 +246,16 @@ if __name__ =='__main__':
                 p_data = p_selected_data.groupby(
                     constraint["x_axis"]).count().sort_index().values
 
-                privbayes_selected_data[constraint["x_axis"]] = pd.cut(privbayes_selected_data[constraint['x_axis']], cut_points,
-                                                                 right=False)
-                privbayes_selected_data['index'] = len(privbayes_selected_data)
+                privbayes_selected_data[constraint["x_axis"]] = pd.cut(privbayes_selected_data[constraint['x_axis']],
+                                                                       cut_points,
+                                                                       right=False)
+                privbayes_selected_data['index'] = len(
+                    privbayes_selected_data)
                 privbayes_data = privbayes_selected_data.groupby(
                     constraint["x_axis"]).count().sort_index().values
 
                 ori_selected_data[constraint["x_axis"]] = pd.cut(ori_selected_data[constraint['x_axis']], cut_points,
-                                                           right=False)
+                                                                 right=False)
                 ori_selected_data['index'] = len(ori_selected_data)
                 ori_data = ori_selected_data.groupby(
                     constraint["x_axis"]).count().sort_index().values
@@ -249,17 +272,18 @@ if __name__ =='__main__':
                 p_selected_data[constraint["x_axis"]] = pd.cut(p_selected_data[constraint['x_axis']], cut_points,
                                                                right=False)
 
-                privbayes_selected_data[constraint["x_axis"]] = pd.cut(privbayes_selected_data[constraint['x_axis']], cut_points,
-                                                                 right=False)
+                privbayes_selected_data[constraint["x_axis"]] = pd.cut(privbayes_selected_data[constraint['x_axis']],
+                                                                       cut_points,
+                                                                       right=False)
 
                 ori_selected_data[constraint["x_axis"]] = pd.cut(ori_selected_data[constraint['x_axis']], cut_points,
-                                                           right=False)
+                                                                 right=False)
                 p_data = p_selected_data.groupby(
-                    constraint["x_axis"]).mean().fillna(method="ffill").sort_index().values
+                    constraint["x_axis"]).mean().fillna(0).sort_index().values
                 privbayes_data = privbayes_selected_data.groupby(
-                    constraint["x_axis"]).mean().fillna(method="ffill").sort_index().values
+                    constraint["x_axis"]).mean().fillna(0).sort_index().values
                 ori_data = ori_selected_data.groupby(
-                    constraint["x_axis"]).mean().fillna(method="ffill").sort_index().values
+                    constraint["x_axis"]).mean().fillna(0).sort_index().values
 
 
             def manhattan_distance(x, y):
@@ -281,40 +305,41 @@ if __name__ =='__main__':
             privbayes_Euc = 1 - privbayes_Euc / maxEuc
             if constraint['computation'] == 'count':
                 ori_coef_data = ori_selected_data.groupby(
-                    constraint['x_axis']).count().sort_index().reset_index()
+                    constraint['x_axis']).count().fillna(0).sort_index().reset_index()
                 ori_coef_data[constraint['x_axis']] = range(
                     1, len(ori_coef_data) + 1)
                 ori_coef_data = ori_coef_data.values
 
                 p_coef_data = p_selected_data.groupby(
-                    constraint['x_axis']).count().sort_index().reset_index()
+                    constraint['x_axis']).count().fillna(0).sort_index().reset_index()
                 p_coef_data[constraint['x_axis']] = range(
                     1, len(p_coef_data) + 1)
                 p_coef_data = p_coef_data.values
 
                 privbayes_coef_data = privbayes_selected_data.groupby(
-                    constraint['x_axis']).count().sort_index().reset_index()
+                    constraint['x_axis']).count().fillna(0).sort_index().reset_index()
                 privbayes_coef_data[constraint['x_axis']] = range(
                     1, len(privbayes_coef_data) + 1)
                 privbayes_coef_data = privbayes_coef_data.values
             elif constraint['computation'] == 'average':
                 ori_coef_data = ori_selected_data.groupby(
-                    constraint['x_axis']).mean().sort_index().reset_index()
+                    constraint['x_axis']).mean().fillna(0).sort_index().reset_index()
                 ori_coef_data[constraint['x_axis']] = range(
                     1, len(ori_coef_data) + 1)
                 ori_coef_data = ori_coef_data.values
                 p_coef_data = p_selected_data.groupby(
-                    constraint['x_axis']).mean().sort_index().reset_index()
+                    constraint['x_axis']).mean().fillna(0).sort_index().reset_index()
                 p_coef_data[constraint['x_axis']] = range(
                     1, len(p_coef_data) + 1)
                 p_coef_data = p_coef_data.values
                 privbayes_coef_data = privbayes_selected_data.groupby(
-                    constraint['x_axis']).mean().sort_index().reset_index()
+                    constraint['x_axis']).mean().fillna(0).sort_index().reset_index()
                 privbayes_coef_data[constraint['x_axis']] = range(
                     1, len(privbayes_coef_data) + 1)
                 privbayes_coef_data = privbayes_coef_data.values
 
-            ori_coef = np.corrcoef(ori_coef_data[:, 0], ori_coef_data[:, 1])
+            ori_coef = np.corrcoef(
+                ori_coef_data[:, 0], ori_coef_data[:, 1])
             p_PCD = abs(np.corrcoef(
                 p_coef_data[:, 0], p_coef_data[:, 1]) - ori_coef)[0][1]
             privbayes_PCD = abs(np.corrcoef(
@@ -374,4 +399,4 @@ if __name__ =='__main__':
         print(p_patterns)
         result_df = result_df.append(p_patterns, ignore_index=True)
 
-    result_df.to_csv("epsilon_0_correlation.csv")
+    result_df.to_csv("epsilon_0_cluster.csv")
