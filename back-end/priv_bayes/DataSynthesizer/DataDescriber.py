@@ -213,11 +213,15 @@ class DataDescriber:
             raise Exception(
                 "Correlated Attribute Mode requires at least 2 attributes(i.e., columns) in dataset.")
 
+        # self.bayesian_network = greedy_bayes(
+        #     self.df_encoded, k, 0, weights)
         self.bayesian_network = greedy_bayes(
             self.df_encoded, k, epsilon/2, weights)
         self.data_description['bayesian_network'] = self.bayesian_network
         # self.data_description['conditional_probabilities'] = construct_noisy_conditional_distributions(
         #         self.bayesian_network, self.df_encoded, 0)
+        # self.data_description['conditional_probabilities'] = construct_noisy_conditional_distributions(
+        #     self.bayesian_network, self.df_encoded, 0)
         self.data_description['conditional_probabilities'] = construct_noisy_conditional_distributions(
             self.bayesian_network, self.df_encoded, epsilon/2)
 

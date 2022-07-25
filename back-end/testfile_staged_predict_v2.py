@@ -15,7 +15,10 @@ from scipy.stats import entropy, wasserstein_distance
 from scipy.special import rel_entr, kl_div
 from sklearn.metrics import mutual_info_score
 from scipy.spatial.distance import euclidean
-import sys
+import bnlearn as bn
+from pgmpy.factors.discrete import TabularCPD
+import matplotlib.pyplot as plt
+
 
 def set_random_seed(seed):
     random.seed(seed)
@@ -65,9 +68,108 @@ def point_inside_polygon(x, y, poly, include_edges=True):
 
     return inside
 
+
 def read_json_file(filename):
     with open(filename, encoding='utf-8') as file:
         return json.load(file)
+
+# 构建贝叶斯网络
+
+
+def construct_bayesian_network(des_file):
+    # 首节点
+    first_node = None
+    # 描述文件
+    des = read_json_file(des_file)
+    # 构建边表
+    bayesian_network = des['bayesian_network']
+    edge_list = []
+    par = {}
+    for el in bayesian_network:
+        v = el[0]
+        par[v] = el[1]
+        for u in el[1]:
+            edge_list.append((u, v))
+    # 构建dag
+    dag = bn.make_DAG(edge_list)
+    # 构建条件概率表
+    cpd_list = []
+    node2dis_num = {}
+    node = des['meta']['attributes_in_BN']
+    for n in node:
+        node_info = des['attribute_description'][n]
+        discrete_num = len(node_info["distribution_bins"])
+        node2dis_num[n] = discrete_num
+    for n in node:
+        node_info = des['attribute_description'][n]
+        discrete_num = len(node_info["distribution_bins"])
+        # dis_prob = node_info["distribution_probabilities"]
+        # 目前只考虑最多两个父节点
+        if n in par:
+            cond_prob = des["conditional_probabilities"][n]
+            # 只有一个父节点
+            if len(par[n]) == 1:
+                value_list = []
+                for i in range(node2dis_num[par[n][0]]):
+                    value_list.append(cond_prob[str([i])])
+                value_list = list(zip(*value_list))
+                cpd = TabularCPD(variable=n, variable_card=discrete_num, values=value_list,
+                                 evidence=par[n], evidence_card=[node2dis_num[par[n][0]]])
+            # 有两个父节点
+            else:
+                value_list = []
+                for i in range(node2dis_num[par[n][0]]):
+                    for j in range(node2dis_num[par[n][1]]):
+                        value_list.append(cond_prob[str([i, j])])
+                value_list = list(zip(*value_list))
+                cpd = TabularCPD(variable=n, variable_card=discrete_num, values=value_list, evidence=par[n], evidence_card=[
+                                 node2dis_num[par[n][0]], node2dis_num[par[n][1]]])
+        # 首节点
+        else:
+            first_node = n
+            dis_prob = des["conditional_probabilities"][n]
+            dis_prob = [[el] for el in dis_prob]
+            cpd = TabularCPD(
+                variable=n, variable_card=discrete_num, values=dis_prob)
+        cpd_list.append(cpd)
+    model = bn.make_DAG(dag, cpd_list)
+    return des, model, first_node
+
+# 得到带约束的两个节点的联合概率分布
+
+
+def constraint_joint_prob(des, x_node, y_node, model, first_node):
+    # first_node_info = des["attribute_description"][first_node]
+    # first_node_prob = first_node_info["distribution_probabilities"]
+    first_node_prob = des["conditional_probabilities"][first_node]
+    total_p = 0
+    total_df = None
+    for i in range(len(first_node_prob)):
+        if first_node == x_node:
+            query = bn.inference.fit(
+                model, variables=[y_node], evidence={first_node: i})
+            df = query.df.copy()
+            df.p *= first_node_prob[i]
+            df.insert(0, first_node, i)
+        elif first_node == y_node:
+            query = bn.inference.fit(
+                model, variables=[x_node], evidence={first_node: i})
+            df = query.df.copy()
+            df.p *= first_node_prob[i]
+            df.insert(1, first_node, i)
+        else:
+            query = bn.inference.fit(
+                model, variables=[x_node, y_node], evidence={first_node: i})
+            df = query.df.copy()
+            df.p *= first_node_prob[i]
+        if total_df is None:
+            total_df = df.copy()
+        else:
+            total_df = pd.concat([total_df, df]).groupby(
+                [x_node, y_node]).sum().reset_index()
+        total_p += df['p'].sum()
+    return total_df
+
 
 def discrete_histogram(des, x_node, y_node, df):
     x_node_info = des['attribute_description'][x_node]
@@ -83,7 +185,8 @@ def discrete_histogram(des, x_node, y_node, df):
     x_data = df[x_node].to_numpy()
     y_data = df[y_node].to_numpy()
 
-    H, x_node_edges, y_node_edges = np.histogram2d(x_data, y_data, bins=(x_node_edges, y_node_edges))
+    H, x_node_edges, y_node_edges = np.histogram2d(
+        x_data, y_data, bins=(x_node_edges, y_node_edges))
     H = H.T
     # H = H / np.sum(H)
 
@@ -92,22 +195,68 @@ def discrete_histogram(des, x_node, y_node, df):
 
     return H
 
+
 def cal_kl(original_df, synthetic_df):
     return entropy(original_df.flatten(), synthetic_df.flatten())
+
 
 def cal_wdis(original_df, synthetic_df):
     return wasserstein_distance(original_df.flatten(), synthetic_df.flatten())
 
+
+def cal_euc(original_df, synthetic_df):
+    return euclidean(original_df.flatten(), synthetic_df.flatten())\
+
+
+
+def get_xy(constraint_file_path):
+    constraint = read_json_file(constraint_file_path)
+    x_node = constraint['x_axis']
+    y_node = constraint['y_axis']
+    return x_node, y_node
+
+
+def get_edges(mi, ma, bin_num):
+    return np.linspace(mi, ma, bin_num + 1, endpoint=True)
+
+
+def get_histogram_from_data(x_node_edges, y_node_edges, x_node, y_node, data_df):
+    x_data = data_df[x_node].to_numpy()
+    y_data = data_df[y_node].to_numpy()
+
+    H, x_node_edges, y_node_edges = np.histogram2d(
+        x_data, y_data, bins=(x_node_edges, y_node_edges))
+    H = H.T
+    H = H / np.sum(H)
+
+    X, Y = np.meshgrid(x_node_edges, y_node_edges)
+    # plt.pcolormesh(X, Y, H)
+    return H
+
+
+def get_predict_histogram_from_network(des_file_path, x_node, y_node, x_edges, y_edges):
+    des, model, first_node = construct_bayesian_network(des_file_path)
+    total_df = constraint_joint_prob(des, x_node, y_node, model, first_node)
+    total_df = total_df.pivot(y_node, x_node, 'p').values
+    X, Y = np.meshgrid(x_edges, y_edges)
+    # plt.pcolormesh(X, Y, total_df)
+    return total_df
+
+
 # 参数
-# BAYES_LIST = [5]
+# BAYES_LIST = [2]
 # BAYES_LIST = [0.1, 0.5, 1,  3,  5, 7, 9, 11, 13, 15, 17, 19, 21]
 BAYES_LIST = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6,
               0.7, 0.8, 0.9, 1, 2, 3, 4, 5, 10, 15, 20]
-# BAYES_LIST = [15, 20]
-BASE_WEIGHT = 128
+BAYES_LIST = list(np.repeat(BAYES_LIST, 10))
+# BAYES_LIST = [0.1, 0.1, 0.2, 0.2, 0.3, 0.3, 0.4, 0.4, 0.5, 0.5, 0.6, 0.6,
+#               0.7, 0.7, 0.8, 0.8, 0.9, 0.9, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 10, 10, 15, 15, 20, 20]
+# BAYES_LIST = [0.2]
+BASE_WEIGHT = 2
 
 # 读入原始数据
-DATA_PATH = "priv_bayes/data/insurance.csv"
+DATA_PATH = "priv_bayes/data/bank_filter2.csv"
+# DATA_PATH = "./priv_bayes/data/shopping_filter4.csv"
 SELECTED_DATA_PATH = "selected_data.csv"
 DES_PATH = "description.json"
 DES_SELECTED_PATH = "description_selected.json"
@@ -121,6 +270,13 @@ f = open("constraints_staged_cluster.json")
 constraint = json.load(f)['constraints'][0]
 selected_df = df.iloc[constraint['data']]
 selected_df.to_csv(SELECTED_DATA_PATH, index=False)
+
+x_node = constraint['x_axis']
+y_node = constraint['y_axis']
+original_bin_num = 15
+x_edges = get_edges(np.min(df[x_node]), np.max(df[x_node]), original_bin_num)
+y_edges = get_edges(np.min(df[y_node]), np.max(df[y_node]), original_bin_num)
+original_H = get_histogram_from_data(x_edges, y_edges, x_node, y_node, df)
 
 
 def is_isomorphic(network1, network2):
@@ -142,44 +298,22 @@ def is_isomorphic(network1, network2):
 if __name__ == '__main__':
     result_df = pd.DataFrame()
 
-    cur_scheme_weights = None
+    rs_list = random.sample(range(1, 65536), len(BAYES_LIST))
+    rs_idx = 0
 
-    # 构建一个weights数组
-    weight_df = copy.deepcopy(df)
-    weight_df[weight_df.columns] = 1.0
-    # 建立一张axis到id的索引表
-    axis2id = {}
-    for idx, val in enumerate(weight_df.columns):
-        axis2id[val] = idx
-    arr = weight_df.values
-    x_id = axis2id.get(constraint["x_axis"])
-    y_id = axis2id.get(constraint["y_axis"])
-    cur_ids = constraint["data"]
-    for id in cur_ids:
-        if x_id is not None:
-            arr[id][x_id] = max(
-                arr[id][x_id], BASE_WEIGHT)
-        if y_id is not None:
-            arr[id][y_id] = max(
-                arr[id][y_id], BASE_WEIGHT)
-    for axis in axis2id:
-        weight_df[axis] = arr[:, axis2id[axis]]
-    cur_scheme_weights = {}
-    dtdt = orjson.loads(weight_df.to_json(orient="records"))
-    for idx, dt in enumerate(dtdt):
-        if idx not in cur_ids:
-            continue
-        cur_scheme_weights[idx] = dt
+    rs2_list = random.sample(range(1, 65536), len(BAYES_LIST) * 10)
+    rs2_idx = 0
 
     for bayes_epsilon in BAYES_LIST:
-        # rs = random.randint(1, 65536)
-
-        set_random_seed(int(bayes_epsilon*10))
-        # set_random_seed(rs)
+        rs = rs_list[rs_idx]
+        rs_idx += 1
+        # set_random_seed(int(bayes_epsilon*10))
+        set_random_seed(rs)
         # 生成原始数据的描述文件
         describer = DataDescriber(
             histogram_bins=15, category_threshold=20)
         describer.describe_dataset_in_correlated_attribute_mode(dataset_file=DATA_PATH,
+                                                                # epsilon=0,
                                                                 epsilon=bayes_epsilon,
                                                                 k=2,
                                                                 attribute_to_is_categorical={},
@@ -189,44 +323,127 @@ if __name__ == '__main__':
         display_bayesian_network(describer.bayesian_network)
         zz_des = read_json_file(DES_PATH)
 
-        set_random_seed(int(bayes_epsilon*10))
-        # set_random_seed(rs)
-        # 生成新数据的描述文件
-        describer_selected = DataDescriber(
-            histogram_bins=15, category_threshold=20)
-        describer_selected.describe_dataset_in_correlated_attribute_mode(dataset_file=DATA_PATH,  # 使用原数据构建概率表
-                                                                            epsilon=bayes_epsilon,
-                                                                            k=2,
-                                                                            attribute_to_is_categorical={},
-                                                                            attribute_to_is_candidate_key={},
-                                                                            weights=cur_scheme_weights  # 加上weights建表
-                                                                            )  # 使用df_selected数据建网络
-        describer_selected.save_dataset_description_to_file(
-            DES_SELECTED_PATH)
-        display_bayesian_network(describer_selected.bayesian_network)
-        zz_privis_des = read_json_file(DES_SELECTED_PATH)
+        privbayes_H = get_predict_histogram_from_network(
+            DES_PATH, x_node, y_node, x_edges, y_edges)
 
-        # if is_isomorphic(describer.bayesian_network, describer_selected.bayesian_network):
-        #     print("Bayesian is the same")
-        #     sys.exit()
+        cnt = 0
+        BASE_WEIGHT = 4
+        while cnt < 1:
+            cur_scheme_weights = None
 
-        # for iter in range(2):
+            # 构建一个weights数组
+            weight_df = copy.deepcopy(df)
+            weight_df[weight_df.columns] = 1.0
+            # 建立一张axis到id的索引表
+            axis2id = {}
+            for idx, val in enumerate(weight_df.columns):
+                axis2id[val] = idx
+            arr = weight_df.values
+            x_id = axis2id.get(constraint["x_axis"])
+            y_id = axis2id.get(constraint["y_axis"])
+            cur_ids = constraint["data"]
+            for id in cur_ids:
+                if x_id is not None:
+                    # 选中数据的所有属性都加权
+                    for i in range(len(axis2id)):
+                        if i == x_id or i == y_id:
+                            arr[id][i] = max(arr[id][i], BASE_WEIGHT)
+                        else:
+                            arr[id][i] = max(arr[id][i], BASE_WEIGHT)
+                    # 只有图表涉及到的属性加权
+                    # arr[id][x_id] = max(
+                    #     arr[id][x_id], BASE_WEIGHT)
+                if y_id is not None:
+                    for i in range(len(axis2id)):
+                        if i == x_id or i == y_id:
+                            arr[id][i] = max(arr[id][i], BASE_WEIGHT)
+                        else:
+                            arr[id][i] = max(arr[id][i], BASE_WEIGHT)
+                    # arr[id][y_id] = max(
+                    #     arr[id][y_id], BASE_WEIGHT)
+            for axis in axis2id:
+                weight_df[axis] = arr[:, axis2id[axis]]
+            cur_scheme_weights = {}
+            dtdt = orjson.loads(weight_df.to_json(orient="records"))
+            for idx, dt in enumerate(dtdt):
+                if idx not in cur_ids:
+                    continue
+                cur_scheme_weights[idx] = dt
+
+            # set_random_seed(int(bayes_epsilon*10))
+            set_random_seed(rs)
+            # 生成新数据的描述文件
+            describer_selected = DataDescriber(
+                histogram_bins=15, category_threshold=20)
+            describer_selected.describe_dataset_in_correlated_attribute_mode(dataset_file=DATA_PATH,  # 使用原数据构建概率表
+                                                                             # epsilon=0,
+                                                                             epsilon=bayes_epsilon,
+                                                                             k=2,
+                                                                             attribute_to_is_categorical={},
+                                                                             attribute_to_is_candidate_key={},
+                                                                             weights=cur_scheme_weights  # 加上weights建表
+                                                                             )  # 使用df_selected数据建网络
+            describer_selected.save_dataset_description_to_file(
+                DES_SELECTED_PATH)
+            display_bayesian_network(describer_selected.bayesian_network)
+            zz_privis_des = read_json_file(DES_SELECTED_PATH)
+
+            privis_H = get_predict_histogram_from_network(
+                DES_SELECTED_PATH, x_node, y_node, x_edges, y_edges)
+
+            isTheoricalGood = 1
+            euc_ori_privbayes = cal_euc(original_H, privbayes_H)
+            euc_ori_privis = cal_euc(original_H, privis_H)
+            wdis_ori_privbayes = cal_wdis(original_H, privbayes_H)
+            wdis_ori_privis = cal_wdis(original_H, privis_H)
+
+            isEucBetter = euc_ori_privis < euc_ori_privbayes
+            isWdisBetter = wdis_ori_privis < wdis_ori_privbayes
+            dis_info = {}
+            dis_info.update({
+                "BASE_WEIGHT": BASE_WEIGHT,
+                "isEucBetter": isEucBetter,
+                "isWdisBetter": isWdisBetter,
+                "euc_ori_privis": euc_ori_privis,
+                "euc_ori_privbayes": euc_ori_privbayes,
+                "wdis_ori_privis": wdis_ori_privis,
+                "wdis_ori_privbayes": wdis_ori_privbayes,
+                "privis_network": str(describer_selected.bayesian_network),
+                "privbayes_network": str(describer.bayesian_network)
+            })
+
+            euc_ratio = euc_ori_privis / euc_ori_privbayes
+            wdis_ratio = wdis_ori_privis / wdis_ori_privbayes
+            if isEucBetter and isWdisBetter and euc_ratio <= 0.7 and wdis_ratio <= 0.7:
+                break
+            else:
+                cnt += 1
+                BASE_WEIGHT *= 2
+                # BASE_WEIGHT = BASE_WEIGHT + cnt
+
+        # for iter in range(5):
         for iter in range(10):
-            
+
+            # result_df = result_df.append(dis_info, ignore_index=True)
             # res_isomorphic = is_isomorphic(describer.bayesian_network, describer_selected.bayesian_network)
             # result_df.append({
             #     "bayes_epsilon": bayes_epsilon,
             #     "is_isomorphic": 1 if res_isomorphic else 0
             # }, ignore_index=True)
             # result_df.to_csv("match_result.csv")
-            set_random_seed(iter)
+            rs2 = rs2_list[rs2_idx]
+            rs2_idx += 1
+            # rs2 = random.randint(1, 65536)
+            set_random_seed(rs2)
+            # set_random_seed(iter)
             generator = DataGenerator()
             generator.generate_dataset_in_correlated_attribute_mode(
-                len(df), DES_PATH, 0)
-            set_random_seed(iter)
+                len(df), DES_PATH, iter)
+            set_random_seed(rs2)
+            # set_random_seed(iter)
             generator_selected = DataGenerator()
             generator_selected.generate_dataset_in_correlated_attribute_mode(
-                len(df), DES_SELECTED_PATH, 0)
+                len(df), DES_SELECTED_PATH, iter)
             synthetic_ori = generator.get_synthetic_data()
             synthetic_p = generator_selected.get_synthetic_data()
             # synthetic_ori.to_csv("result_data/synthetic_ori"+str(iter)+".csv")
@@ -243,7 +460,7 @@ if __name__ == '__main__':
                 base_dt_y = synthetic_ori[constraint["y_axis"]]
                 ori_dt_x = df[constraint["x_axis"]]
                 ori_dt_y = df[constraint["y_axis"]]
-                
+
                 if constraint["params"]["type"] == "rect":
                     p_selected_data = synthetic_p[(dt_x >= area[0][0]) & (dt_x <= area[1][0]) & (dt_y >= area[1][1])
                                                   & (dt_y <= area[0][1])]
@@ -289,12 +506,15 @@ if __name__ == '__main__':
 
                 zz_x_node = constraint['x_axis']
                 zz_y_node = constraint['y_axis']
-                # zz_privis_H = discrete_histogram(zz_des, zz_x_node, zz_y_node, synthetic_p)
-                zz_privis_H = discrete_histogram(zz_des, zz_x_node, zz_y_node, p_selected_data)
-                # zz_privbayes_H = discrete_histogram(zz_des, zz_x_node, zz_y_node, synthetic_ori)
-                zz_privbayes_H = discrete_histogram(zz_des, zz_x_node, zz_y_node, privbayes_selected_data)
-                # zz_ori_H = discrete_histogram(zz_des, zz_x_node, zz_y_node, df)
-                zz_ori_H = discrete_histogram(zz_des, zz_x_node, zz_y_node, ori_selected_data)
+                zz_privis_H = discrete_histogram(
+                    zz_privis_des, zz_x_node, zz_y_node, synthetic_p)
+                # zz_privis_H = discrete_histogram(zz_privis_des, zz_x_node, zz_y_node, p_selected_data)
+                zz_privbayes_H = discrete_histogram(
+                    zz_privis_des, zz_x_node, zz_y_node, synthetic_ori)
+                # zz_privbayes_H = discrete_histogram(zz_privis_des, zz_x_node, zz_y_node, privbayes_selected_data)
+                zz_ori_H = discrete_histogram(
+                    zz_privis_des, zz_x_node, zz_y_node, df)
+                # zz_ori_H = discrete_histogram(zz_privis_des, zz_x_node, zz_y_node, ori_selected_data)
 
                 # 临时，转成2d直方图计算
                 p_WDis = cal_wdis(zz_ori_H, zz_privis_H)
@@ -305,12 +525,12 @@ if __name__ == '__main__':
                 #     p_selected_data.values, ori_selected_data.values)
                 # privbayes_WDis = get_w_distance(
                 #     privbayes_selected_data.values, ori_selected_data.values)
-                
 
                 # 临时，转成2d直方图计算，kl会有inf，计算euclidean
                 p_KL = euclidean(zz_ori_H.flatten(), zz_privis_H.flatten())
                 # p_KL = cal_kl(zz_ori_H, zz_privis_H)
-                privbayes_KL = euclidean(zz_ori_H.flatten(), zz_privbayes_H.flatten())
+                privbayes_KL = euclidean(
+                    zz_ori_H.flatten(), zz_privbayes_H.flatten())
                 # privbayes_KL = cal_kl(zz_ori_H, zz_privbayes_H)
 
                 # 使用sdv库计算KL散度
@@ -525,9 +745,16 @@ if __name__ == '__main__':
             p_patterns.update({
                 "epsilon": bayes_epsilon
             })
+            p_patterns.update(dis_info)
+            p_patterns.update({
+                "rs": rs,
+                "rs2": rs2
+            })
             print(p_patterns)
             result_df = result_df.append(p_patterns, ignore_index=True)
-        synthetic_ori.to_csv("result_data/synthetic_ori_"+str(bayes_epsilon)+".csv")
-        synthetic_p.to_csv("result_data/synthetic_p_"+str(bayes_epsilon)+".csv")
+        synthetic_ori.to_csv("result_data/synthetic_ori_" +
+                             str(bayes_epsilon)+".csv")
+        synthetic_p.to_csv("result_data/synthetic_p_" +
+                           str(bayes_epsilon)+".csv")
 
     result_df.to_csv("result_cluster.csv")

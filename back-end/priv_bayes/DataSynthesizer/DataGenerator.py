@@ -2,7 +2,7 @@ from numpy import random
 from pandas import DataFrame
 
 from priv_bayes.DataSynthesizer.datatypes.utils.AttributeLoader import parse_json
-from priv_bayes.DataSynthesizer.lib.utils import read_json_file, generate_random_string
+from priv_bayes.DataSynthesizer.lib.utils import set_random_seed, read_json_file, generate_random_string
 
 
 class DataGenerator(object):
@@ -54,6 +54,7 @@ class DataGenerator(object):
                 self.synthetic_dataset[attr] = column.sample_values_from_binning_indices(binning_indices)
 
     def generate_dataset_in_correlated_attribute_mode(self, n, description_file, seed=0, randomize=False):
+        set_random_seed(seed)
         self.n = n
         self.description = read_json_file(description_file)
 

@@ -172,6 +172,8 @@ def greedy_bayes(dataset: DataFrame, k: int, epsilon: float, weights: {}):
     # root_attribute = random.choice(dataset.columns)
     # print(dataset.columns)
     # root_attribute = dataset.columns[5] # ['age', 'sex', 'bmi', 'children', 'smoker', 'region', 'charges']
+    # ['Gender', 'Married', 'Dependents', 'Education', 'Self_Employed', 'ApplicantIncome', 'CoapplicantIncome', 'LoanAmount', 'Loan_Amount_Term', 'Credit_History', 'Property_Area', 'Loan_Status']
+    # ['ProductRelated', 'ProductRelated_Duration', 'BounceRates', 'ExitRates', 'Month', 'OperatingSystems', 'Revenue']
     root_attribute = dataset.columns[1]
     V = [root_attribute]
     rest_attributes = list(dataset.columns)
