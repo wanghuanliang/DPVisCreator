@@ -1,197 +1,40 @@
-age,job,education,balance,pdays,deposit
-37,management,primary,1506,80,no
-72,retired,primary,2600,82,yes
-73,retired,primary,1388,83,yes
-42,blue-collar,primary,201,85,yes
-28,unemployed,primary,236,87,yes
-54,blue-collar,primary,258,88,no
-78,retired,primary,680,89,no
-42,management,primary,5310,90,yes
-76,retired,primary,3324,90,yes
-71,housemaid,primary,1311,91,yes
-59,technician,primary,4198,91,yes
-80,retired,primary,997,91,yes
-77,retired,primary,3324,91,yes
-68,retired,primary,2027,91,yes
-72,retired,primary,4657,91,yes
-67,retired,primary,1430,91,yes
-20,student,primary,0,91,no
-83,retired,primary,425,92,yes
-76,retired,primary,3324,92,yes
-81,retired,primary,243,92,yes
-68,retired,primary,2027,92,yes
-64,retired,primary,48,92,yes
-60,blue-collar,primary,5,92,yes
-53,blue-collar,primary,4401,92,yes
-55,unemployed,primary,1212,92,no
-43,blue-collar,primary,3917,93,yes
-58,retired,primary,565,93,yes
-18,student,primary,608,93,yes
-80,retired,primary,155,93,yes
-82,housemaid,primary,1381,93,no
-55,management,primary,2587,94,yes
-61,blue-collar,primary,5,94,yes
-77,retired,primary,2590,94,no
-60,blue-collar,primary,5,95,yes
-42,management,primary,5310,97,yes
-73,retired,primary,508,97,no
-71,retired,primary,2600,98,yes
-50,blue-collar,primary,3764,99,yes
-42,blue-collar,primary,201,103,yes
-57,blue-collar,primary,3109,105,yes
-58,retired,primary,2538,111,yes
-56,retired,primary,1947,123,yes
-59,retired,primary,3648,126,yes
-59,management,primary,2769,131,no
-71,retired,primary,3230,133,yes
-59,entrepreneur,primary,124,134,no
-67,retired,primary,1430,135,yes
-30,blue-collar,primary,5956,139,no
-83,retired,primary,425,140,yes
-64,retired,primary,2140,155,yes
-30,blue-collar,primary,201,157,yes
-35,blue-collar,primary,2040,157,no
-74,retired,primary,5539,159,no
-48,blue-collar,primary,214,162,no
-47,blue-collar,primary,2749,164,yes
-49,services,primary,0,166,yes
-42,blue-collar,primary,1461,170,yes
-52,blue-collar,primary,230,170,no
-32,blue-collar,primary,1918,172,no
-37,blue-collar,primary,2120,175,yes
-48,blue-collar,primary,214,177,yes
-29,unemployed,primary,1374,178,yes
-77,retired,primary,2590,178,yes
-60,blue-collar,primary,14,178,no
-56,management,primary,870,179,yes
-22,student,primary,423,179,yes
-49,services,primary,1830,179,yes
-73,retired,primary,542,180,yes
-63,blue-collar,primary,115,180,yes
-86,retired,primary,1255,180,yes
-82,retired,primary,243,180,yes
-48,housemaid,primary,46,180,yes
-19,student,primary,608,180,yes
-35,blue-collar,primary,2490,180,no
-51,blue-collar,primary,3764,181,yes
-44,services,primary,2557,181,yes
-22,student,primary,3472,181,yes
-66,housemaid,primary,1230,181,yes
-70,retired,primary,2795,181,yes
-70,retired,primary,482,181,yes
-82,housemaid,primary,1381,181,yes
-53,blue-collar,primary,306,181,yes
-45,admin.,primary,429,181,yes
-76,retired,primary,802,181,yes
-73,retired,primary,796,182,yes
-73,retired,primary,796,182,yes
-65,retired,primary,493,182,no
-43,services,primary,2557,183,yes
-22,student,primary,3472,183,yes
-54,blue-collar,primary,4401,183,yes
-38,blue-collar,primary,2240,183,no
-54,blue-collar,primary,1311,184,yes
-70,retired,primary,2346,184,yes
-42,management,primary,5310,186,yes
-59,retired,primary,2074,186,yes
-61,housemaid,primary,211,186,yes
-69,retired,primary,2398,186,no
-76,housemaid,primary,1411,187,yes
-75,retired,primary,1765,187,yes
-62,retired,primary,1515,187,no
-77,retired,primary,2223,187,no
-75,retired,primary,1413,188,yes
-53,housemaid,primary,2581,189,yes
-80,housemaid,primary,0,189,yes
-69,retired,primary,324,189,no
-31,services,primary,997,190,no
-47,blue-collar,primary,2,190,no
-73,retired,primary,1388,190,no
-48,technician,primary,235,191,yes
-76,retired,primary,3324,192,yes
-70,retired,primary,482,196,yes
-50,blue-collar,primary,859,196,no
-46,housemaid,primary,3512,197,yes
-32,housemaid,primary,-184,197,no
-30,blue-collar,primary,5,203,yes
-29,unemployed,primary,1374,208,yes
-55,management,primary,621,208,no
-64,retired,primary,109,225,yes
-56,admin.,primary,0,227,no
-56,entrepreneur,primary,29,227,no
-45,housemaid,primary,221,235,no
-58,technician,primary,4198,246,yes
-60,technician,primary,4243,251,no
-40,management,primary,738,258,no
-59,admin.,primary,879,259,no
-46,blue-collar,primary,1291,259,no
-50,housemaid,primary,1158,265,no
-55,blue-collar,primary,781,270,no
-42,blue-collar,primary,-97,271,no
-51,blue-collar,primary,216,274,no
-77,retired,primary,2590,277,yes
-21,student,primary,423,285,yes
-58,blue-collar,primary,3109,287,yes
-35,blue-collar,primary,0,290,no
-31,services,primary,459,293,yes
-51,blue-collar,primary,-19,296,yes
-31,blue-collar,primary,-199,299,no
-43,management,primary,62,300,no
-36,blue-collar,primary,319,301,yes
-37,blue-collar,primary,3154,305,yes
-38,housemaid,primary,199,306,yes
-72,retired,primary,4657,309,yes
-36,blue-collar,primary,1177,311,yes
-39,services,primary,324,312,no
-40,blue-collar,primary,1530,315,no
-37,self-employed,primary,235,323,no
-43,services,primary,2557,327,yes
-38,services,primary,3715,327,no
-44,blue-collar,primary,103,329,no
-42,blue-collar,primary,402,330,no
-41,blue-collar,primary,3658,330,no
-33,blue-collar,primary,557,331,no
-54,retired,primary,136,332,no
-41,management,primary,733,335,no
-57,blue-collar,primary,5041,336,no
-35,blue-collar,primary,147,337,no
-43,blue-collar,primary,-181,337,no
-58,entrepreneur,primary,1153,337,no
-40,blue-collar,primary,-388,340,no
-46,services,primary,116,341,no
-43,blue-collar,primary,250,342,no
-51,blue-collar,primary,42,342,no
-34,blue-collar,primary,329,343,yes
-40,blue-collar,primary,34,344,no
-40,services,primary,471,345,yes
-36,blue-collar,primary,828,345,yes
-44,blue-collar,primary,-234,347,no
-31,blue-collar,primary,1127,349,no
-41,technician,primary,340,349,no
-50,blue-collar,primary,15,350,no
-40,blue-collar,primary,592,350,no
-35,blue-collar,primary,-367,350,no
-34,blue-collar,primary,3868,350,no
-40,blue-collar,primary,2805,353,no
-32,blue-collar,primary,-454,355,yes
-44,blue-collar,primary,-57,356,no
-59,management,primary,1727,358,yes
-47,retired,primary,1374,359,yes
-43,services,primary,2567,360,no
-46,blue-collar,primary,804,361,yes
-21,blue-collar,primary,-172,361,yes
-32,blue-collar,primary,0,361,no
-49,blue-collar,primary,24,362,yes
-28,blue-collar,primary,431,363,no
-50,entrepreneur,primary,199,363,no
-57,blue-collar,primary,739,364,no
-58,housemaid,primary,260,364,no
-44,blue-collar,primary,-101,366,yes
-46,admin.,primary,429,369,yes
-40,blue-collar,primary,332,369,no
-40,blue-collar,primary,830,370,yes
-42,unemployed,primary,-581,370,no
-44,blue-collar,primary,36,371,yes
-48,blue-collar,primary,430,371,no
-42,blue-collar,primary,156,371,no
-79,retired,primary,2787,377,yes
+Gender,Married,Dependents,Education,Self_Employed,ApplicantIncome,CoapplicantIncome,LoanAmount,Loan_Amount_Term,Credit_History,Property_Area,Loan_Status
+Male,Yes,0,Not Graduate,No,2917,536.0,66,360,1,Rural,N
+Male,Yes,0,Not Graduate,Yes,4344,736.0,87,360,1,Semiurban,N
+Male,Yes,3+,Not Graduate,No,2071,754.0,94,480,1,Semiurban,Y
+Male,Yes,3+,Not Graduate,No,3850,983.0,100,360,1,Semiurban,Y
+Male,Yes,2,Not Graduate,No,4226,1040.0,110,360,1,Urban,Y
+Male,Yes,0,Not Graduate,No,1863,1041.0,98,360,1,Semiurban,Y
+Male,Yes,1,Not Graduate,No,3500,1083.0,135,360,1,Urban,Y
+Male,Yes,2,Not Graduate,No,2309,1255.0,125,360,0,Rural,N
+Male,No,0,Not Graduate,No,3598,1287.0,100,360,1,Rural,N
+Male,No,1,Not Graduate,No,2679,1302.0,94,360,1,Semiurban,Y
+Male,Yes,2,Not Graduate,No,4200,1430.0,129,360,1,Rural,N
+Male,No,0,Not Graduate,No,2333,1451.0,102,480,0,Urban,N
+Male,Yes,0,Not Graduate,No,3814,1483.0,124,300,1,Semiurban,Y
+Male,Yes,1,Not Graduate,No,2653,1500.0,113,180,0,Rural,N
+Male,Yes,0,Not Graduate,No,2333,1516.0,95,360,1,Urban,Y
+Male,No,0,Not Graduate,No,2346,1600.0,132,360,1,Semiurban,Y
+Male,Yes,2,Not Graduate,No,1993,1625.0,113,180,1,Semiurban,Y
+Male,Yes,1,Not Graduate,No,3399,1640.0,111,180,1,Urban,Y
+Female,Yes,0,Not Graduate,No,1928,1644.0,100,360,1,Semiurban,Y
+Male,Yes,3+,Not Graduate,No,2947,1664.0,70,180,0,Urban,N
+Male,Yes,0,Not Graduate,No,3000,1666.0,100,480,0,Urban,N
+Male,No,0,Not Graduate,No,3902,1666.0,109,360,1,Rural,Y
+Male,No,0,Not Graduate,No,3748,1668.0,110,360,1,Semiurban,Y
+Male,Yes,0,Not Graduate,No,2600,1700.0,107,360,1,Rural,Y
+Male,Yes,2,Not Graduate,No,3273,1820.0,81,360,1,Urban,Y
+Male,Yes,2,Not Graduate,Yes,1875,1875.0,97,360,1,Semiurban,Y
+Male,Yes,0,Not Graduate,No,2600,1911.0,116,360,0,Semiurban,N
+Male,Yes,1,Not Graduate,No,2510,1983.0,140,180,1,Urban,N
+Male,No,3+,Not Graduate,No,4707,1993.0,148,360,1,Semiurban,Y
+Male,Yes,0,Not Graduate,No,2253,2033.0,110,360,1,Rural,Y
+Male,No,0,Not Graduate,Yes,2583,2167.0,104,360,1,Rural,Y
+Male,Yes,2,Not Graduate,No,3083,2168.0,126,360,1,Urban,Y
+Male,No,0,Not Graduate,No,3200,2254.0,126,180,0,Urban,N
+Male,Yes,0,Not Graduate,No,2583,2358.0,120,360,1,Urban,Y
+Male,Yes,0,Not Graduate,No,2167,2400.0,115,360,1,Urban,Y
+Male,No,0,Not Graduate,No,2927,2405.0,111,360,1,Semiurban,Y
+Male,Yes,1,Not Graduate,No,1958,2436.0,131,360,1,Rural,Y
+Male,Yes,1,Not Graduate,No,2600,2500.0,90,360,1,Semiurban,Y
+Male,Yes,1,Not Graduate,No,2239,2524.0,128,360,1,Urban,Y

@@ -249,13 +249,14 @@ def get_predict_histogram_from_network(des_file_path, x_node, y_node, x_edges, y
 BAYES_LIST = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6,
               0.7, 0.8, 0.9, 1, 2, 3, 4, 5, 10, 15, 20]
 BAYES_LIST = list(np.repeat(BAYES_LIST, 10))
+# BAYES_LIST = list(np.repeat(BAYES_LIST, 5))
 # BAYES_LIST = [0.1, 0.1, 0.2, 0.2, 0.3, 0.3, 0.4, 0.4, 0.5, 0.5, 0.6, 0.6,
 #               0.7, 0.7, 0.8, 0.8, 0.9, 0.9, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 10, 10, 15, 15, 20, 20]
 # BAYES_LIST = [0.2]
 BASE_WEIGHT = 2
 
 # 读入原始数据
-DATA_PATH = "priv_bayes/data/bank_filter2.csv"
+DATA_PATH = "priv_bayes/data/loan_dataset_processed_2.csv"
 # DATA_PATH = "./priv_bayes/data/shopping_filter4.csv"
 SELECTED_DATA_PATH = "selected_data.csv"
 DES_PATH = "description.json"
@@ -298,15 +299,23 @@ def is_isomorphic(network1, network2):
 if __name__ == '__main__':
     result_df = pd.DataFrame()
 
-    rs_list = random.sample(range(1, 65536), len(BAYES_LIST))
+    set_random_seed(12345)
+    # rs_list = random.sample(range(1, 65536), len(BAYES_LIST))
+    rs_list = random.sample(range(1, 65536), 10)
+    # rs_list = [34754, 61144, 5234, 6027, 44738,
+    #            20235, 30128, 56882, 54750, 13474]
     rs_idx = 0
 
-    rs2_list = random.sample(range(1, 65536), len(BAYES_LIST) * 10)
+    # rs2_list = random.sample(range(1, 65536), len(BAYES_LIST) * 10)
+    rs2_list = random.sample(range(1, 65536), 10)
+    # rs2_list = [24062, 27431, 25319, 29844,
+    #             39491, 34062, 14829, 15665, 46326, 16238]
     rs2_idx = 0
 
     for bayes_epsilon in BAYES_LIST:
         rs = rs_list[rs_idx]
-        rs_idx += 1
+        rs_idx = (rs_idx + 1) % 10
+        # rs_idx += 1
         # set_random_seed(int(bayes_epsilon*10))
         set_random_seed(rs)
         # 生成原始数据的描述文件
@@ -327,7 +336,7 @@ if __name__ == '__main__':
             DES_PATH, x_node, y_node, x_edges, y_edges)
 
         cnt = 0
-        BASE_WEIGHT = 4
+        BASE_WEIGHT = 64
         while cnt < 1:
             cur_scheme_weights = None
 
@@ -432,7 +441,8 @@ if __name__ == '__main__':
             # }, ignore_index=True)
             # result_df.to_csv("match_result.csv")
             rs2 = rs2_list[rs2_idx]
-            rs2_idx += 1
+            # rs2_idx += 1
+            rs2_idx = (rs2_idx + 1) % 10
             # rs2 = random.randint(1, 65536)
             set_random_seed(rs2)
             # set_random_seed(iter)
@@ -542,7 +552,7 @@ if __name__ == '__main__':
                 #     'ContinuousKLDivergence'])  # sdv打开注释
 
                 p_patterns.update({
-                    "klpc": float(p_KL),    # sdv打开注释
+                    "eucpc": float(p_KL),    # sdv打开注释
                     "distocenterpc": float(p_intra_cluster_dis),
                     "wdispc": float(p_WDis),
                     "nodessimpc": 1 - abs(len(ori_selected_data) - len(p_selected_data)) / len(ori_selected_data),
@@ -550,7 +560,7 @@ if __name__ == '__main__':
                 })
 
                 privbayes_patterns.update({
-                    "klpriv": float(privbayes_KL),   # sdv打开注释
+                    "eucpriv": float(privbayes_KL),   # sdv打开注释
                     "distocenterpriv": float(privbayes_intra_cluster_dis),
                     "wdispriv": float(privbayes_WDis),
                     "nodessimpriv": 1 - abs(len(ori_selected_data) - len(privbayes_selected_data)) / len(ori_selected_data),

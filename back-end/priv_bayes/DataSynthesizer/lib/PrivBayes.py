@@ -174,7 +174,7 @@ def greedy_bayes(dataset: DataFrame, k: int, epsilon: float, weights: {}):
     # root_attribute = dataset.columns[5] # ['age', 'sex', 'bmi', 'children', 'smoker', 'region', 'charges']
     # ['Gender', 'Married', 'Dependents', 'Education', 'Self_Employed', 'ApplicantIncome', 'CoapplicantIncome', 'LoanAmount', 'Loan_Amount_Term', 'Credit_History', 'Property_Area', 'Loan_Status']
     # ['ProductRelated', 'ProductRelated_Duration', 'BounceRates', 'ExitRates', 'Month', 'OperatingSystems', 'Revenue']
-    root_attribute = dataset.columns[1]
+    root_attribute = dataset.columns[7]
     V = [root_attribute]
     rest_attributes = list(dataset.columns)
     rest_attributes.remove(root_attribute)
